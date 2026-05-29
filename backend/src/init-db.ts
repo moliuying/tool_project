@@ -14,8 +14,9 @@ async function bootstrap() {
   if (count === 0) {
     const menus = [
       { name: '首页', path: '/', icon: 'Home', parentId: null, sort: 1, component: 'views/Home.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 2, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 2, sort: 1, component: 'views/Menu.vue' },
+      { name: 'JavaScript 工具', path: '/js-tool', icon: 'Files', parentId: null, sort: 2, component: 'views/JsTool.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 3, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 3, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

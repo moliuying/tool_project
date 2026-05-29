@@ -15,6 +15,19 @@ const routes: RouteRecordRaw[] = [
         path: '/menu',
         name: 'Menu',
         component: () => import('@/views/Menu.vue')
+      },
+      {
+        path: '/js-tool',
+        name: 'JsTool',
+        redirect: '/js-tool/beautify',
+        component: () => import('@/views/JsTool.vue'),
+        children: [
+          {
+            path: 'beautify',
+            name: 'JsBeautify',
+            component: () => import('@/views/JsBeautify.vue')
+          }
+        ]
       }
     ]
   }
