@@ -25,6 +25,11 @@ const routes: RouteRecordRaw[] = [
         path: '/loan-calculator',
         name: 'LoanCalculator',
         component: () => import('@/views/LoanCalculator.vue')
+      },
+      {
+        path: '/random-picker',
+        name: 'RandomPicker',
+        component: () => import('@/views/RandomPicker.vue')
       }
     ]
   }
