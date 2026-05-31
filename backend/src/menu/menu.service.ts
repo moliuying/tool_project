@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Menu } from './menu.entity';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
@@ -10,6 +10,7 @@ export class MenuService {
   constructor(
     @InjectRepository(Menu)
     private menuRepository: Repository<Menu>,
+    private dataSource: DataSource,
   ) {}
 
   async create(createMenuDto: CreateMenuDto): Promise<Menu> {
@@ -50,5 +51,40 @@ export class MenuService {
 
   async remove(id: number): Promise<void> {
     await this.menuRepository.delete(id);
+  }
+
+  async batchImport(menus: CreateMenuDto[]): Promise<Menu[]> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const createdMenus: Menu[] = [];
+      const nameToIdMap = new Map<string, number>();
+
+      const createMenuWithChildren = async (
+        menuDto: CreateMenuDto,
+        parentId: number | null = null,
+      ): Promise<Menu> => {
+        const menuData = { ...menuDto, parentId };
+        const menu = queryRunner.manager.create(Menu, menuData);
+        const savedMenu = await queryRunner.manager.save(menu);
+        createdMenus.push(savedMenu);
+        nameToIdMap.set(savedMenu.name, savedMenu.id);
+        return savedMenu;
+      };
+
+      for (const menuDto of menus) {
+        await createMenuWithChildren(menuDto);
+      }
+
+      await queryRunner.commitTransaction();
+      return createdMenus;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }

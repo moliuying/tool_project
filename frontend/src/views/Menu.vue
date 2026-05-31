@@ -4,10 +4,16 @@
       <template #header>
         <div class="card-header">
           <span>菜单管理</span>
-          <el-button type="primary" @click="handleAdd">
-            <el-icon><Plus /></el-icon>
-            新增菜单
-          </el-button>
+          <div class="header-buttons">
+            <el-button type="success" @click="handleBatchImport">
+              <el-icon><Upload /></el-icon>
+              批量导入
+            </el-button>
+            <el-button type="primary" @click="handleAdd">
+              <el-icon><Plus /></el-icon>
+              新增菜单
+            </el-button>
+          </div>
         </div>
       </template>
       
@@ -97,12 +103,81 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <el-dialog
+      v-model="batchImportVisible"
+      title="批量导入菜单"
+      width="800px"
+      @close="handleBatchImportClose"
+    >
+      <div class="batch-import-tips">
+        <el-alert
+          title="导入说明"
+          type="info"
+          :closable="false"
+        >
+          <template #default>
+            <p>1. 请按照以下 JSON 格式输入菜单数据</p>
+            <p>2. 支持一次导入多个菜单</p>
+            <p>3. parentId 为 null 表示顶级菜单</p>
+          </template>
+        </el-alert>
+      </div>
+      
+      <div class="json-editor-wrapper">
+        <el-input
+          v-model="batchImportJson"
+          type="textarea"
+          :rows="15"
+          placeholder='请输入 JSON 数据，例如：
+[
+  {
+    "name": "系统管理",
+    "path": "/system",
+    "icon": "Setting",
+    "parentId": null,
+    "component": "views/System.vue",
+    "sort": 0
+  },
+  {
+    "name": "用户管理",
+    "path": "/system/user",
+    "icon": "User",
+    "parentId": null,
+    "component": "views/User.vue",
+    "sort": 1
+  }
+]'
+        />
+      </div>
+
+      <div class="batch-import-preview" v-if="previewData.length > 0">
+        <h4>预览（{{ previewData.length }} 条数据）</h4>
+        <el-table :data="previewData" size="small" border max-height="200">
+          <el-table-column prop="name" label="菜单名称" width="150" />
+          <el-table-column prop="path" label="路由路径" />
+          <el-table-column prop="icon" label="图标" width="100" />
+          <el-table-column prop="sort" label="排序" width="80" />
+        </el-table>
+      </div>
+
+      <template #footer>
+        <el-button @click="batchImportVisible = false">取消</el-button>
+        <el-button type="info" @click="handleFormatJson" :disabled="!batchImportJson">
+          格式化验证
+        </el-button>
+        <el-button type="primary" @click="handleBatchImportSubmit" :loading="batchImporting" :disabled="previewData.length === 0">
+          确认导入
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
+import { Upload } from '@element-plus/icons-vue'
 import { menuApi, type Menu, type CreateMenuDto } from '@/api/menu'
 
 const loading = ref(false)
@@ -111,6 +186,10 @@ const dialogVisible = ref(false)
 const dialogTitle = computed(() => (formData.value.id ? '编辑菜单' : '新增菜单'))
 const submitting = ref(false)
 const formRef = ref<FormInstance>()
+const batchImportVisible = ref(false)
+const batchImportJson = ref('')
+const batchImporting = ref(false)
+const previewData = ref<CreateMenuDto[]>([])
 
 const iconList = [
   'Home', 'HomeFilled', 'Menu', 'Setting', 'User', 'Document',
@@ -242,6 +321,65 @@ const handleDialogClose = () => {
   formRef.value?.resetFields()
 }
 
+const handleBatchImport = () => {
+  batchImportVisible.value = true
+  batchImportJson.value = ''
+  previewData.value = []
+}
+
+const handleBatchImportClose = () => {
+  batchImportJson.value = ''
+  previewData.value = []
+}
+
+const handleFormatJson = () => {
+  try {
+    const data = JSON.parse(batchImportJson.value)
+    if (!Array.isArray(data)) {
+      throw new Error('数据格式错误：必须是数组')
+    }
+    batchImportJson.value = JSON.stringify(data, null, 2)
+    previewData.value = data
+    ElMessage.success(`格式正确，共 ${data.length} 条数据`)
+  } catch (error: any) {
+    ElMessage.error(`JSON 格式错误：${error.message}`)
+    previewData.value = []
+  }
+}
+
+const handleBatchImportSubmit = async () => {
+  if (previewData.value.length === 0) {
+    ElMessage.warning('请先格式化验证数据')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确定要导入 ${previewData.value.length} 条菜单数据吗？`,
+      '提示',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+  } catch {
+    return
+  }
+
+  batchImporting.value = true
+  try {
+    await menuApi.batchImportMenu(previewData.value)
+    ElMessage.success('批量导入成功')
+    batchImportVisible.value = false
+    await fetchMenuList()
+  } catch (error) {
+    ElMessage.error('批量导入失败')
+  } finally {
+    batchImporting.value = false
+  }
+}
+
 onMounted(() => {
   fetchMenuList()
 })
@@ -256,5 +394,40 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.batch-import-tips {
+  margin-bottom: 20px;
+}
+
+.batch-import-tips :deep(.el-alert__description p) {
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+.json-editor-wrapper {
+  margin-bottom: 20px;
+}
+
+.json-editor-wrapper :deep(.el-textarea__inner) {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.batch-import-preview {
+  margin-top: 20px;
+}
+
+.batch-import-preview h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
 }
 </style>

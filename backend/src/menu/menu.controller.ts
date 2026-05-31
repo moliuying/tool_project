@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
 import { MenuService } from './menu.service';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
+import { BatchImportMenuDto } from './dto/batch-import-menu.dto';
 
 @Controller('menu')
 export class MenuController {
@@ -35,5 +36,11 @@ export class MenuController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.menuService.remove(+id);
+  }
+
+  @Post('batch-import')
+  @HttpCode(HttpStatus.OK)
+  batchImport(@Body() batchImportMenuDto: BatchImportMenuDto) {
+    return this.menuService.batchImport(batchImportMenuDto.menus);
   }
 }

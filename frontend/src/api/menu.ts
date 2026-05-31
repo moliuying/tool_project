@@ -36,5 +36,6 @@ export const menuApi = {
   getMenuById: (id: number) => api.get<Menu>(`/menu/${id}`),
   createMenu: (data: CreateMenuDto) => api.post<Menu>('/menu', data),
   updateMenu: (id: number, data: Partial<CreateMenuDto>) => api.patch<Menu>(`/menu/${id}`, data),
-  deleteMenu: (id: number) => api.delete(`/menu/${id}`)
+  deleteMenu: (id: number) => api.delete(`/menu/${id}`),
+  batchImportMenu: (menus: CreateMenuDto[]) => api.post<Menu[]>('/menu/batch-import', { menus })
 }

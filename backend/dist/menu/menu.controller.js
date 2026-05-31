@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const menu_service_1 = require("./menu.service");
 const create_menu_dto_1 = require("./dto/create-menu.dto");
 const update_menu_dto_1 = require("./dto/update-menu.dto");
+const batch_import_menu_dto_1 = require("./dto/batch-import-menu.dto");
 let MenuController = class MenuController {
     constructor(menuService) {
         this.menuService = menuService;
@@ -38,6 +39,9 @@ let MenuController = class MenuController {
     }
     remove(id) {
         return this.menuService.remove(+id);
+    }
+    batchImport(batchImportMenuDto) {
+        return this.menuService.batchImport(batchImportMenuDto.menus);
     }
 };
 __decorate([
@@ -81,6 +85,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], MenuController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)('batch-import'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [batch_import_menu_dto_1.BatchImportMenuDto]),
+    __metadata("design:returntype", void 0)
+], MenuController.prototype, "batchImport", null);
 MenuController = __decorate([
     (0, common_1.Controller)('menu'),
     __metadata("design:paramtypes", [menu_service_1.MenuService])

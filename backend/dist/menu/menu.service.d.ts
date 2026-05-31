@@ -1,10 +1,11 @@
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { Menu } from './menu.entity';
 import { CreateMenuDto } from './dto/create-menu.dto';
 import { UpdateMenuDto } from './dto/update-menu.dto';
 export declare class MenuService {
     private menuRepository;
-    constructor(menuRepository: Repository<Menu>);
+    private dataSource;
+    constructor(menuRepository: Repository<Menu>, dataSource: DataSource);
     create(createMenuDto: CreateMenuDto): Promise<Menu>;
     findAll(): Promise<Menu[]>;
     findTree(): Promise<Menu[]>;
@@ -12,4 +13,5 @@ export declare class MenuService {
     findOne(id: number): Promise<Menu | undefined>;
     update(id: number, updateMenuDto: UpdateMenuDto): Promise<Menu>;
     remove(id: number): Promise<void>;
+    batchImport(menus: CreateMenuDto[]): Promise<Menu[]>;
 }

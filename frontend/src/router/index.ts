@@ -15,6 +15,11 @@ const routes: RouteRecordRaw[] = [
         path: '/menu',
         name: 'Menu',
         component: () => import('@/views/Menu.vue')
+      },
+      {
+        path: '/system/menu',
+        name: 'SystemMenu',
+        component: () => import('@/views/Menu.vue')
       }
     ]
   }

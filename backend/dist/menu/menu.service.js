@@ -18,8 +18,9 @@ const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const menu_entity_1 = require("./menu.entity");
 let MenuService = class MenuService {
-    constructor(menuRepository) {
+    constructor(menuRepository, dataSource) {
         this.menuRepository = menuRepository;
+        this.dataSource = dataSource;
     }
     async create(createMenuDto) {
         const menu = this.menuRepository.create(createMenuDto);
@@ -51,11 +52,41 @@ let MenuService = class MenuService {
     async remove(id) {
         await this.menuRepository.delete(id);
     }
+    async batchImport(menus) {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        try {
+            const createdMenus = [];
+            const nameToIdMap = new Map();
+            const createMenuWithChildren = async (menuDto, parentId = null) => {
+                const menuData = Object.assign(Object.assign({}, menuDto), { parentId });
+                const menu = queryRunner.manager.create(menu_entity_1.Menu, menuData);
+                const savedMenu = await queryRunner.manager.save(menu);
+                createdMenus.push(savedMenu);
+                nameToIdMap.set(savedMenu.name, savedMenu.id);
+                return savedMenu;
+            };
+            for (const menuDto of menus) {
+                await createMenuWithChildren(menuDto);
+            }
+            await queryRunner.commitTransaction();
+            return createdMenus;
+        }
+        catch (error) {
+            await queryRunner.rollbackTransaction();
+            throw error;
+        }
+        finally {
+            await queryRunner.release();
+        }
+    }
 };
 MenuService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(menu_entity_1.Menu)),
-    __metadata("design:paramtypes", [typeorm_2.Repository])
+    __metadata("design:paramtypes", [typeorm_2.Repository,
+        typeorm_2.DataSource])
 ], MenuService);
 exports.MenuService = MenuService;
 //# sourceMappingURL=menu.service.js.map
