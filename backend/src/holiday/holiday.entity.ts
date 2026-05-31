@@ -5,7 +5,7 @@ export class Holiday {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 50 })
+  @Column()
   year: number;
 
   @Column({ length: 50 })
