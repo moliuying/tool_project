@@ -35,6 +35,11 @@ const routes: RouteRecordRaw[] = [
         path: '/holiday-calendar',
         name: 'HolidayCalendar',
         component: () => import('@/views/HolidayCalendar.vue')
+      },
+      {
+        path: '/word-counter',
+        name: 'WordCounter',
+        component: () => import('@/views/WordCounter.vue')
       }
     ]
   }
