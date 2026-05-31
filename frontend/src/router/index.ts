@@ -20,6 +20,11 @@ const routes: RouteRecordRaw[] = [
         path: '/system/menu',
         name: 'SystemMenu',
         component: () => import('@/views/Menu.vue')
+      },
+      {
+        path: '/loan-calculator',
+        name: 'LoanCalculator',
+        component: () => import('@/views/LoanCalculator.vue')
       }
     ]
   }
