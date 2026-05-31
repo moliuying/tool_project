@@ -109,6 +109,38 @@
             </div>
           </template>
         </el-alert>
+
+        <el-card class="quick-stats-card" shadow="never" v-if="currentGroupHistory.length > 0">
+          <div class="quick-stats-header">
+            <el-icon :size="16" color="#165DFF"><DataLine /></el-icon>
+            <span>本次抉择后统计</span>
+          </div>
+          <div class="quick-stats-content">
+            <div class="quick-stat-item">
+              <div class="quick-stat-label">总次数</div>
+              <div class="quick-stat-value highlight">{{ currentGroupHistory.length }}</div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="quick-stat-label">{{ optionA }}</div>
+              <div class="quick-stat-value success">{{ currentOptionACount }} 次</div>
+              <div class="quick-stat-percent success">{{ currentOptionAPercent }}%</div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="quick-stat-label">{{ optionB }}</div>
+              <div class="quick-stat-value primary">{{ currentOptionBCount }} 次</div>
+              <div class="quick-stat-percent primary">{{ currentOptionBPercent }}%</div>
+            </div>
+            <div class="quick-stat-item">
+              <div class="quick-stat-label">当前连胜</div>
+              <div class="quick-stat-value streak">{{ currentStreak }} 次</div>
+              <div class="quick-stat-percent streak">{{ lastResultName }}</div>
+            </div>
+          </div>
+          <div class="quick-stats-footer" v-if="currentGroupHistory.length >= 5">
+            <el-tag size="small" :type="randomnessLevel.type">{{ randomnessLevel.label }}</el-tag>
+            <span class="quick-stats-hint">{{ quickStatsHint }}</span>
+          </div>
+        </el-card>
       </div>
 
       <div class="action-buttons">
@@ -136,35 +168,63 @@
 
     <el-tabs v-model="activeTab" class="stats-tabs">
       <el-tab-pane name="current" label="当前选项统计">
-        <el-card class="stats-card" shadow="never">
+        <el-card class="distribution-card" shadow="never" v-if="currentGroupHistory.length > 0">
           <div class="stats-header">
             <el-icon :size="18" color="#165DFF"><DataLine /></el-icon>
             <span>{{ optionA }} vs {{ optionB }} · 分布统计</span>
             <el-tag size="small" type="info" class="stats-tag">基于 {{ currentGroupHistory.length }} 次记录</el-tag>
           </div>
-          <div class="stats-content">
-            <div class="stat-item">
-              <div class="stat-label">{{ optionA }}</div>
-              <div class="stat-bar">
-                <div class="stat-bar-inner" :style="{ width: currentOptionAPercent + '%', background: '#67c23a' }"></div>
+          <div class="distribution-content">
+            <div class="pie-chart-container">
+              <div class="pie-chart" :style="pieChartStyle">
+                <div class="pie-chart-inner">
+                  <div class="pie-chart-center">
+                    <div class="pie-chart-total">{{ currentGroupHistory.length }}</div>
+                    <div class="pie-chart-label">总次数</div>
+                  </div>
+                </div>
               </div>
-              <div class="stat-value">{{ currentOptionACount }} 次 ({{ currentOptionAPercent }}%)</div>
             </div>
-            <div class="stat-item">
-              <div class="stat-label">{{ optionB }}</div>
-              <div class="stat-bar">
-                <div class="stat-bar-inner" :style="{ width: currentOptionBPercent + '%', background: '#409eff' }"></div>
+            <div class="distribution-details">
+              <div class="distribution-item">
+                <div class="distribution-color" style="background: #67c23a"></div>
+                <div class="distribution-info">
+                  <div class="distribution-name">{{ optionA }}</div>
+                  <div class="distribution-stats">
+                    <span class="distribution-count">{{ currentOptionACount }} 次</span>
+                    <span class="distribution-percent">{{ currentOptionAPercent }}%</span>
+                  </div>
+                </div>
+                <div class="distribution-bar">
+                  <div class="distribution-bar-inner" :style="{ width: currentOptionAPercent + '%', background: '#67c23a' }"></div>
+                </div>
               </div>
-              <div class="stat-value">{{ currentOptionBCount }} 次 ({{ currentOptionBPercent }}%)</div>
+              <div class="distribution-item">
+                <div class="distribution-color" style="background: #409eff"></div>
+                <div class="distribution-info">
+                  <div class="distribution-name">{{ optionB }}</div>
+                  <div class="distribution-stats">
+                    <span class="distribution-count">{{ currentOptionBCount }} 次</span>
+                    <span class="distribution-percent">{{ currentOptionBPercent }}%</span>
+                  </div>
+                </div>
+                <div class="distribution-bar">
+                  <div class="distribution-bar-inner" :style="{ width: currentOptionBPercent + '%', background: '#409eff' }"></div>
+                </div>
+              </div>
             </div>
-          </div>
-          <div class="stats-footer">
-            <span class="stats-hint" v-if="currentGroupHistory.length >= 10">数据越多，分布越接近 50%/50%</span>
-            <span class="stats-hint" v-else>至少需要 10 次记录才能显示统计趋势</span>
           </div>
         </el-card>
 
-        <el-row :gutter="16" class="advanced-stats">
+        <el-card class="empty-stats-card" shadow="never" v-else>
+          <div class="empty-stats-content">
+            <el-icon :size="48" color="#c0c4cc"><DataLine /></el-icon>
+            <p class="empty-stats-text">暂无统计数据</p>
+            <p class="empty-stats-hint">开始抉择后，这里将显示详细的统计分析</p>
+          </div>
+        </el-card>
+
+        <el-row :gutter="16" class="advanced-stats" v-if="currentGroupHistory.length > 0">
           <el-col :span="8">
             <el-card class="metric-card" shadow="never">
               <div class="metric-icon win">
@@ -199,6 +259,43 @@
             </el-card>
           </el-col>
         </el-row>
+
+        <el-card class="insights-card" shadow="never" v-if="currentGroupHistory.length >= 5">
+          <div class="stats-header">
+            <el-icon :size="18" color="#165DFF"><DataAnalysis /></el-icon>
+            <span>数据洞察</span>
+            <el-tag size="small" :type="randomnessLevel.type" class="stats-tag">{{ randomnessLevel.label }}</el-tag>
+          </div>
+          <div class="insights-content">
+            <div class="insight-item">
+              <div class="insight-icon" :class="fairnessClass">
+                <el-icon><Star /></el-icon>
+              </div>
+              <div class="insight-info">
+                <div class="insight-title">公平性评估</div>
+                <div class="insight-desc">{{ fairnessAnalysis }}</div>
+              </div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-icon" :class="trendClass">
+                <el-icon><TrendCharts /></el-icon>
+              </div>
+              <div class="insight-info">
+                <div class="insight-title">趋势分析</div>
+                <div class="insight-desc">{{ trendAnalysis }}</div>
+              </div>
+            </div>
+            <div class="insight-item">
+              <div class="insight-icon" :class="patternClass">
+                <el-icon><MagicStick /></el-icon>
+              </div>
+              <div class="insight-info">
+                <div class="insight-title">模式识别</div>
+                <div class="insight-desc">{{ patternAnalysis }}</div>
+              </div>
+            </div>
+          </div>
+        </el-card>
 
         <el-card class="trend-card" shadow="never" v-if="currentGroupHistory.length >= 5">
           <div class="stats-header">
@@ -300,6 +397,27 @@
           </el-button>
         </div>
       </template>
+
+      <div class="history-summary" v-if="currentGroupHistory.length > 0">
+        <div class="summary-title">当前选项统计摘要</div>
+        <div class="summary-content">
+          <div class="summary-item">
+            <span class="summary-label">{{ optionA }}</span>
+            <span class="summary-value success">{{ currentOptionACount }} 次 ({{ currentOptionAPercent }}%)</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-label">{{ optionB }}</span>
+            <span class="summary-value primary">{{ currentOptionBCount }} 次 ({{ currentOptionBPercent }}%)</span>
+          </div>
+          <div class="summary-divider"></div>
+          <div class="summary-item">
+            <span class="summary-label">总计</span>
+            <span class="summary-value highlight">{{ currentGroupHistory.length }} 次</span>
+          </div>
+        </div>
+      </div>
+
       <div class="history-list">
         <div class="history-item" v-for="(item, index) in displayHistory" :key="index">
           <span class="history-time">{{ formatTime(item.time) }}</span>
@@ -313,6 +431,30 @@
         </el-button>
       </div>
     </el-card>
+
+    <div class="floating-stats" v-if="currentGroupHistory.length >= 3">
+      <div class="floating-stats-content">
+        <div class="floating-stat-item">
+          <span class="floating-stat-label">总次数</span>
+          <span class="floating-stat-value highlight">{{ currentGroupHistory.length }}</span>
+        </div>
+        <div class="floating-stat-divider"></div>
+        <div class="floating-stat-item">
+          <span class="floating-stat-label">{{ optionA }}</span>
+          <span class="floating-stat-value success">{{ currentOptionACount }} ({{ currentOptionAPercent }}%)</span>
+        </div>
+        <div class="floating-stat-divider"></div>
+        <div class="floating-stat-item">
+          <span class="floating-stat-label">{{ optionB }}</span>
+          <span class="floating-stat-value primary">{{ currentOptionBCount }} ({{ currentOptionBPercent }}%)</span>
+        </div>
+        <div class="floating-stat-divider"></div>
+        <div class="floating-stat-item">
+          <span class="floating-stat-label">连胜</span>
+          <span class="floating-stat-value streak">{{ currentStreak }} 次</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -335,7 +477,8 @@ import {
   Histogram,
   DataAnalysis,
   Files,
-  Right
+  Right,
+  Star
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -467,6 +610,108 @@ const recentTrend = computed(() => {
   return currentGroupHistory.value.slice(-10).reverse()
 })
 
+const pieChartStyle = computed(() => {
+  if (currentGroupHistory.value.length === 0) {
+    return { background: 'conic-gradient(#e4e7ed 0deg 360deg)' }
+  }
+  const angleA = (currentOptionAPercent.value / 100) * 360
+  return {
+    background: `conic-gradient(#67c23a 0deg ${angleA}deg, #409eff ${angleA}deg 360deg)`
+  }
+})
+
+const randomnessLevel = computed(() => {
+  if (currentGroupHistory.value.length < 10) {
+    return { type: 'info', label: '数据不足' }
+  }
+  const deviation = parseFloat(probabilityDeviation.value)
+  if (deviation <= 5) {
+    return { type: 'success', label: '高度随机' }
+  } else if (deviation <= 15) {
+    return { type: 'warning', label: '基本随机' }
+  } else {
+    return { type: 'danger', label: '偏差较大' }
+  }
+})
+
+const fairnessAnalysis = computed(() => {
+  if (currentGroupHistory.value.length < 5) {
+    return '数据较少，继续抉择以获得更准确的评估'
+  }
+  const deviation = parseFloat(probabilityDeviation.value)
+  if (deviation <= 5) {
+    return `分布非常均衡（偏差${deviation}%），算法表现良好`
+  } else if (deviation <= 15) {
+    return `分布基本均衡（偏差${deviation}%），属于正常波动范围`
+  } else {
+    return `分布偏差较大（${deviation}%），可能是小概率事件`
+  }
+})
+
+const trendAnalysis = computed(() => {
+  if (currentGroupHistory.value.length < 5) {
+    return '需要更多数据来分析趋势'
+  }
+  const streak = currentStreak.value
+  const lastResult = currentGroupHistory.value[currentGroupHistory.value.length - 1]?.result
+  if (streak >= 5) {
+    return `${lastResult} 已连续出现 ${streak} 次，这是一个罕见的连胜！`
+  } else if (streak >= 3) {
+    return `${lastResult} 正在连胜（${streak}次），接下来可能会反转`
+  } else {
+    return '近期结果交替出现，趋势平稳'
+  }
+})
+
+const patternAnalysis = computed(() => {
+  if (currentGroupHistory.value.length < 8) {
+    return '需要更多数据来识别模式'
+  }
+  const recent = currentGroupHistory.value.slice(-8)
+  let alternations = 0
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i].result !== recent[i - 1].result) {
+      alternations++
+    }
+  }
+  if (alternations >= 6) {
+    return '交替模式明显，结果呈现规律性交替'
+  } else if (alternations <= 2) {
+    return '聚集模式明显，相同结果连续出现'
+  } else {
+    return '模式混合，既有交替也有聚集，符合随机特性'
+  }
+})
+
+const fairnessClass = computed(() => {
+  const deviation = parseFloat(probabilityDeviation.value)
+  if (currentGroupHistory.value.length < 5) return 'neutral'
+  if (deviation <= 5) return 'good'
+  if (deviation <= 15) return 'warning'
+  return 'bad'
+})
+
+const trendClass = computed(() => {
+  if (currentGroupHistory.value.length < 5) return 'neutral'
+  const streak = currentStreak.value
+  if (streak >= 5) return 'bad'
+  if (streak >= 3) return 'warning'
+  return 'good'
+})
+
+const patternClass = computed(() => {
+  if (currentGroupHistory.value.length < 8) return 'neutral'
+  const recent = currentGroupHistory.value.slice(-8)
+  let alternations = 0
+  for (let i = 1; i < recent.length; i++) {
+    if (recent[i].result !== recent[i - 1].result) {
+      alternations++
+    }
+  }
+  if (alternations >= 6 || alternations <= 2) return 'warning'
+  return 'good'
+})
+
 const totalCount = computed(() => history.value.length)
 
 const groupCount = computed(() => {
@@ -536,6 +781,26 @@ const displayOption = computed(() => {
 
 const displayOptionBack = computed(() => {
   return optionB.value
+})
+
+const lastResultName = computed(() => {
+  if (currentGroupHistory.value.length === 0) return '-'
+  const lastResult = currentGroupHistory.value[currentGroupHistory.value.length - 1]?.result
+  return lastResult || '-'
+})
+
+const quickStatsHint = computed(() => {
+  if (currentGroupHistory.value.length < 5) {
+    return '继续抉择获得更准确统计'
+  }
+  const deviation = parseFloat(probabilityDeviation.value)
+  if (deviation <= 5) {
+    return '分布均衡，随机性良好'
+  } else if (deviation <= 15) {
+    return '略有偏差，属正常波动'
+  } else {
+    return '偏差较大，可能是小概率事件'
+  }
 })
 
 const presets: Record<string, { optionA: string; optionB: string }> = {
@@ -1189,5 +1454,448 @@ const formatTime = (dateStr: string) => {
 .group-arrow {
   color: #c0c4cc;
   font-size: 16px;
+}
+
+.distribution-card {
+  background: #fafafa;
+  margin-bottom: 16px;
+}
+
+.distribution-content {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.pie-chart-container {
+  flex-shrink: 0;
+}
+
+.pie-chart {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  position: relative;
+  transition: background 0.5s ease;
+}
+
+.pie-chart-inner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pie-chart-center {
+  text-align: center;
+}
+
+.pie-chart-total {
+  font-size: 28px;
+  font-weight: bold;
+  color: #303133;
+  line-height: 1;
+}
+
+.pie-chart-label {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.distribution-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.distribution-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.distribution-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.distribution-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.distribution-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.distribution-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 13px;
+  color: #909399;
+}
+
+.distribution-count {
+  font-weight: 500;
+}
+
+.distribution-percent {
+  font-family: 'Monaco', 'Menlo', monospace;
+  color: #606266;
+}
+
+.distribution-bar {
+  width: 100%;
+  height: 6px;
+  background: #e4e7ed;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.distribution-bar-inner {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.empty-stats-card {
+  background: #fafafa;
+  margin-bottom: 16px;
+}
+
+.empty-stats-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-stats-text {
+  font-size: 16px;
+  color: #909399;
+  margin: 16px 0 8px 0;
+}
+
+.empty-stats-hint {
+  font-size: 13px;
+  color: #c0c4cc;
+  margin: 0;
+}
+
+.insights-card {
+  background: #fafafa;
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.insight-item:hover {
+  transform: translateX(4px);
+}
+
+.insight-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.insight-icon.good {
+  background: linear-gradient(135deg, #f0f9eb, #e1f3d8);
+  color: #67c23a;
+}
+
+.insight-icon.warning {
+  background: linear-gradient(135deg, #fdf6ec, #faecd8);
+  color: #e6a23c;
+}
+
+.insight-icon.bad {
+  background: linear-gradient(135deg, #fef0f0, #fde2e2);
+  color: #f56c6c;
+}
+
+.insight-icon.neutral {
+  background: linear-gradient(135deg, #f4f4f5, #e9e9eb);
+  color: #909399;
+}
+
+.insight-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.insight-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.insight-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.quick-stats-card {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border: 1px solid #bae7ff;
+}
+
+.quick-stats-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 12px;
+}
+
+.quick-stats-content {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.quick-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 8px;
+  background: #fff;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+.quick-stat-item:hover {
+  transform: translateY(-2px);
+}
+
+.quick-stat-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.quick-stat-value {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.quick-stat-value.highlight {
+  color: #165DFF;
+}
+
+.quick-stat-value.success {
+  color: #67c23a;
+}
+
+.quick-stat-value.primary {
+  color: #409eff;
+}
+
+.quick-stat-value.streak {
+  color: #e6a23c;
+}
+
+.quick-stat-percent {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.quick-stat-percent.success {
+  color: #67c23a;
+}
+
+.quick-stat-percent.primary {
+  color: #409eff;
+}
+
+.quick-stat-percent.streak {
+  color: #e6a23c;
+  background: #fdf6ec;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+}
+
+.quick-stats-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px dashed #91d5ff;
+}
+
+.quick-stats-hint {
+  font-size: 12px;
+  color: #606266;
+}
+
+.history-summary {
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ebeef5 100%);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.summary-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+  margin-bottom: 12px;
+}
+
+.summary-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  text-align: center;
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.summary-value {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.summary-value.success {
+  color: #67c23a;
+}
+
+.summary-value.primary {
+  color: #409eff;
+}
+
+.summary-value.highlight {
+  color: #165DFF;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 32px;
+  background: #dcdfe6;
+}
+
+.floating-stats {
+  position: fixed;
+  bottom: 0;
+  left: 240px;
+  right: 0;
+  background: linear-gradient(135deg, #165DFF 0%, #409eff 100%);
+  box-shadow: 0 -4px 20px rgba(22, 93, 255, 0.3);
+  z-index: 1000;
+  padding: 12px 24px;
+  backdrop-filter: blur(10px);
+}
+
+.floating-stats-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.floating-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.floating-stat-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.floating-stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.floating-stat-value.highlight {
+  font-size: 22px;
+}
+
+.floating-stat-value.success {
+  color: #95de64;
+}
+
+.floating-stat-value.primary {
+  color: #91d5ff;
+}
+
+.floating-stat-value.streak {
+  color: #ffd666;
+}
+
+.floating-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.random-picker {
+  padding-bottom: 80px;
 }
 </style>

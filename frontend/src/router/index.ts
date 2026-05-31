@@ -30,6 +30,11 @@ const routes: RouteRecordRaw[] = [
         path: '/random-picker',
         name: 'RandomPicker',
         component: () => import('@/views/RandomPicker.vue')
+      },
+      {
+        path: '/holiday-calendar',
+        name: 'HolidayCalendar',
+        component: () => import('@/views/HolidayCalendar.vue')
       }
     ]
   }
