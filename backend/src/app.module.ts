@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuModule } from './menu/menu.module';
 import { Menu } from './menu/menu.entity';
+import { HolidayModule } from './holiday/holiday.module';
+import { Holiday } from './holiday/holiday.entity';
 import * as path from 'path';
 
 @Module({
@@ -9,11 +11,12 @@ import * as path from 'path';
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: path.join(__dirname, '../data/database.sqlite'),
-      entities: [Menu],
+      entities: [Menu, Holiday],
       synchronize: true,
       logging: false,
     }),
     MenuModule,
+    HolidayModule,
   ],
 })
 export class AppModule {}

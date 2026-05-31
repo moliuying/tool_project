@@ -1,6 +1,6 @@
 <template>
   <div class="holiday-calendar">
-    <el-card class="summary-card">
+    <el-card class="summary-card" v-loading="loading">
       <template #header>
         <div class="card-header">
           <el-icon :size="20" color="#165DFF">
@@ -14,14 +14,41 @@
       <div class="filter-bar">
         <div class="year-selector">
           <span class="selector-label">选择年份：</span>
-          <el-button-group>
-            <el-button 
+          <el-select 
+            v-model="currentYear" 
+            placeholder="请选择年份" 
+            size="default"
+            style="width: 140px"
+            @change="onYearChange"
+          >
+            <el-option 
               v-for="year in yearOptions" 
               :key="year" 
-              :type="currentYear === year ? 'primary' : 'default'"
-              @click="currentYear = year"
+              :label="year + '年'" 
+              :value="year"
+            />
+          </el-select>
+          <el-button-group class="year-quick-btns">
+            <el-button 
+              size="small"
+              :type="currentYear === thisYear ? 'primary' : 'default'"
+              @click="currentYear = thisYear"
             >
-              {{ year }}年
+              今年
+            </el-button>
+            <el-button 
+              size="small"
+              :disabled="currentYear <= Math.min(...yearOptions)"
+              @click="currentYear--"
+            >
+              <el-icon><ArrowLeft /></el-icon>
+            </el-button>
+            <el-button 
+              size="small"
+              :disabled="currentYear >= Math.max(...yearOptions)"
+              @click="currentYear++"
+            >
+              <el-icon><ArrowRight /></el-icon>
             </el-button>
           </el-button-group>
         </div>
@@ -149,7 +176,7 @@
     </div>
 
     <el-row :gutter="20" class="holiday-list">
-      <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="holiday in filteredHolidays" :key="holiday.id" :id="holiday.id">
+      <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="holiday in filteredHolidays" :key="holiday.id" :id="String(holiday.id)">
         <el-card class="holiday-card" :class="`type-${holiday.type}`" shadow="hover">
           <div class="holiday-top">
             <div class="holiday-month-day">
@@ -251,7 +278,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import {
   Calendar,
   Clock,
@@ -263,33 +290,20 @@ import {
   Tickets,
   Search,
   Top,
-  Bottom
+  Bottom,
+  ArrowLeft,
+  ArrowRight
 } from '@element-plus/icons-vue'
+import { holidayApi, Holiday } from '../api/holiday'
 
-interface Holiday {
-  id: string
-  name: string
-  dateRange: string
-  holidayPeriod: string
-  days: number
-  workDays: string[]
-  type: 'tradition' | 'modern' | 'international'
-  typeText: string
-  tagType: 'success' | 'primary' | 'warning'
-  icon: string
-  tips: string
-  startDate: Date
-  endDate: Date
-  countdown: number | null
-  month: number
-  startDay: number
-}
-
-const currentYear = ref(2026)
-const yearOptions = [2025, 2026, 2027]
+const thisYear = new Date().getFullYear()
+const currentYear = ref(thisYear)
+const yearOptions = ref<number[]>([])
+const rawHolidays = ref<Holiday[]>([])
 const searchKeyword = ref('')
 const activeType = ref('')
 const showOverview = ref(true)
+const loading = ref(false)
 
 const typeFilters = [
   { label: '全部', value: '' },
@@ -300,338 +314,14 @@ const typeFilters = [
   { label: '即将到来', value: 'upcoming' }
 ]
 
-const holidayData: Record<number, Omit<Holiday, 'countdown'>[]> = {
-  2025: [
-    {
-      id: 'newyear-2025',
-      name: '元旦',
-      dateRange: '1月1日 - 1月1日',
-      holidayPeriod: '1月1日（星期三）',
-      days: 1,
-      workDays: [],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Calendar',
-      tips: '新的一年开始了！',
-      startDate: new Date('2025-01-01'),
-      endDate: new Date('2025-01-01')
-    },
-    {
-      id: 'spring-2025',
-      name: '春节',
-      dateRange: '1月29日 - 2月4日',
-      holidayPeriod: '1月29日至2月4日（共7天）',
-      days: 7,
-      workDays: ['1月26日（周日）', '2月8日（周六）'],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Present',
-      tips: '除夕在1月28日，记得吃年夜饭！',
-      startDate: new Date('2025-01-29'),
-      endDate: new Date('2025-02-04')
-    },
-    {
-      id: 'qingming-2025',
-      name: '清明节',
-      dateRange: '4月4日 - 4月6日',
-      holidayPeriod: '4月4日至4月6日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '踏青祭扫，缅怀先人',
-      startDate: new Date('2025-04-04'),
-      endDate: new Date('2025-04-06')
-    },
-    {
-      id: 'labour-2025',
-      name: '劳动节',
-      dateRange: '5月1日 - 5月5日',
-      holidayPeriod: '5月1日至5月5日（共5天）',
-      days: 5,
-      workDays: ['4月27日（周日）', '5月10日（周六）'],
-      type: 'international',
-      typeText: '国际假日',
-      tagType: 'warning',
-      icon: 'Tickets',
-      tips: '可拼9天长假（4.27-4.30请假4天）',
-      startDate: new Date('2025-05-01'),
-      endDate: new Date('2025-05-05')
-    },
-    {
-      id: 'dragon-2025',
-      name: '端午节',
-      dateRange: '5月31日 - 6月2日',
-      holidayPeriod: '5月31日至6月2日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '吃粽子、赛龙舟',
-      startDate: new Date('2025-05-31'),
-      endDate: new Date('2025-06-02')
-    },
-    {
-      id: 'midautumn-2025',
-      name: '中秋节',
-      dateRange: '10月6日 - 10月8日',
-      holidayPeriod: '10月6日至10月8日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '与国庆节连休，共11天超长假期',
-      startDate: new Date('2025-10-06'),
-      endDate: new Date('2025-10-08')
-    },
-    {
-      id: 'national-2025',
-      name: '国庆节',
-      dateRange: '10月1日 - 10月7日',
-      holidayPeriod: '10月1日至10月7日（共7天）',
-      days: 7,
-      workDays: ['9月28日（周日）', '10月11日（周六）'],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Present',
-      tips: '与中秋节连休，可安排长途旅行',
-      startDate: new Date('2025-10-01'),
-      endDate: new Date('2025-10-07')
-    }
-  ],
-  2026: [
-    {
-      id: 'newyear-2026',
-      name: '元旦',
-      dateRange: '1月1日 - 1月3日',
-      holidayPeriod: '1月1日至1月3日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Calendar',
-      tips: '与周末连休，无需调休',
-      startDate: new Date('2026-01-01'),
-      endDate: new Date('2026-01-03')
-    },
-    {
-      id: 'spring-2026',
-      name: '春节',
-      dateRange: '2月17日 - 2月23日',
-      holidayPeriod: '2月17日至2月23日（共7天）',
-      days: 7,
-      workDays: ['2月15日（周六）', '2月28日（周六）'],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Present',
-      tips: '除夕在2月16日，一年中最重要的节日',
-      startDate: new Date('2026-02-17'),
-      endDate: new Date('2026-02-23')
-    },
-    {
-      id: 'qingming-2026',
-      name: '清明节',
-      dateRange: '4月4日 - 4月6日',
-      holidayPeriod: '4月4日至4月6日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '清明时节雨纷纷，踏青祭祖正当时',
-      startDate: new Date('2026-04-04'),
-      endDate: new Date('2026-04-06')
-    },
-    {
-      id: 'labour-2026',
-      name: '劳动节',
-      dateRange: '5月1日 - 5月5日',
-      holidayPeriod: '5月1日至5月5日（共5天）',
-      days: 5,
-      workDays: ['4月26日（周日）', '5月9日（周六）'],
-      type: 'international',
-      typeText: '国际假日',
-      tagType: 'warning',
-      icon: 'Tickets',
-      tips: '请4天（5.6-5.9）休10天',
-      startDate: new Date('2026-05-01'),
-      endDate: new Date('2026-05-05')
-    },
-    {
-      id: 'dragon-2026',
-      name: '端午节',
-      dateRange: '6月19日 - 6月21日',
-      holidayPeriod: '6月19日至6月21日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '纪念屈原，品尝粽子',
-      startDate: new Date('2026-06-19'),
-      endDate: new Date('2026-06-21')
-    },
-    {
-      id: 'midautumn-2026',
-      name: '中秋节',
-      dateRange: '9月25日 - 9月27日',
-      holidayPeriod: '9月25日至9月27日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '花好月圆，阖家团圆',
-      startDate: new Date('2026-09-25'),
-      endDate: new Date('2026-09-27')
-    },
-    {
-      id: 'national-2026',
-      name: '国庆节',
-      dateRange: '10月1日 - 10月7日',
-      holidayPeriod: '10月1日至10月7日（共7天）',
-      days: 7,
-      workDays: ['9月27日（周日）', '10月10日（周六）'],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Present',
-      tips: '请3天（9.28-9.30）休11天',
-      startDate: new Date('2026-10-01'),
-      endDate: new Date('2026-10-07')
-    }
-  ],
-  2027: [
-    {
-      id: 'newyear-2027',
-      name: '元旦',
-      dateRange: '1月1日 - 1月3日',
-      holidayPeriod: '1月1日至1月3日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Calendar',
-      tips: '与周末连休，无需调休',
-      startDate: new Date('2027-01-01'),
-      endDate: new Date('2027-01-03')
-    },
-    {
-      id: 'spring-2027',
-      name: '春节',
-      dateRange: '2月6日 - 2月12日',
-      holidayPeriod: '2月6日至2月12日（共7天）',
-      days: 7,
-      workDays: ['2月4日（周四）', '2月20日（周六）'],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Present',
-      tips: '除夕在2月5日，阖家团圆',
-      startDate: new Date('2027-02-06'),
-      endDate: new Date('2027-02-12')
-    },
-    {
-      id: 'qingming-2027',
-      name: '清明节',
-      dateRange: '4月3日 - 4月5日',
-      holidayPeriod: '4月3日至4月5日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '清明踏青，缅怀先人',
-      startDate: new Date('2027-04-03'),
-      endDate: new Date('2027-04-05')
-    },
-    {
-      id: 'labour-2027',
-      name: '劳动节',
-      dateRange: '5月1日 - 5月5日',
-      holidayPeriod: '5月1日至5月5日（共5天）',
-      days: 5,
-      workDays: ['4月25日（周日）', '5月8日（周六）'],
-      type: 'international',
-      typeText: '国际假日',
-      tagType: 'warning',
-      icon: 'Tickets',
-      tips: '请4天休9天长假',
-      startDate: new Date('2027-05-01'),
-      endDate: new Date('2027-05-05')
-    },
-    {
-      id: 'dragon-2027',
-      name: '端午节',
-      dateRange: '6月8日 - 6月10日',
-      holidayPeriod: '6月8日至6月10日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '端午安康',
-      startDate: new Date('2027-06-08'),
-      endDate: new Date('2027-06-10')
-    },
-    {
-      id: 'midautumn-2027',
-      name: '中秋节',
-      dateRange: '9月15日 - 9月17日',
-      holidayPeriod: '9月15日至9月17日（共3天）',
-      days: 3,
-      workDays: [],
-      type: 'tradition',
-      typeText: '传统节日',
-      tagType: 'success',
-      icon: 'Calendar',
-      tips: '中秋赏月，阖家团圆',
-      startDate: new Date('2027-09-15'),
-      endDate: new Date('2027-09-17')
-    },
-    {
-      id: 'national-2027',
-      name: '国庆节',
-      dateRange: '10月1日 - 10月7日',
-      holidayPeriod: '10月1日至10月7日（共7天）',
-      days: 7,
-      workDays: ['9月26日（周日）', '10月9日（周六）'],
-      type: 'modern',
-      typeText: '法定假日',
-      tagType: 'primary',
-      icon: 'Present',
-      tips: '请3天休11天超长假期',
-      startDate: new Date('2027-10-01'),
-      endDate: new Date('2027-10-07')
-    }
-  ]
-}
-
-const calculateCountdown = (startDate: Date, endDate: Date): number | null => {
+const calculateCountdown = (startDateStr: string, endDateStr: string): number | null => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   
-  const start = new Date(startDate)
+  const start = new Date(startDateStr)
   start.setHours(0, 0, 0, 0)
   
-  const end = new Date(endDate)
+  const end = new Date(endDateStr)
   end.setHours(23, 59, 59, 999)
   
   if (today < start) {
@@ -643,13 +333,38 @@ const calculateCountdown = (startDate: Date, endDate: Date): number | null => {
   }
 }
 
+const fetchAvailableYears = async () => {
+  try {
+    const res = await holidayApi.getAvailableYears()
+    yearOptions.value = res.data
+  } catch (error) {
+    console.error('Failed to fetch available years:', error)
+    yearOptions.value = Array.from({ length: 11 }, (_, i) => 2020 + i)
+  }
+}
+
+const fetchHolidays = async (year: number) => {
+  loading.value = true
+  try {
+    const res = await holidayApi.getHolidaysByYear(year)
+    rawHolidays.value = res.data
+  } catch (error) {
+    console.error('Failed to fetch holidays:', error)
+    rawHolidays.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
+const onYearChange = () => {
+  fetchHolidays(currentYear.value)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const holidays = computed<Holiday[]>(() => {
-  const data = holidayData[currentYear.value] || holidayData[2026]
-  return data.map(h => ({
+  return rawHolidays.value.map(h => ({
     ...h,
-    countdown: calculateCountdown(h.startDate, h.endDate),
-    month: h.startDate.getMonth() + 1,
-    startDay: h.startDate.getDate()
+    countdown: calculateCountdown(h.startDate, h.endDate)
   }))
 })
 
@@ -689,15 +404,21 @@ const nextHoliday = computed(() => {
   return holidays.value.find(h => h.countdown !== null && h.countdown >= 0)
 })
 
-const scrollToHoliday = (id: string) => {
-  const element = document.getElementById(id)
+const scrollToHoliday = (id: number | string) => {
+  const element = document.getElementById(String(id))
   if (element) {
     element.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 }
 
 watch(currentYear, () => {
+  fetchHolidays(currentYear.value)
   window.scrollTo({ top: 0, behavior: 'smooth' })
+})
+
+onMounted(() => {
+  fetchAvailableYears()
+  fetchHolidays(currentYear.value)
 })
 </script>
 
