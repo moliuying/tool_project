@@ -40,6 +40,11 @@ const routes: RouteRecordRaw[] = [
         path: '/word-counter',
         name: 'WordCounter',
         component: () => import('@/views/WordCounter.vue')
+      },
+      {
+        path: '/font-encoder',
+        name: 'FontEncoder',
+        component: () => import('@/views/FontEncoder.vue')
       }
     ]
   }
