@@ -70,6 +70,11 @@ const routes: RouteRecordRaw[] = [
         path: '/torrent-to-magnet',
         name: 'TorrentToMagnet',
         component: () => import('@/views/TorrentToMagnet.vue')
+      },
+      {
+        path: '/metronome',
+        name: 'Metronome',
+        component: () => import('@/views/Metronome.vue')
       }
     ]
   }
