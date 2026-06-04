@@ -65,6 +65,11 @@ const routes: RouteRecordRaw[] = [
         path: '/unit-converter',
         name: 'UnitConverter',
         component: () => import('@/views/UnitConverter.vue')
+      },
+      {
+        path: '/torrent-to-magnet',
+        name: 'TorrentToMagnet',
+        component: () => import('@/views/TorrentToMagnet.vue')
       }
     ]
   }

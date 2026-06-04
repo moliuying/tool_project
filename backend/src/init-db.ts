@@ -20,8 +20,12 @@ async function bootstrap() {
       { name: '心理自测', path: '/psychology-test', icon: 'Reading', parentId: null, sort: 3, component: 'views/PsychologyTest.vue' },
       { name: '字体编码转换', path: '/font-encoder', icon: 'EditPen', parentId: null, sort: 4, component: 'views/FontEncoder.vue' },
       { name: '节假日查询', path: '/holiday-calendar', icon: 'Calendar', parentId: null, sort: 5, component: 'views/HolidayCalendar.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 6, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 6, sort: 1, component: 'views/Menu.vue' },
+      { name: '字数统计', path: '/word-counter', icon: 'Document', parentId: null, sort: 6, component: 'views/WordCounter.vue' },
+      { name: '随机选择器', path: '/random-picker', icon: 'Rank', parentId: null, sort: 7, component: 'views/RandomPicker.vue' },
+      { name: '单位换算', path: '/unit-converter', icon: 'Histogram', parentId: null, sort: 8, component: 'views/UnitConverter.vue' },
+      { name: '种子转磁力', path: '/torrent-to-magnet', icon: 'Link', parentId: null, sort: 9, component: 'views/TorrentToMagnet.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 10, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 10, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
