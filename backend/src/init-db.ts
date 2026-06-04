@@ -17,10 +17,11 @@ async function bootstrap() {
     const menus = [
       { name: '首页', path: '/', icon: 'Home', parentId: null, sort: 1, component: 'views/Home.vue' },
       { name: '贷款试算', path: '/loan-calculator', icon: 'Money', parentId: null, sort: 2, component: 'views/LoanCalculator.vue' },
-      { name: '字体编码转换', path: '/font-encoder', icon: 'EditPen', parentId: null, sort: 3, component: 'views/FontEncoder.vue' },
-      { name: '节假日查询', path: '/holiday-calendar', icon: 'Calendar', parentId: null, sort: 4, component: 'views/HolidayCalendar.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 5, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 4, sort: 1, component: 'views/Menu.vue' },
+      { name: '心理自测', path: '/psychology-test', icon: 'Reading', parentId: null, sort: 3, component: 'views/PsychologyTest.vue' },
+      { name: '字体编码转换', path: '/font-encoder', icon: 'EditPen', parentId: null, sort: 4, component: 'views/FontEncoder.vue' },
+      { name: '节假日查询', path: '/holiday-calendar', icon: 'Calendar', parentId: null, sort: 5, component: 'views/HolidayCalendar.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 6, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 6, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

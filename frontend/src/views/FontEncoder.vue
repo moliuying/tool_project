@@ -1674,86 +1674,105 @@ const copyToClipboard = (text: string, label: string) => {
 .attr-kv {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   flex: 1;
 }
 
 .attr-kv-row {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 7px 10px;
-  background: #f5f7fa;
-  border-radius: 6px;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
-  line-height: 1.5;
 }
 
 .attr-kv-row:hover {
-  background: #e8f0fe;
+  border-color: #165DFF;
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.1);
 }
 
 .attr-kv-row:hover .kv-copy {
-  opacity: 1;
-  color: #165DFF;
+  background: #165DFF;
+  color: #fff;
+}
+
+.attr-kv-row:hover .kv-label {
+  background: #165DFF;
+  color: #fff;
 }
 
 .kv-label {
-  font-size: 11px;
-  color: #909399;
-  white-space: nowrap;
-  min-width: 42px;
-  font-weight: 500;
-  line-height: 1.6;
   flex-shrink: 0;
+  width: 86px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f0f2f5;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s;
+  border-right: 1px solid #e4e7ed;
 }
 
 .kv-name {
+  flex: 1;
+  padding: 10px 12px;
   font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
   font-size: 13px;
   color: #165DFF;
-  background: #e8f0fe;
-  padding: 1px 6px;
-  border-radius: 3px;
+  display: flex;
+  align-items: center;
   word-break: break-all;
-  white-space: nowrap;
-  line-height: 1.6;
+  line-height: 1.5;
+  font-weight: 500;
 }
 
 .kv-value {
+  flex: 1;
+  padding: 10px 12px;
   font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
   font-size: 12px;
   color: #303133;
   word-break: break-all;
-  flex: 1;
-  min-width: 0;
   line-height: 1.6;
+  display: flex;
+  align-items: flex-start;
 }
 
 .kv-copy {
-  color: #c0c4cc;
   flex-shrink: 0;
-  opacity: 0;
+  width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  color: #909399;
   transition: all 0.2s;
-  margin-top: 3px;
+  border-left: 1px solid #e4e7ed;
 }
 
 .attr-full-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  margin-top: 10px;
-  padding: 6px 0;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 16px;
   font-size: 12px;
-  color: #909399;
+  font-weight: 500;
+  color: #606266;
   cursor: pointer;
-  border-top: 1px dashed #e4e7ed;
+  background: #f5f7fa;
+  border-radius: 6px;
   transition: all 0.2s;
 }
 
 .attr-full-row:hover {
+  background: #e8f0fe;
   color: #165DFF;
 }
 
