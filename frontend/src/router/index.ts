@@ -60,6 +60,11 @@ const routes: RouteRecordRaw[] = [
         path: '/psychology-test/:id/result',
         name: 'PsychologyTestResult',
         component: () => import('@/views/PsychologyTestResult.vue')
+      },
+      {
+        path: '/unit-converter',
+        name: 'UnitConverter',
+        component: () => import('@/views/UnitConverter.vue')
       }
     ]
   }
