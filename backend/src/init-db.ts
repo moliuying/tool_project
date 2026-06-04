@@ -25,8 +25,9 @@ async function bootstrap() {
       { name: '单位换算', path: '/unit-converter', icon: 'Histogram', parentId: null, sort: 8, component: 'views/UnitConverter.vue' },
       { name: '种子转磁力', path: '/torrent-to-magnet', icon: 'Link', parentId: null, sort: 9, component: 'views/TorrentToMagnet.vue' },
       { name: '节拍练习器', path: '/metronome', icon: 'VideoPlay', parentId: null, sort: 10, component: 'views/Metronome.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 11, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 11, sort: 1, component: 'views/Menu.vue' },
+      { name: 'PDF页面调整', path: '/pdf-adjuster', icon: 'Document', parentId: null, sort: 11, component: 'views/PdfAdjuster.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 12, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 12, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

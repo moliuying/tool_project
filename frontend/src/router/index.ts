@@ -75,6 +75,11 @@ const routes: RouteRecordRaw[] = [
         path: '/metronome',
         name: 'Metronome',
         component: () => import('@/views/Metronome.vue')
+      },
+      {
+        path: '/pdf-adjuster',
+        name: 'PdfAdjuster',
+        component: () => import('@/views/PdfAdjuster.vue')
       }
     ]
   }
