@@ -125,10 +125,13 @@
       </template>
 
       <div class="color-preview-section">
-        <div class="color-preview-large" :style="{ backgroundColor: colorResults.hex }">
+        <div class="color-preview-large" :style="{ backgroundColor: colorResults.rgba }">
           <div class="preview-info">
             <span class="preview-label">颜色预览</span>
             <span class="preview-hex">{{ colorResults.hex }}</span>
+            <el-tag v-if="hasAlpha" size="small" type="info" class="alpha-tag">
+              透明度 {{ alphaPercent }}%
+            </el-tag>
           </div>
         </div>
         <div class="color-info">
@@ -138,6 +141,13 @@
               <div class="info-bar-fill" :style="{ width: brightness + '%' }"></div>
             </div>
             <span class="info-value">{{ brightness.toFixed(1) }}%</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">透明度</span>
+            <div class="info-bar">
+              <div class="info-bar-fill alpha-fill" :style="{ width: alphaPercent + '%' }"></div>
+            </div>
+            <span class="info-value">{{ alphaPercent }}%</span>
           </div>
           <div class="info-item">
             <span class="info-label">类型</span>
@@ -368,6 +378,15 @@ const contrastRatio = computed(() => {
   const lighter = Math.max(l1, l2)
   const darker = Math.min(l1, l2)
   return (lighter + 0.05) / (darker + 0.05)
+})
+
+const hasAlpha = computed(() => {
+  return rgbValue.value?.a !== undefined && rgbValue.value.a < 1
+})
+
+const alphaPercent = computed(() => {
+  if (!rgbValue.value?.a) return 100
+  return Math.round(rgbValue.value.a * 100)
 })
 
 const colorDetailList = computed(() => {
@@ -978,15 +997,38 @@ pickerColor.value = '#165DFF'
   align-items: flex-end;
   padding: 16px;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+              linear-gradient(-45deg, #f0f0f0 25%, transparent 25%),
+              linear-gradient(45deg, transparent 75%, #f0f0f0 75%),
+              linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.color-preview-large::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: inherit;
+  z-index: 0;
 }
 
 .preview-info {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   padding: 8px 16px;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .preview-label {
@@ -999,6 +1041,10 @@ pickerColor.value = '#165DFF'
   font-weight: bold;
   color: #303133;
   font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.alpha-tag {
+  align-self: flex-start;
 }
 
 .color-info {
@@ -1033,6 +1079,10 @@ pickerColor.value = '#165DFF'
   background: linear-gradient(90deg, #165DFF, #409eff);
   border-radius: 4px;
   transition: width 0.3s;
+}
+
+.info-bar-fill.alpha-fill {
+  background: linear-gradient(90deg, #909399, #606266);
 }
 
 .info-value {
