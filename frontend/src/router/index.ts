@@ -105,6 +105,11 @@ const routes: RouteRecordRaw[] = [
         path: '/partition-calculator',
         name: 'PartitionCalculator',
         component: () => import('@/views/PartitionCalculator.vue')
+      },
+      {
+        path: '/character-splitter',
+        name: 'CharacterSplitter',
+        component: () => import('@/views/ChineseCharacterSplitter.vue')
       }
     ]
   }
