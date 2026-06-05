@@ -42,7 +42,10 @@
         </el-input>
 
         <div class="quick-char-list">
-          <span class="quick-label">常用字：</span>
+          <span class="quick-label">
+            <el-icon size="14" color="#165DFF"><Tips /></el-icon>
+            点击下方汉字，查看不同的拆字结果：
+          </span>
           <div class="char-buttons">
             <el-button
               v-for="char in quickChars"
@@ -307,11 +310,12 @@ import {
   SetUp,
   Monitor,
   MagicStick,
-  TrendCharts
+  TrendCharts,
+  Tips
 } from '@element-plus/icons-vue'
 import { characterDatabase, type CharacterDecomposition } from '@/data/characterDecomposition'
 
-const searchChar = ref('')
+const searchChar = ref('好')
 const selectedRadical = ref('')
 
 const quickChars = ['好', '明', '林', '森', '休', '想', '国', '家', '安', '学', '请', '清', '情', '晴', '晶', '品']
@@ -449,8 +453,15 @@ const isRadical = (part: string): boolean => {
 
 .quick-label {
   font-size: 14px;
-  color: #606266;
+  color: #165DFF;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #c6e2ff;
 }
 
 .char-buttons {
