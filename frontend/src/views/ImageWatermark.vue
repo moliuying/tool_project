@@ -143,6 +143,47 @@
                     maxlength="100"
                     show-word-limit
                   />
+                  <div class="watermark-tips">
+                    <el-alert type="info" :closable="false" show-icon>
+                      <template #title>
+                        <div class="tips-content">
+                          <div class="tips-title">
+                            <el-icon :size="16"><Warning /></el-icon>
+                            <span>如何写好防盗用水印？</span>
+                          </div>
+                          <div class="tips-section">
+                            <div class="tips-subtitle">✅ 推荐写法（包含三要素）：</div>
+                            <div class="tips-examples good">
+                              <span class="example-tag good">仅用于支付宝实名认证 他用无效</span>
+                              <span class="example-tag good">仅限2024年入职XX公司使用</span>
+                              <span class="example-tag good">办理XX银行贷款专用 再次复印无效</span>
+                            </div>
+                          </div>
+                          <div class="tips-section">
+                            <div class="tips-subtitle">❌ 避免这样写（信息不完整）：</div>
+                            <div class="tips-examples bad">
+                              <span class="example-tag bad">仅供使用</span>
+                              <span class="example-tag bad">复印件无效</span>
+                            </div>
+                          </div>
+                          <div class="tips-principles">
+                            <div class="principle-item">
+                              <span class="principle-number">1</span>
+                              <span class="principle-text"><strong>明确用途</strong> - 说明具体用于什么业务</span>
+                            </div>
+                            <div class="principle-item">
+                              <span class="principle-number">2</span>
+                              <span class="principle-text"><strong>限定范围</strong> - 注明使用单位或平台</span>
+                            </div>
+                            <div class="principle-item">
+                              <span class="principle-number">3</span>
+                              <span class="principle-text"><strong>声明无效</strong> - 添加"他用无效"等声明</span>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                    </el-alert>
+                  </div>
                 </el-form-item>
 
                 <el-form-item label="预设模板">
@@ -281,7 +322,8 @@ import {
   Right,
   BottomLeft,
   Bottom,
-  BottomRight
+  BottomRight,
+  Warning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -956,6 +998,104 @@ onMounted(() => {
 
 .download-tip {
   margin-bottom: 0;
+}
+
+.watermark-tips {
+  margin-top: 12px;
+}
+
+.watermark-tips :deep(.el-alert__content) {
+  width: 100%;
+}
+
+.tips-content {
+  padding: 4px 0;
+}
+
+.tips-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.tips-section {
+  margin-bottom: 10px;
+}
+
+.tips-subtitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.tips-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.example-tag {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.example-tag.good {
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
+  color: #529e2e;
+  border: 1px solid #b3e19d;
+}
+
+.example-tag.bad {
+  background: linear-gradient(135deg, #fef0f0 0%, #fde2e2 100%);
+  color: #dd6161;
+  border: 1px solid #fbc4c4;
+}
+
+.tips-principles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed #ebeef5;
+}
+
+.principle-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.principle-number {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(135deg, #409eff 0%, #165DFF 100%);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.principle-text {
+  line-height: 1.5;
+}
+
+.principle-text strong {
+  color: #303133;
+  font-weight: 600;
 }
 
 @media (max-width: 992px) {
