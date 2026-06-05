@@ -86,15 +86,25 @@
             active-text="自动比对"
             inactive-text="手动比对"
             size="small"
+            :disabled="isComparing"
           />
           <el-button
-            v-if="!autoCompare"
+            v-if="!autoCompare && !isComparing"
             type="primary"
             size="small"
-            @click="compare"
+            @click="startCompare"
           >
             <el-icon><Search /></el-icon>
             开始比对
+          </el-button>
+          <el-button
+            v-if="isComparing"
+            type="warning"
+            size="small"
+            @click="cancelCompare"
+          >
+            <el-icon><CircleClose /></el-icon>
+            取消比对
           </el-button>
         </div>
       </div>
@@ -187,7 +197,32 @@
         </div>
       </div>
 
-      <el-divider v-if="hasDiff" />
+      <div v-if="isComparing" class="comparing-status">
+        <div class="comparing-content">
+          <div class="comparing-icon">
+            <el-icon class="is-loading"><Loading /></el-icon>
+          </div>
+          <div class="comparing-info">
+            <div class="comparing-title">正在比对文本...</div>
+            <div class="comparing-desc">{{ comparingMessage }}</div>
+            <div class="comparing-progress">
+              <el-progress
+                :percentage="compareProgress"
+                :stroke-width="8"
+                :show-text="false"
+                striped
+                striped-flow
+              />
+            </div>
+            <div class="comparing-time">
+              已用时 {{ elapsedTime }}s
+              <span v-if="estimatedTime > 0"> / 预计 {{ estimatedTime }}s</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <el-divider v-if="hasDiff || isComparing" />
 
       <div v-if="hasDiff" class="stats-section">
         <div class="stats-header">
@@ -319,7 +354,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import {
   InfoFilled,
   Suitcase,
@@ -337,13 +372,16 @@ import {
   Select,
   View,
   CopyDocument,
-  Warning
+  Warning,
+  Loading,
+  CircleClose
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const MAX_CHARS = 500000
 const WARNING_CHARS = 400000
 const PERFORMANCE_THRESHOLD = 50000
+const LARGE_FILE_THRESHOLD = 5000
 
 interface DiffLine {
   type: 'added' | 'removed' | 'unchanged' | 'empty'
@@ -367,6 +405,15 @@ const autoCompare = ref(true)
 const viewMode = ref<'split' | 'unified'>('split')
 const diffResult = ref<DiffLine[]>([])
 const wasAutoCompare = ref(true)
+const isComparing = ref(false)
+const isCancelled = ref(false)
+const compareProgress = ref(0)
+const comparingMessage = ref('准备比对...')
+const startTime = ref(0)
+const elapsedTime = ref(0)
+const estimatedTime = ref(0)
+let timeInterval: number | null = null
+let compareTimeout: number | null = null
 
 const leftCharCount = computed(() => leftText.value.length)
 const rightCharCount = computed(() => rightText.value.length)
@@ -615,7 +662,133 @@ const escapeHtml = (text: string): string => {
   return div.innerHTML
 }
 
-const compare = () => {
+const startCompareTimer = () => {
+  startTime.value = Date.now()
+  elapsedTime.value = 0
+  estimatedTime.value = 0
+  timeInterval = window.setInterval(() => {
+    elapsedTime.value = Math.floor((Date.now() - startTime.value) / 1000)
+  }, 1000)
+}
+
+const stopCompareTimer = () => {
+  if (timeInterval) {
+    clearInterval(timeInterval)
+    timeInterval = null
+  }
+}
+
+const lcsAsync = async (arr1: string[], arr2: string[]): Promise<number[][] | null> => {
+  const m = arr1.length
+  const n = arr2.length
+  const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0))
+  const total = m * n
+  let processed = 0
+  const chunkSize = 1000
+
+  comparingMessage.value = `构建比对矩阵 (${m.toLocaleString()} × ${n.toLocaleString()})...`
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (isCancelled.value) {
+        return null
+      }
+
+      if (arr1[i - 1] === arr2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1])
+      }
+
+      processed++
+      if (processed % chunkSize === 0) {
+        compareProgress.value = Math.min(50, Math.floor((processed / total) * 50))
+        estimatedTime.value = Math.ceil((elapsedTime.value / Math.max(compareProgress.value, 1)) * 100)
+        await new Promise(resolve => setTimeout(resolve, 0))
+      }
+    }
+  }
+
+  compareProgress.value = 50
+  return dp
+}
+
+const backtrackAsync = async (dp: number[][], arr1: string[], arr2: string[], i: number, j: number): Promise<DiffLine[]> => {
+  const result: DiffLine[] = []
+  const stack: [number, number][] = [[i, j]]
+  const total = i + j
+  let processed = 0
+
+  comparingMessage.value = '回溯差异结果...'
+
+  while (stack.length > 0) {
+    if (isCancelled.value) {
+      return []
+    }
+
+    const [currI, currJ] = stack.pop()!
+
+    if (currI === 0 && currJ === 0) {
+      continue
+    }
+
+    processed++
+    if (processed % 500 === 0) {
+      compareProgress.value = 50 + Math.floor((processed / total) * 50)
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+
+    if (currI === 0) {
+      stack.push([currI, currJ - 1])
+      result.push({
+        type: 'added',
+        lineNum: currJ,
+        content: escapeHtml(arr2[currJ - 1])
+      })
+      continue
+    }
+
+    if (currJ === 0) {
+      stack.push([currI - 1, currJ])
+      result.push({
+        type: 'removed',
+        lineNum: currI,
+        content: escapeHtml(arr1[currI - 1])
+      })
+      continue
+    }
+
+    if (arr1[currI - 1] === arr2[currJ - 1]) {
+      stack.push([currI - 1, currJ - 1])
+      result.push({
+        type: 'unchanged',
+        lineNum: currI,
+        content: escapeHtml(arr1[currI - 1])
+      })
+    } else if (dp[currI - 1][currJ] > dp[currI][currJ - 1]) {
+      stack.push([currI - 1, currJ])
+      result.push({
+        type: 'removed',
+        lineNum: currI,
+        content: escapeHtml(arr1[currI - 1])
+      })
+    } else {
+      stack.push([currI, currJ - 1])
+      result.push({
+        type: 'added',
+        lineNum: currJ,
+        content: escapeHtml(arr2[currJ - 1])
+      })
+    }
+  }
+
+  compareProgress.value = 100
+  return result
+}
+
+const startCompare = async () => {
+  if (isComparing.value) return
+
   const leftLines = leftText.value.split('\n')
   const rightLines = rightText.value.split('\n')
 
@@ -625,24 +798,81 @@ const compare = () => {
   }
 
   const totalLines = leftLines.length + rightLines.length
+
   if (totalLines > 10000) {
-    ElMessageBox.confirm(
-      `当前文本共 ${totalLines.toLocaleString()} 行，比对可能需要较长时间（预计 ${Math.ceil(totalLines / 1000)} 秒），是否继续？`,
-      '大文本比对提示',
-      {
-        confirmButtonText: '继续比对',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    ).then(() => {
-      const dp = lcs(leftLines, rightLines)
-      diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
-    }).catch(() => {
-    })
-  } else {
-    const dp = lcs(leftLines, rightLines)
-    diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
+    try {
+      await ElMessageBox.confirm(
+        `当前文本共 ${totalLines.toLocaleString()} 行，比对可能需要较长时间（预计 ${Math.ceil(totalLines / 1000)} 秒），是否继续？`,
+        '大文本比对提示',
+        {
+          confirmButtonText: '继续比对',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+    } catch {
+      return
+    }
   }
+
+  isComparing.value = true
+  isCancelled.value = false
+  compareProgress.value = 0
+  comparingMessage.value = '准备比对...'
+  startCompareTimer()
+
+  try {
+    const dp = await lcsAsync(leftLines, rightLines)
+    if (dp === null || isCancelled.value) {
+      ElMessage.info('比对已取消')
+      return
+    }
+
+    const result = await backtrackAsync(dp, leftLines, rightLines, leftLines.length, rightLines.length)
+    if (!isCancelled.value) {
+      diffResult.value = result
+      ElMessage.success(`比对完成，共发现 ${diffStats.value.total} 处差异`)
+    }
+  } catch (error) {
+    ElMessage.error('比对过程中发生错误')
+    console.error('Compare error:', error)
+  } finally {
+    stopCompareTimer()
+    isComparing.value = false
+    compareProgress.value = 0
+  }
+}
+
+const cancelCompare = () => {
+  isCancelled.value = true
+  comparingMessage.value = '正在取消...'
+}
+
+const compare = () => {
+  if (!autoCompare.value) return
+  if (isComparing.value) return
+
+  const leftLines = leftText.value.split('\n')
+  const rightLines = rightText.value.split('\n')
+  const totalLines = leftLines.length + rightLines.length
+
+  if (totalLines > LARGE_FILE_THRESHOLD) {
+    if (compareTimeout) {
+      clearTimeout(compareTimeout)
+    }
+    compareTimeout = window.setTimeout(() => {
+      startCompare()
+    }, 500)
+    return
+  }
+
+  if (!leftText.value && !rightText.value) {
+    diffResult.value = []
+    return
+  }
+
+  const dp = lcs(leftLines, rightLines)
+  diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
 }
 
 const handleLeftInput = (value: string) => {
@@ -789,6 +1019,14 @@ watch(totalCharCount, (newCount) => {
   if (newCount > PERFORMANCE_THRESHOLD) {
     checkPerformanceMode()
   }
+})
+
+onUnmounted(() => {
+  stopCompareTimer()
+  if (compareTimeout) {
+    clearTimeout(compareTimeout)
+  }
+  isCancelled.value = true
 })
 </script>
 
@@ -1170,5 +1408,73 @@ watch(totalCharCount, (newCount) => {
 
 .editor-actions .el-tag {
   transition: all 0.3s ease;
+}
+
+.comparing-status {
+  margin-top: 24px;
+  padding: 32px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-radius: 8px;
+  border: 1px solid #b3d8ff;
+}
+
+.comparing-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.comparing-icon {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #409eff, #165DFF);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 32px;
+}
+
+.comparing-icon .el-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.comparing-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.comparing-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.comparing-desc {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 16px;
+}
+
+.comparing-progress {
+  margin-bottom: 12px;
+}
+
+.comparing-time {
+  font-size: 13px;
+  color: #909399;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
 }
 </style>
