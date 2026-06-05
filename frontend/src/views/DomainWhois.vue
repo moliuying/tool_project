@@ -81,6 +81,76 @@
       </div>
     </el-card>
 
+    <el-card v-if="!hasResult && !isLoading" class="preview-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#909399">
+            <View />
+          </el-icon>
+          <span>结果预览</span>
+          <el-tag size="small" type="info">示例数据</el-tag>
+          <el-button
+            type="primary"
+            link
+            size="small"
+            class="view-demo-btn"
+            @click="loadDemoData"
+          >
+            <el-icon><MagicStick /></el-icon>
+            查看完整示例
+          </el-button>
+        </div>
+      </template>
+
+      <div class="preview-content">
+        <div class="preview-intro">
+          <p>查询后将显示以下结构化的域名注册信息：</p>
+        </div>
+        <div class="preview-tabs">
+          <div class="preview-tab active">
+            <span class="tab-icon"><DataLine /></span>
+            <span class="tab-label">基本信息</span>
+            <span class="tab-desc">域名、注册商、注册时间、到期时间、DNS服务器等</span>
+          </div>
+          <div class="preview-tab">
+            <span class="tab-icon"><Connection /></span>
+            <span class="tab-label">DNS 服务器</span>
+            <span class="tab-desc">域名解析服务器列表</span>
+          </div>
+          <div class="preview-tab">
+            <span class="tab-icon"><User /></span>
+            <span class="tab-label">注册人信息</span>
+            <span class="tab-desc">持有者、管理员、技术联系人信息</span>
+          </div>
+          <div class="preview-tab">
+            <span class="tab-icon"><Document /></span>
+            <span class="tab-label">原始数据</span>
+            <span class="tab-desc">完整的 WHOIS 原始响应文本</span>
+          </div>
+        </div>
+        <div class="preview-grid">
+          <div class="preview-item">
+            <div class="preview-item-label">域名</div>
+            <div class="preview-item-value">example.com</div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-item-label">注册商</div>
+            <div class="preview-item-value">Example Registrar, Inc.</div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-item-label">注册时间</div>
+            <div class="preview-item-value">2020-01-15 08:00</div>
+          </div>
+          <div class="preview-item">
+            <div class="preview-item-label">到期时间</div>
+            <div class="preview-item-value">
+              <el-tag size="small" type="success">2026-01-15 08:00</el-tag>
+            </div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <el-card v-if="hasResult" class="result-card">
       <template #header>
         <div class="card-header">
@@ -293,7 +363,10 @@ import {
   User,
   Message,
   Phone,
-  Location
+  Location,
+  View,
+  MagicStick,
+  DataLine
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { whoisApi, type WhoisResult } from '@/api/whois'
@@ -311,6 +384,78 @@ const exampleDomains = [
   'qq.com',
   'taobao.com'
 ]
+
+const demoData: WhoisResult = {
+  domainName: 'example.com',
+  registrar: 'Example Registrar, Inc.',
+  registrationDate: '2020-01-15T08:00:00Z',
+  expirationDate: '2026-01-15T08:00:00Z',
+  updatedDate: '2023-06-20T10:30:00Z',
+  nameServers: [
+    'ns1.example.com',
+    'ns2.example.com',
+    'ns3.example.com'
+  ],
+  status: [
+    'clientTransferProhibited',
+    'clientUpdateProhibited',
+    'clientDeleteProhibited'
+  ],
+  registrantName: 'John Doe',
+  registrantOrganization: 'Example Company LLC',
+  registrantEmail: 'admin@example.com',
+  registrantPhone: '+1.5551234567',
+  registrantCountry: 'United States',
+  adminName: 'Jane Smith',
+  adminOrganization: 'Example Company LLC',
+  adminEmail: 'admin@example.com',
+  techName: 'Tech Team',
+  techOrganization: 'Example Company LLC',
+  techEmail: 'tech@example.com',
+  rawData: `Domain Name: EXAMPLE.COM
+Registry Domain ID: 1234567_DOMAIN_COM-VRSN
+Registrar WHOIS Server: whois.example-registrar.com
+Registrar URL: http://www.example-registrar.com
+Updated Date: 2023-06-20T10:30:00Z
+Creation Date: 2020-01-15T08:00:00Z
+Registrar Registration Expiration Date: 2026-01-15T08:00:00Z
+Registrar: Example Registrar, Inc.
+Registrar IANA ID: 1234
+Registrar Abuse Contact Email: abuse@example-registrar.com
+Registrar Abuse Contact Phone: +1.5559876543
+Domain Status: clientTransferProhibited http://www.icann.org/epp#clientTransferProhibited
+Domain Status: clientUpdateProhibited http://www.icann.org/epp#clientUpdateProhibited
+Domain Status: clientDeleteProhibited http://www.icann.org/epp#clientDeleteProhibited
+Registry Registrant ID:
+Registrant Name: John Doe
+Registrant Organization: Example Company LLC
+Registrant Street: 123 Main Street
+Registrant City: New York
+Registrant State/Province: NY
+Registrant Postal Code: 10001
+Registrant Country: US
+Registrant Phone: +1.5551234567
+Registrant Email: admin@example.com
+Registry Admin ID:
+Admin Name: Jane Smith
+Admin Organization: Example Company LLC
+Admin Email: admin@example.com
+Registry Tech ID:
+Tech Name: Tech Team
+Tech Organization: Example Company LLC
+Tech Email: tech@example.com
+Name Server: NS1.EXAMPLE.COM
+Name Server: NS2.EXAMPLE.COM
+Name Server: NS3.EXAMPLE.COM
+DNSSEC: signedDelegation
+URL of the ICANN WHOIS Data Problem Reporting System: http://wdprs.internic.net/
+>>> Last update of WHOIS database: 2024-01-01T00:00:00Z <<<`
+}
+
+const loadDemoData = () => {
+  whoisResult.value = { ...demoData }
+  ElMessage.info('已加载示例数据，实际查询结果可能有所不同')
+}
 
 const hasResult = computed(() => {
   return Object.keys(whoisResult.value).length > 0 && whoisResult.value.domainName
@@ -421,8 +566,110 @@ ${(result.nameServers || []).map(ns => '  - ' + ns).join('\n') || '  -'}
 
 .guide-card,
 .query-card,
-.result-card {
+.result-card,
+.preview-card {
   margin-bottom: 24px;
+}
+
+.preview-card {
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+}
+
+.preview-card :deep(.el-card__body) {
+  padding: 20px;
+}
+
+.view-demo-btn {
+  margin-left: auto;
+  font-weight: 500;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preview-intro {
+  padding: 12px 16px;
+  background: #ecf5ff;
+  border-radius: 8px;
+  border-left: 4px solid #165DFF;
+}
+
+.preview-intro p {
+  margin: 0;
+  color: #409eff;
+  font-size: 14px;
+}
+
+.preview-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.preview-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px;
+  background: white;
+  border: 2px solid #e4e7ed;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.preview-tab.active {
+  border-color: #165DFF;
+  background: #f0f7ff;
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.15);
+}
+
+.tab-icon {
+  font-size: 24px;
+  color: #165DFF;
+}
+
+.tab-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.tab-desc {
+  font-size: 12px;
+  color: #909399;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.preview-item {
+  padding: 14px 16px;
+  background: white;
+  border: 1px dashed #dcdfe6;
+  border-radius: 8px;
+  opacity: 0.8;
+}
+
+.preview-item-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.preview-item-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+  font-family: 'Monaco', 'Menlo', monospace;
 }
 
 .card-header {
