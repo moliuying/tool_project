@@ -619,39 +619,73 @@
           <div class="encoding-header">
             <el-icon :size="16" color="#165DFF"><TrendCharts /></el-icon>
             <span>编码字节对比</span>
+            <el-tag size="small" type="primary" class="header-tag">开发者专区</el-tag>
           </div>
-          <div class="encoding-list">
-            <div class="encoding-item">
-              <div class="encoding-name">
-                <span class="encoding-dot utf8"></span>
-                UTF-8
-              </div>
-              <div class="encoding-bar">
-                <div class="encoding-fill utf8" :style="{ width: getEncodingPercent('utf8') + '%' }"></div>
-              </div>
-              <div class="encoding-value">
-                {{ stats.utf8Bytes }} 字节
-                <span class="encoding-note">（中文占3字节）</span>
-              </div>
+          
+          <div class="encoding-summary">
+            <div class="summary-item">
+              <div class="summary-label">UTF-8 存储大小</div>
+              <div class="summary-value">{{ formatBytes(stats.utf8Bytes) }}</div>
+              <div class="summary-sub">{{ stats.utf8Bytes }} 字节</div>
             </div>
-            <div class="encoding-item">
-              <div class="encoding-name">
-                <span class="encoding-dot gbk"></span>
-                GBK
-              </div>
-              <div class="encoding-bar">
-                <div class="encoding-fill gbk" :style="{ width: getEncodingPercent('gbk') + '%' }"></div>
-              </div>
-              <div class="encoding-value">
-                {{ stats.gbkBytes }} 字节
-                <span class="encoding-note">（中文占2字节）</span>
-              </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item">
+              <div class="summary-label">GBK 存储大小</div>
+              <div class="summary-value success">{{ formatBytes(stats.gbkBytes) }}</div>
+              <div class="summary-sub">{{ stats.gbkBytes }} 字节</div>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-item highlight">
+              <div class="summary-label">空间节省</div>
+              <div class="summary-value warning">{{ stats.utf8Bytes - stats.gbkBytes }} 字节</div>
+              <div class="summary-sub">约 {{ getEncodingSavingPercent() }}%</div>
             </div>
           </div>
-          <div class="encoding-desc">
-            <el-tag size="small" type="info">节省 {{ stats.utf8Bytes - stats.gbkBytes }} 字节</el-tag>
-            <span>GBK 编码比 UTF-8 少占用约 {{ getEncodingSavingPercent() }}% 空间</span>
+
+          <el-divider class="encoding-divider">编码差异对比</el-divider>
+          
+          <el-table :data="encodingDiffTable" :show-header="true" size="small" class="encoding-table">
+            <el-table-column prop="feature" label="对比项" width="120">
+              <template #default="scope">
+                <strong>{{ scope.row.feature }}</strong>
+              </template>
+            </el-table-column>
+            <el-table-column prop="utf8" label="UTF-8">
+              <template #default="scope">
+                <span :class="scope.row.utf8Highlight ? 'highlight-utf8' : ''">{{ scope.row.utf8 }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="gbk" label="GBK">
+              <template #default="scope">
+                <span :class="scope.row.gbkHighlight ? 'highlight-gbk' : ''">{{ scope.row.gbk }}</span>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <el-divider class="encoding-divider">如何选择？</el-divider>
+          
+          <div class="encoding-guide">
+            <div class="guide-card-recommend" v-for="guide in encodingGuides" :key="guide.title">
+              <div class="guide-card-header">
+                <el-icon :color="guide.color"><component :is="getGuideIcon(guide.icon)" /></el-icon>
+                <span class="guide-title">{{ guide.title }}</span>
+              </div>
+              <p class="guide-desc">{{ guide.desc }}</p>
+              <div class="guide-recommendation">
+                <span class="recommend-label">推荐编码：</span>
+                <el-tag size="small" :type="guide.recommend === 'UTF-8' ? 'primary' : 'success'">
+                  {{ guide.recommend }}
+                </el-tag>
+              </div>
+            </div>
           </div>
+
+          <el-alert type="info" :closable="false" class="encoding-alert">
+            <template #title>
+              <strong>💡 存储成本估算提示：</strong>
+              100 万汉字 UTF-8 约 3MB，GBK 约 2MB；1 亿汉字 UTF-8 约 300MB，GBK 约 200MB
+            </template>
+          </el-alert>
         </div>
       </el-card>
 
@@ -836,7 +870,11 @@ import {
   Files,
   Folder,
   TrendCharts,
-  User
+  User,
+  Globe,
+  Platform,
+  Iphone,
+  Coin
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -956,6 +994,96 @@ const roleGuides: RoleGuide[] = [
     focus: '编码字节/字符',
     color: '#722ed1',
     metrics: ['UTF-8 字节', 'GBK 字节', '总字符数']
+  }
+]
+
+interface EncodingDiff {
+  feature: string
+  utf8: string
+  gbk: string
+  utf8Highlight?: boolean
+  gbkHighlight?: boolean
+}
+
+const encodingDiffTable: EncodingDiff[] = [
+  {
+    feature: '中文占用',
+    utf8: '3 字节',
+    gbk: '2 字节',
+    gbkHighlight: true
+  },
+  {
+    feature: '英文/数字',
+    utf8: '1 字节',
+    gbk: '1 字节'
+  },
+  {
+    feature: '全角标点',
+    utf8: '3 字节',
+    gbk: '2 字节',
+    gbkHighlight: true
+  },
+  {
+    feature: '半角标点',
+    utf8: '1 字节',
+    gbk: '1 字节'
+  },
+  {
+    feature: '字符范围',
+    utf8: '全球语言',
+    gbk: '中日韩',
+    utf8Highlight: true
+  },
+  {
+    feature: '兼容性',
+    utf8: '最好',
+    gbk: '一般',
+    utf8Highlight: true
+  },
+  {
+    feature: '中文场景',
+    utf8: '33% 额外开销',
+    gbk: '最节省',
+    gbkHighlight: true
+  }
+]
+
+interface EncodingGuide {
+  title: string
+  icon: string
+  desc: string
+  recommend: 'UTF-8' | 'GBK'
+  color: string
+}
+
+const encodingGuides: EncodingGuide[] = [
+  {
+    title: 'Web 开发 / 国际化项目',
+    icon: 'Globe',
+    desc: '需要支持多语言、兼容所有现代浏览器和平台，或使用 PostgreSQL/MySQL 8.0+ 等现代数据库',
+    recommend: 'UTF-8',
+    color: '#409eff'
+  },
+  {
+    title: '纯中文系统 / Legacy 项目',
+    icon: 'Platform',
+    desc: '仅面向国内用户，使用 Windows 传统编码，或需要与 GBK 编码的老系统交互',
+    recommend: 'GBK',
+    color: '#67c23a'
+  },
+  {
+    title: '移动端 / 存储敏感',
+    icon: 'Iphone',
+    desc: 'App 离线数据、短信、窄带宽传输，中文内容为主，存储成本是关键考量因素',
+    recommend: 'GBK',
+    color: '#e6a23c'
+  },
+  {
+    title: '大规模中文存储',
+    icon: 'Coin',
+    desc: '论坛、新闻网站、知识库等有大量中文文本，需要优化存储成本和性能',
+    recommend: 'GBK',
+    color: '#f56c6c'
   }
 ]
 
@@ -1218,7 +1346,25 @@ const iconMap: Record<string, any> = {
   Edit,
   ChatLineRound,
   Files,
-  User
+  User,
+  Globe,
+  Platform,
+  Iphone,
+  Coin
+}
+
+const formatBytes = (bytes: number): string => {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  } else if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(2)} KB`
+  } else {
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+  }
+}
+
+const getGuideIcon = (iconName: string) => {
+  return iconMap[iconName] || Globe
 }
 
 const setActiveRole = (roleName: string) => {
@@ -1606,6 +1752,147 @@ onMounted(() => {
   font-weight: 600;
   color: #303133;
   margin-bottom: 16px;
+}
+
+.encoding-header .header-tag {
+  margin-left: auto;
+  font-weight: normal;
+}
+
+.encoding-summary {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.summary-item {
+  flex: 1;
+  text-align: center;
+}
+
+.summary-item.highlight {
+  background: #fff;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 6px;
+}
+
+.summary-value {
+  font-size: 20px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.summary-value.success {
+  color: #67c23a;
+}
+
+.summary-value.warning {
+  color: #e6a23c;
+}
+
+.summary-sub {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.summary-divider {
+  width: 1px;
+  height: 40px;
+  background: #d9e9f5;
+}
+
+.encoding-divider {
+  margin: 16px 0;
+}
+
+.encoding-table {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.encoding-table :deep(.el-table__body tr) {
+  background: #fff;
+}
+
+.encoding-table :deep(.el-table__body td) {
+  padding: 10px 12px;
+}
+
+.highlight-utf8 {
+  color: #409eff;
+  font-weight: 600;
+}
+
+.highlight-gbk {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.encoding-guide {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.guide-card-recommend {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+  transition: all 0.3s ease;
+}
+
+.guide-card-recommend:hover {
+  border-color: #165DFF;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+}
+
+.guide-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.guide-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.guide-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.guide-recommendation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.recommend-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.encoding-alert {
+  margin-bottom: 0;
 }
 
 .encoding-list {
