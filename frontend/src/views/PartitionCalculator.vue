@@ -11,9 +11,9 @@
       </template>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
         <el-step title="输入目标容量" description="输入您想要的分区大小（单位GB）" />
+        <el-step title="选择文件系统" description="根据需求选择NTFS、FAT32或exFAT" />
         <el-step title="选择对齐方式" description="根据磁盘类型选择合适的扇区对齐方式" />
         <el-step title="查看计算结果" description="获取精确的整数扇区值和实际容量" />
-        <el-step title="复制参数" description="复制计算结果用于磁盘分区工具" />
       </el-steps>
       <el-divider />
       <div class="partition-rules">
@@ -22,31 +22,47 @@
           分区对齐原理
         </h4>
         <el-row :gutter="16">
-          <el-col :span="12">
+          <el-col :span="8">
             <div class="rule-item">
               <div class="rule-label">为什么要对齐</div>
               <div class="rule-desc">磁盘分区按柱面/扇区边界对齐可显著提升磁盘读写性能，避免跨扇区读写开销</div>
             </div>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <div class="rule-item">
               <div class="rule-label">整数容量原理</div>
               <div class="rule-desc">通过计算能被柱面大小整除的扇区数，使分区容量显示为精确的整数GB值</div>
             </div>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <div class="rule-item">
-              <div class="rule-label">传统BIOS/MBR</div>
+              <div class="rule-label">NTFS 文件系统</div>
               <div class="rule-desc">
-                <el-tag size="small" type="info">CHS模式</el-tag> 255磁头 × 63扇区/磁道 = 16065扇区/柱面
+                <el-tag size="small" type="success">推荐</el-tag> Windows默认，支持大文件，安全性高
               </div>
             </div>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="8">
             <div class="rule-item">
-              <div class="rule-label">现代UEFI/GPT</div>
+              <div class="rule-label">FAT32 文件系统</div>
               <div class="rule-desc">
-                <el-tag size="small" type="success">4K对齐</el-tag> 2048扇区对齐，适配SSD和4K原生扇区硬盘
+                <el-tag size="small" type="warning">兼容性好</el-tag> 单文件最大4GB，兼容所有设备
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="rule-item">
+              <div class="rule-label">exFAT 文件系统</div>
+              <div class="rule-desc">
+                <el-tag size="small" type="info">现代方案</el-tag> 支持大文件，跨平台兼容性好
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="rule-item">
+              <div class="rule-label">对齐方式</div>
+              <div class="rule-desc">
+                <el-tag size="small" type="success">4K对齐</el-tag> 推荐SSD和现代硬盘使用
               </div>
             </div>
           </el-col>
@@ -67,7 +83,7 @@
 
       <el-form label-width="120px" class="calculator-form">
         <el-row :gutter="24">
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item label="目标容量">
               <div class="form-item-with-help">
                 <el-tooltip content="输入您想要的分区容量大小，单位为GB" placement="top">
@@ -92,15 +108,33 @@
               </div>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
+            <el-form-item label="文件系统">
+              <div class="form-item-with-help">
+                <el-tooltip content="选择文件系统类型，影响分区参数" placement="top">
+                  <el-icon class="help-icon"><QuestionFilled /></el-icon>
+                </el-tooltip>
+                <el-select v-model="fileSystem" style="width: 100%" @change="calculate">
+                  <el-option label="NTFS (推荐)" value="ntfs" />
+                  <el-option label="FAT32" value="fat32" />
+                  <el-option label="exFAT" value="exfat" />
+                </el-select>
+              </div>
+              <div class="field-hint">
+                <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>{{ fileSystemHint }}</span>
+              </div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
             <el-form-item label="对齐方式">
               <div class="form-item-with-help">
                 <el-tooltip content="选择分区对齐方式，影响计算结果" placement="top">
                   <el-icon class="help-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
                 <el-select v-model="alignmentType" style="width: 100%" @change="calculate">
-                  <el-option label="MBR/CHS (255×63扇区)" value="chs" />
                   <el-option label="GPT/4K对齐 (2048扇区)" value="4k" />
+                  <el-option label="MBR/CHS (255×63扇区)" value="chs" />
                   <el-option label="自定义柱面大小" value="custom" />
                 </el-select>
               </div>
@@ -110,7 +144,7 @@
               </div>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="6">
             <el-form-item v-if="alignmentType === 'custom'" label="自定义柱面">
               <div class="form-item-with-help">
                 <el-tooltip content="自定义每柱面扇区数" placement="top">
@@ -139,7 +173,7 @@
               </div>
             </el-form-item>
           </el-col>
-        </el-row>
+        </el-col>
       </el-form>
 
       <div class="preset-scenarios">
@@ -192,88 +226,119 @@
         class="result-alert"
       >
         <template #title>
-          <span>✅ 计算完成：已找到最接近的整数柱面边界，分区容量为精确整数GB</span>
+          <span>✅ 计算完成：已找到最接近的整数柱面边界，分区容量显示为精确整数GB（{{ fileSystemLabel }}文件系统）</span>
         </template>
       </el-alert>
 
-      <el-row :gutter="16" class="result-grid">
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">总扇区数</div>
-            <div class="result-value">{{ formatNumber(result.totalSectors) }}</div>
-            <div class="result-unit">Sectors</div>
-            <el-button size="small" type="primary" link @click="copyValue(result.totalSectors, '总扇区数')">
-              <el-icon><CopyDocument /></el-icon>
-              复制
-            </el-button>
-          </div>
+      <div class="result-section-title">
+        <h4>
+          <el-icon :size="16" color="#165DFF"><Files /></el-icon>
+          分区核心参数
+        </h4>
+        <el-row :gutter="16" class="result-grid">
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">总扇区数</div>
+              <div class="result-value">{{ formatNumber(result.totalSectors) }}</div>
+              <div class="result-unit">单位：扇区 (Sectors)</div>
+              <el-tooltip content="分区占用的总扇区数量，用于分区工具中指定分区大小" placement="top">
+                <el-button size="small" type="primary" link @click="copyValue(result.totalSectors, '总扇区数')">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">柱面数</div>
+              <div class="result-value">{{ formatNumber(result.cylinders) }}</div>
+              <div class="result-unit">单位：柱面 (Cylinders)</div>
+              <el-tooltip content="分区占用的柱面数量，CHS模式下使用" placement="top">
+                <el-button size="small" type="primary" link @click="copyValue(result.cylinders, '柱面数')">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">每柱面扇区</div>
+              <div class="result-value">{{ formatNumber(result.sectorsPerCylinder) }}</div>
+              <div class="result-unit">单位：扇区/柱面 (Sectors/Cyl)</div>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">总字节数</div>
+              <div class="result-value">{{ formatBytes(result.totalBytes) }}</div>
+              <div class="result-unit">单位：字节 (Bytes)</div>
+            </div>
+          </el-col>
         </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">柱面数</div>
-            <div class="result-value">{{ formatNumber(result.cylinders) }}</div>
-            <div class="result-unit">Cylinders</div>
-            <el-button size="small" type="primary" link @click="copyValue(result.cylinders, '柱面数')">
-              <el-icon><CopyDocument /></el-icon>
-              复制
-            </el-button>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">每柱面扇区</div>
-            <div class="result-value">{{ formatNumber(result.sectorsPerCylinder) }}</div>
-            <div class="result-unit">Sectors/Cyl</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">总字节数</div>
-            <div class="result-value">{{ formatBytes(result.totalBytes) }}</div>
-            <div class="result-unit">Bytes</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">MB值</div>
-            <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024)) }}</div>
-            <div class="result-unit">MB</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">KB值</div>
-            <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024 * 1024)) }}</div>
-            <div class="result-unit">KB</div>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">起始扇区</div>
-            <div class="result-value">{{ formatNumber(result.startSector) }}</div>
-            <div class="result-unit">LBA</div>
-            <el-button size="small" type="primary" link @click="copyValue(result.startSector, '起始扇区')">
-              <el-icon><CopyDocument /></el-icon>
-              复制
-            </el-button>
-          </div>
-        </el-col>
-        <el-col :xs="12" :sm="8" :md="6">
-          <div class="result-item">
-            <div class="result-label">结束扇区</div>
-            <div class="result-value">{{ formatNumber(result.endSector) }}</div>
-            <div class="result-unit">LBA</div>
-            <el-button size="small" type="primary" link @click="copyValue(result.endSector, '结束扇区')">
-              <el-icon><CopyDocument /></el-icon>
-              复制
-            </el-button>
-          </div>
-        </el-col>
-      </el-row>
+      </div>
 
       <el-divider />
 
-      <div class="command-section">
+      <div class="result-section-title">
+        <h4>
+          <el-icon :size="16" color="#165DFF"><TrendCharts /></el-icon>
+          容量换算表
+        </h4>
+        <el-row :gutter="16" class="result-grid">
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">MB值</div>
+              <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024) }}</div>
+              <div class="result-unit">单位：兆字节 (MB)</div>
+              <el-tooltip content="可在Diskpart等工具中使用size参数" placement="top">
+                <el-button size="small" type="primary" link @click="copyValue(Math.floor(result.actualSize * 1024), 'MB值')">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">KB值</div>
+              <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024 * 1024) }}</div>
+              <div class="result-unit">单位：千字节 (KB)</div>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">起始扇区</div>
+              <div class="result-value">{{ formatNumber(result.startSector) }}</div>
+              <div class="result-unit">单位：逻辑块地址 (LBA)</div>
+              <el-tooltip content="分区的起始扇区位置，LBA寻址方式" placement="top">
+                <el-button size="small" type="primary" link @click="copyValue(result.startSector, '起始扇区')">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">结束扇区</div>
+              <div class="result-value">{{ formatNumber(result.endSector) }}</div>
+              <div class="result-unit">单位：逻辑块地址 (LBA)</div>
+              <el-tooltip content="分区的结束扇区位置" placement="top">
+                <el-button size="small" type="primary" link @click="copyValue(result.endSector, '结束扇区')">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制
+                </el-button>
+              </el-tooltip>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
+      <el-divider />
+
+      <div class="result-section-title">
         <h4>
           <el-icon :size="16" color="#165DFF"><Tickets /></el-icon>
           分区命令参考
@@ -311,7 +376,7 @@
 
       <el-divider />
 
-      <div class="calculation-detail">
+      <div class="result-section-title">
         <h4>
           <el-icon :size="16" color="#E6A23C"><Calculator /></el-icon>
           计算过程
@@ -342,6 +407,7 @@
             <Collection />
           </el-icon>
           <span>常用整数分区速查表</span>
+          <el-tag size="small" type="info" style="margin-left: 12px;">单位说明：扇区数 = 512字节/扇区</el-tag>
         </div>
       </template>
       <el-table :data="referenceTable" border stripe size="small">
@@ -350,24 +416,24 @@
             <el-tag type="primary" size="small">{{ row.size }}GB</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="chsSectors" label="CHS模式扇区数" align="right">
+        <el-table-column label="NTFS 扇区数 (4K对齐)" align="right">
           <template #default="{ row }">
-            <span class="table-value">{{ formatNumber(row.chsSectors) }}</span>
+            <span class="table-value" :title="'单位：扇区，用于分区工具指定分区大小">{{ formatNumber(row.ntfsSectors) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="chsActual" label="CHS实际容量" width="120" align="right">
+        <el-table-column label="NTFS 实际容量" width="130" align="right">
           <template #default="{ row }">
-            {{ row.chsActual.toFixed(4) }}GB
+            {{ row.ntfsActual.toFixed(4) }}GB
           </template>
         </el-table-column>
-        <el-table-column prop="4kSectors" label="4K对齐扇区数" align="right">
+        <el-table-column label="FAT32 扇区数 (4K对齐)" align="right">
           <template #default="{ row }">
-            <span class="table-value">{{ formatNumber(row['4kSectors']) }}</span>
+            <span class="table-value" :title="'单位：扇区，FAT32单文件最大4GB">{{ formatNumber(row.fat32Sectors) }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="4kActual" label="4K实际容量" width="120" align="right">
+        <el-table-column label="FAT32 实际容量" width="130" align="right">
           <template #default="{ row }">
-            {{ row['4kActual'].toFixed(4) }}GB
+            {{ row.fat32Actual.toFixed(4) }}GB
           </template>
         </el-table-column>
         <el-table-column label="操作" width="150" align="center">
@@ -378,6 +444,65 @@
           </template>
         </el-table-column>
       </el-table>
+      <div class="table-note">
+        <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+        <span>说明：NTFS和FAT32采用相同的扇区对齐计算，差异在于文件系统本身的元数据占用空间不同，但分区大小相同</span>
+      </div>
+    </el-card>
+
+    <el-card class="filesystem-guide-card">
+      <template #header>
+        <div class="card-header">
+        <el-icon :size="20" color="#165DFF">
+          <Guide />
+        </el-icon>
+        <span>文件系统选择指南</span>
+      </div>
+      </template>
+      <el-row :gutter="20">
+        <el-col :span="8">
+          <div class="filesystem-card ntfs">
+            <div class="fs-title">
+              <el-icon :size="24"><FolderOpened /></el-icon>
+              <h4>NTFS</h4>
+              <el-tag size="small" type="success">推荐</el-tag>
+            </div>
+            <div class="fs-desc">
+              <p><strong>优点：</strong>支持大文件（最大256TB)，支持文件权限加密压缩，安全性高，日志型文件系统，稳定性好</p>
+              <p><strong>适用场景：</strong>Windows系统盘、数据盘、大容量存储设备</p>
+              <p><strong>最大单文件大小：</strong>无限制（理论256TB)</p>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="filesystem-card fat32">
+            <div class="fs-title">
+              <el-icon :size="24"><Folder /></el-icon>
+              <h4>FAT32</h4>
+              <el-tag size="small" type="warning">兼容</el-tag>
+            </div>
+            <div class="fs-desc">
+              <p><strong>优点：</strong>兼容性最好，几乎所有设备都支持，结构简单，占用空间小</p>
+              <p><strong>缺点：</strong>单文件最大4GB，分区最大8TB，无日志功能，容错能力差</p>
+              <p><strong>适用场景：</strong>U盘、SD卡、小容量移动设备</p>
+            </div>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="filesystem-card exfat">
+            <div class="fs-title">
+              <el-icon :size="24"><Folders /></el-icon>
+              <h4>exFAT</h4>
+              <el-tag size="small" type="info">现代</el-tag>
+            </div>
+            <div class="fs-desc">
+              <p><strong>优点：</strong>支持大文件（最大16EB)，跨平台兼容性好，Windows、Mac、Linux都支持</p>
+              <p><strong>缺点：</strong>无日志功能，不支持文件权限</p>
+              <p><strong>适用场景：</strong>大容量U盘、移动硬盘、跨平台文件交换</p>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
     </el-card>
   </div>
 </template>
@@ -394,7 +519,13 @@ import {
   CopyDocument,
   Tickets,
   Calculator,
-  Collection
+  Collection,
+  Files,
+  TrendCharts,
+  Guide,
+  Folder,
+  FolderOpened,
+  Folders
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -410,6 +541,7 @@ interface PartitionResult {
 }
 
 const targetSize = ref<number>(100)
+const fileSystem = ref<string>('ntfs')
 const alignmentType = ref<string>('4k')
 const sectorSize = ref<string>('512')
 const customCylinder = ref<number>(16065)
@@ -419,13 +551,35 @@ const activeCommandTab = ref<string>('diskpart')
 const quickSizes = [10, 50, 100, 200, 500, 1024]
 
 const scenarios = [
-  { label: '系统盘 (100GB)', size: 100, alignment: '4k' },
-  { label: '软件盘 (200GB)', size: 200, alignment: '4k' },
-  { label: '游戏盘 (500GB)', size: 500, alignment: '4k' },
-  { label: '数据盘 (1TB)', size: 1024, alignment: '4k' },
-  { label: '旧硬盘 (50GB CHS)', size: 50, alignment: 'chs' },
-  { label: '大容量 (2TB)', size: 2048, alignment: '4k' }
+  { label: '系统盘 (100GB NTFS)', size: 100, fs: 'ntfs', alignment: '4k' },
+  { label: '软件盘 (200GB NTFS)', size: 200, fs: 'ntfs', alignment: '4k' },
+  { label: '游戏盘 (500GB NTFS)', size: 500, fs: 'ntfs', alignment: '4k' },
+  { label: '数据盘 (1TB NTFS)', size: 1024, fs: 'ntfs', alignment: '4k' },
+  { label: 'U盘 (32GB FAT32)', size: 32, fs: 'fat32', alignment: '4k' },
+  { label: '移动硬盘 (2TB exFAT)', size: 2048, fs: 'exfat', alignment: '4k' }
 ]
+
+const fileSystemHint = computed(() => {
+  switch (fileSystem.value) {
+    case 'ntfs':
+      return 'Windows默认，推荐使用'
+    case 'fat32':
+      return '兼容性最好，单文件最大4GB'
+    case 'exfat':
+      return '支持大文件，跨平台兼容性好'
+    default:
+      return ''
+  }
+})
+
+const fileSystemLabel = computed(() => {
+  switch (fileSystem.value) {
+    case 'ntfs': return 'NTFS'
+    case 'fat32': return 'FAT32'
+    case 'exfat': return 'exFAT'
+    default: return ''
+  }
+})
 
 const sectorsPerCylinder = computed(() => {
   switch (alignmentType.value) {
@@ -443,20 +597,16 @@ const sectorsPerCylinder = computed(() => {
 const referenceTable = computed(() => {
   const sizes = [10, 20, 30, 50, 60, 80, 100, 120, 150, 200, 256, 300, 500, 512, 1024]
   return sizes.map(size => {
-    const chsCylinders = Math.round((size * 1024 * 1024 * 1024 / 512) / 16065)
-    const chsSectors = chsCylinders * 16065
-    const chsActual = (chsSectors * 512) / (1024 * 1024 * 1024)
-    
-    const k4Cylinders = Math.round((size * 1024 * 1024 * 1024 / 512) / 2048)
+    const k4Cylinders = Math.round((size * 1024 * 1024 * 1024 / 512) / 2048
     const k4Sectors = k4Cylinders * 2048
     const k4Actual = (k4Sectors * 512) / (1024 * 1024 * 1024)
     
     return {
       size,
-      chsSectors,
-      chsActual,
-      '4kSectors': k4Sectors,
-      '4kActual': k4Actual
+      ntfsSectors: k4Sectors,
+      ntfsActual: k4Actual,
+      fat32Sectors: k4Sectors,
+      fat32Actual: k4Actual
     }
   })
 })
@@ -505,14 +655,15 @@ const setQuickSize = (val: number) => {
   calculate()
 }
 
-const applyScenario = (scenario: { label: string; size: number; alignment: string }) => {
+const applyScenario = (scenario: { label: string; size: number; fs: string; alignment: string }) => {
   targetSize.value = scenario.size
+  fileSystem.value = scenario.fs
   alignmentType.value = scenario.alignment
   calculate()
   ElMessage.success(`已应用场景：${scenario.label}`)
 }
 
-const applyReference = (row: { size: number; chsSectors: number; '4kSectors': number }) => {
+const applyReference = (row: { size: number; ntfsSectors: number; fat32Sectors: number }) => {
   targetSize.value = row.size
   calculate()
   ElMessage.success(`已应用 ${row.size}GB 分区参数`)
@@ -530,18 +681,35 @@ const copyValue = (value: string | number, label: string) => {
 const getDiskpartCommand = (): string => {
   if (!result.value) return ''
   const sizeMB = Math.floor(result.value.actualSize * 1024)
-  return `create partition primary size=${sizeMB} align=${alignmentType.value === '4k' ? '1024' : '64'}\nREM 说明：创建 ${targetSize.value}GB 整数分区，实际大小 ${result.value.actualSize.toFixed(2)}GB`
+  return `select disk 0
+create partition primary size=${sizeMB} align=${alignmentType.value === '4k' ? '1024' : '64'}
+format fs=${fileSystem.value} quick
+assign letter=D
+REM 说明：创建 ${targetSize.value}GB ${fileSystemLabel.value} 整数分区，实际大小 ${result.value.actualSize.toFixed(2)}GB`
 }
 
 const getFdiskCommand = (): string => {
   if (!result.value) return ''
-  return `n\np\n1\n${result.value.startSector}\n+${result.value.totalSectors}\nw\nREM 说明：新建分区，起始扇区 ${result.value.startSector}，扇区数 ${result.value.totalSectors}`
+  return `fdisk /dev/sda
+n
+p
+1
+${result.value.startSector}
++${result.value.totalSectors}
+t
+7
+w
+REM 说明：新建${fileSystemLabel.value} 分区，起始扇区 ${result.value.startSector}，扇区数 ${result.value.totalSectors}`
 }
 
 const getPartedCommand = (): string => {
   if (!result.value) return ''
   const endGB = result.value.actualSize.toFixed(2)
-  return `parted /dev/sda\n(parted) mklabel gpt\n(parted) mkpart primary 0% ${endGB}GB\n(parted) print\nREM 说明：创建 ${targetSize.value}GB 分区，结束位置 ${endGB}GB`
+  return `parted /dev/sda
+(parted) mklabel gpt
+(parted) mkpart primary ${fileSystem.value} 0% ${endGB}GB
+(parted) print
+REM 说明：创建 ${targetSize.value}GB ${fileSystemLabel.value} 分区，结束位置 ${endGB}GB`
 }
 
 onMounted(() => {
@@ -558,7 +726,8 @@ onMounted(() => {
 .guide-card,
 .calculator-card,
 .result-card,
-.reference-card {
+.reference-card,
+.filesystem-guide-card {
   margin-bottom: 24px;
 }
 
@@ -759,6 +928,15 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
+.result-section-title h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #303133;
+}
+
 .result-grid {
   margin-bottom: 20px;
 }
@@ -797,16 +975,6 @@ onMounted(() => {
   font-size: 11px;
   color: #909399;
   margin-bottom: 8px;
-}
-
-.command-section h4,
-.calculation-detail h4 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 0 16px;
-  font-size: 16px;
-  color: #303133;
 }
 
 .command-block {
@@ -859,11 +1027,72 @@ onMounted(() => {
   font-family: 'Monaco', 'Menlo', monospace;
   font-weight: 500;
   color: #165DFF;
+  cursor: help;
+}
+
+.table-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #606266;
 }
 
 :deep(.el-table th) {
   background-color: #f5f7fa;
   font-weight: 600;
+}
+
+.filesystem-card {
+  padding: 20px;
+  border-radius: 8px;
+  height: 100%;
+}
+
+.filesystem-card.ntfs {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border: 1px solid #b3d8ff;
+}
+
+.filesystem-card.fat32 {
+  background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
+  border: 1px solid #f5dab1;
+}
+
+.filesystem-card.exfat {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border: 1px solid #b3e0ff;
+}
+
+.fs-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.fs-title h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.fs-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.8;
+}
+
+.fs-desc p {
+  margin: 6px 0;
+}
+
+.fs-desc strong {
+  color: #303133;
 }
 
 @media (max-width: 768px) {
