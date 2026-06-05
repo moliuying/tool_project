@@ -100,6 +100,11 @@ const routes: RouteRecordRaw[] = [
         path: '/subtitle-puzzle',
         name: 'SubtitlePuzzleMaker',
         component: () => import('@/views/SubtitlePuzzleMaker.vue')
+      },
+      {
+        path: '/partition-calculator',
+        name: 'PartitionCalculator',
+        component: () => import('@/views/PartitionCalculator.vue')
       }
     ]
   }
