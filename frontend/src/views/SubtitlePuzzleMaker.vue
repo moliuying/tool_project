@@ -20,24 +20,25 @@
         <div class="mode-tabs">
           <div
             class="mode-tab"
+            :class="{ active: currentMode === 'text' }"
+            @click="currentMode = 'text'"
+          >
+            <div class="mode-badge" v-if="currentMode === 'text'">推荐</div>
+            <el-icon :size="18"><Edit /></el-icon>
+            <div class="mode-info">
+              <span class="mode-name">文字生成模式</span>
+              <span class="mode-desc">直接输入台词，快速生成拼图</span>
+            </div>
+          </div>
+          <div
+            class="mode-tab"
             :class="{ active: currentMode === 'image' }"
             @click="currentMode = 'image'"
           >
             <el-icon :size="18"><Picture /></el-icon>
             <div class="mode-info">
               <span class="mode-name">截图拼接模式</span>
-              <span class="mode-desc">上传已有的台词截图进行拼接</span>
-            </div>
-          </div>
-          <div
-            class="mode-tab"
-            :class="{ active: currentMode === 'text' }"
-            @click="currentMode = 'text'"
-          >
-            <el-icon :size="18"><Edit /></el-icon>
-            <div class="mode-info">
-              <span class="mode-name">文字生成模式</span>
-              <span class="mode-desc">输入台词文字自动生成字幕图</span>
+              <span class="mode-desc">上传已有台词截图进行拼接</span>
             </div>
           </div>
         </div>
@@ -198,29 +199,41 @@
             </div>
           </template>
           <div class="text-input-area">
+            <div class="input-tip">
+              <el-icon :size="14" color="#67c23a"><InfoFilled /></el-icon>
+              <span>直接输入台词内容，支持每行一条，按 <kbd>Ctrl</kbd> + <kbd>Enter</kbd> 快速添加</span>
+            </div>
             <el-input
               v-model="newText"
               type="textarea"
               :rows="3"
-              placeholder="请输入台词内容，支持换行输入多条..."
+              placeholder="例如：
+人生就像一盒巧克力，你永远不知道下一颗是什么味道。
+希望是个好东西，也许是最好的东西。"
               @keydown.enter.ctrl="addTextItem"
+              class="text-input"
             />
             <div class="input-actions">
               <el-button type="primary" size="small" @click="addTextItem" :disabled="!newText.trim()">
                 <el-icon><Plus /></el-icon>
                 添加台词
               </el-button>
-              <span class="input-hint">按 Ctrl + Enter 快速添加</span>
+              <el-button size="small" text @click="loadExample">
+                <el-icon><MagicStick /></el-icon>
+                加载示例
+              </el-button>
             </div>
           </div>
 
           <div class="text-list" v-if="textList.length > 0">
             <div class="list-header">
               <span>已添加 {{ textList.length }} 条台词</span>
-              <el-button size="small" type="danger" text @click="clearAllTexts">
-                <el-icon><Delete /></el-icon>
-                清空全部
-              </el-button>
+              <div class="header-buttons">
+                <el-button size="small" text @click="clearAllTexts">
+                  <el-icon><Delete /></el-icon>
+                  清空全部
+                </el-button>
+              </div>
             </div>
             <draggable
               v-model="textList"
@@ -501,11 +514,35 @@ const uploadRef = ref()
 const canvas = ref<HTMLCanvasElement | null>(null)
 const previewContainer = ref<HTMLDivElement | null>(null)
 
-const currentMode = ref<'image' | 'text'>('image')
+const currentMode = ref<'image' | 'text'>('text')
 
 const imageList = ref<ImageItem[]>([])
 const textList = ref<TextItem[]>([])
 const newText = ref('')
+
+const exampleTexts = [
+  '人生就像一盒巧克力，你永远不知道下一颗是什么味道。',
+  '希望是个好东西，也许是最好的东西，好东西永远不会消逝。',
+  '坚强的人只能救赎自己，伟大的人才能拯救他人。',
+  '不要恨你的敌人，这会影响你的判断力。',
+  '千万不要恨你的对手，那会让你失去理智。'
+]
+
+const loadExample = () => {
+  if (textList.value.length > 0) {
+    ElMessage.warning('请先清空现有台词')
+    return
+  }
+  exampleTexts.forEach((text, index) => {
+    setTimeout(() => {
+      textList.value.push({
+        id: `demo-${Date.now()}-${index}`,
+        content: text
+      })
+    }, index * 50)
+  })
+  ElMessage.success('示例台词已加载')
+}
 const downloading = ref(false)
 
 const widthMode = ref<'max' | 'custom'>('max')
@@ -1086,6 +1123,7 @@ watch(currentMode, () => {
 }
 
 .mode-tab {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1095,6 +1133,19 @@ watch(currentMode, () => {
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.mode-badge {
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(238, 90, 90, 0.3);
 }
 
 .mode-tab:hover {
@@ -1225,6 +1276,34 @@ watch(currentMode, () => {
 .upload-area,
 .text-input-area {
   padding: 20px 0;
+}
+
+.input-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #166534;
+}
+
+.input-tip kbd {
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid #86efac;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  font-weight: 500;
+  margin: 0 2px;
+}
+
+.text-input :deep(.el-textarea__inner) {
+  font-size: 14px;
+  line-height: 1.6;
 }
 
 .image-uploader :deep(.el-upload-dragger) {
