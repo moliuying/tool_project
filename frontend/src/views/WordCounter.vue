@@ -105,6 +105,30 @@
             </div>
           </el-col>
         </el-row>
+        <el-row :gutter="16" class="spec-grid">
+          <el-col :span="12">
+            <div class="spec-item">
+              <div class="spec-title">
+                <el-icon color="#409eff"><Files /></el-icon>
+                <span>UTF-8 字节</span>
+                <el-tag size="small" type="primary">Unicode</el-tag>
+              </div>
+              <p class="spec-desc">按 UTF-8 编码计算字节数：<strong>中文占 3 字节</strong>，英文/数字/半角标点占 1 字节，全角标点占 3 字节。</p>
+              <p class="spec-scene"><strong>适用场景：</strong>Web 开发、API 接口、数据库存储、国际化系统</p>
+            </div>
+          </el-col>
+          <el-col :span="12">
+            <div class="spec-item">
+              <div class="spec-title">
+                <el-icon color="#67c23a"><Folder /></el-icon>
+                <span>GBK 字节</span>
+                <el-tag size="small" type="success">中文编码</el-tag>
+              </div>
+              <p class="spec-desc">按 GBK/GB2312 编码计算字节数：<strong>中文占 2 字节</strong>，英文/数字/半角标点占 1 字节，全角标点占 2 字节。</p>
+              <p class="spec-scene"><strong>适用场景：</strong>中文系统、Legacy 系统、Windows 编码、中文数据库</p>
+            </div>
+          </el-col>
+        </el-row>
         <el-divider>常见场景参考</el-divider>
         <div class="scene-reference">
           <el-tag type="primary" effect="plain">微信公众号：正文最多支持 20000 字（含标点）</el-tag>
@@ -359,6 +383,55 @@
             </el-tooltip>
           </el-col>
         </el-row>
+
+        <el-row :gutter="16" class="stats-grid">
+          <el-col :span="12">
+            <el-tooltip placement="top" :show-after="300">
+              <template #content>
+                <div class="tooltip-content">
+                  <strong>统计规则：</strong>UTF-8 编码字节数
+                  <br /><strong>说明：</strong>中文占 3 字节，英文/数字占 1 字节
+                  <br /><strong>适用：</strong>Web 开发、API 接口、数据库存储
+                </div>
+              </template>
+              <div class="stat-card primary">
+                <div class="stat-icon">
+                  <el-icon><Files /></el-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ stats.utf8Bytes }}</div>
+                  <div class="stat-label">
+                    UTF-8 字节
+                    <el-icon class="label-help"><QuestionFilled /></el-icon>
+                  </div>
+                </div>
+              </div>
+            </el-tooltip>
+          </el-col>
+          <el-col :span="12">
+            <el-tooltip placement="top" :show-after="300">
+              <template #content>
+                <div class="tooltip-content">
+                  <strong>统计规则：</strong>GBK/GB2312 编码字节数
+                  <br /><strong>说明：</strong>中文占 2 字节，英文/数字占 1 字节
+                  <br /><strong>适用：</strong>中文系统、Legacy 系统、Windows 编码
+                </div>
+              </template>
+              <div class="stat-card success">
+                <div class="stat-icon">
+                  <el-icon><Folder /></el-icon>
+                </div>
+                <div class="stat-content">
+                  <div class="stat-value">{{ stats.gbkBytes }}</div>
+                  <div class="stat-label">
+                    GBK 字节
+                    <el-icon class="label-help"><QuestionFilled /></el-icon>
+                  </div>
+                </div>
+              </div>
+            </el-tooltip>
+          </el-col>
+        </el-row>
       </div>
 
       <el-card v-if="hasContent" class="detail-stats-card" shadow="never">
@@ -436,6 +509,44 @@
               <span class="detail-value">{{ stats.byteSize }}</span>
             </div>
           </el-tooltip>
+        </div>
+        <div class="encoding-compare">
+          <div class="encoding-header">
+            <el-icon :size="16" color="#165DFF"><TrendCharts /></el-icon>
+            <span>编码字节对比</span>
+          </div>
+          <div class="encoding-list">
+            <div class="encoding-item">
+              <div class="encoding-name">
+                <span class="encoding-dot utf8"></span>
+                UTF-8
+              </div>
+              <div class="encoding-bar">
+                <div class="encoding-fill utf8" :style="{ width: getEncodingPercent('utf8') + '%' }"></div>
+              </div>
+              <div class="encoding-value">
+                {{ stats.utf8Bytes }} 字节
+                <span class="encoding-note">（中文占3字节）</span>
+              </div>
+            </div>
+            <div class="encoding-item">
+              <div class="encoding-name">
+                <span class="encoding-dot gbk"></span>
+                GBK
+              </div>
+              <div class="encoding-bar">
+                <div class="encoding-fill gbk" :style="{ width: getEncodingPercent('gbk') + '%' }"></div>
+              </div>
+              <div class="encoding-value">
+                {{ stats.gbkBytes }} 字节
+                <span class="encoding-note">（中文占2字节）</span>
+              </div>
+            </div>
+          </div>
+          <div class="encoding-desc">
+            <el-tag size="small" type="info">节省 {{ stats.utf8Bytes - stats.gbkBytes }} 字节</el-tag>
+            <span>GBK 编码比 UTF-8 少占用约 {{ getEncodingSavingPercent() }}% 空间</span>
+          </div>
         </div>
       </el-card>
 
@@ -600,7 +711,10 @@ import {
   Clock,
   Refresh,
   MagicStick,
-  ChatDotRound
+  ChatDotRound,
+  Files,
+  Folder,
+  TrendCharts
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -630,6 +744,8 @@ interface Stats {
   avgSentenceLength: string
   readTime: string
   byteSize: string
+  utf8Bytes: number
+  gbkBytes: number
   chinesePercent: string
   englishPercent: string
   digitPercent: string
@@ -650,6 +766,32 @@ interface HistoryItem {
 }
 
 const STORAGE_KEY = 'word_counter_history'
+
+const gbkBytesMap: Record<string, number> = {}
+for (let i = 0; i < 128; i++) {
+  gbkBytesMap[String.fromCharCode(i)] = 1
+}
+
+const calculateGBKBytes = (str: string): number => {
+  let bytes = 0
+  for (let i = 0; i < str.length; i++) {
+    const charCode = str.charCodeAt(i)
+    if (charCode < 128) {
+      bytes += 1
+    } else if (charCode >= 0x4E00 && charCode <= 0x9FA5) {
+      bytes += 2
+    } else if (charCode >= 0x3000 && charCode <= 0x303F) {
+      bytes += 2
+    } else if (charCode >= 0xFF00 && charCode <= 0xFFEF) {
+      bytes += 2
+    } else if (charCode >= 0x2000 && charCode <= 0x206F) {
+      bytes += 2
+    } else {
+      bytes += 2
+    }
+  }
+  return bytes
+}
 
 const text = ref('')
 const history = ref<HistoryItem[]>([])
@@ -687,14 +829,15 @@ const stats = computed<Stats>(() => {
     : '0'
   
   const encoder = new TextEncoder()
-  const byteCount = encoder.encode(str).length
+  const utf8Bytes = encoder.encode(str).length
+  const gbkBytes = calculateGBKBytes(str)
   let byteSize = ''
-  if (byteCount < 1024) {
-    byteSize = `${byteCount} B`
-  } else if (byteCount < 1024 * 1024) {
-    byteSize = `${(byteCount / 1024).toFixed(2)} KB`
+  if (utf8Bytes < 1024) {
+    byteSize = `${utf8Bytes} B`
+  } else if (utf8Bytes < 1024 * 1024) {
+    byteSize = `${(utf8Bytes / 1024).toFixed(2)} KB`
   } else {
-    byteSize = `${(byteCount / (1024 * 1024)).toFixed(2)} MB`
+    byteSize = `${(utf8Bytes / (1024 * 1024)).toFixed(2)} MB`
   }
   
   const otherChars = totalChars - chineseChars - englishChars - digitChars
@@ -777,6 +920,8 @@ const stats = computed<Stats>(() => {
     avgSentenceLength,
     readTime,
     byteSize,
+    utf8Bytes,
+    gbkBytes,
     chinesePercent,
     englishPercent,
     digitPercent,
@@ -867,6 +1012,8 @@ const copyStats = () => {
 不含空格：${stats.value.charsNoSpace}
 行数：${stats.value.lines}
 段落数：${stats.value.paragraphs}
+UTF-8 字节：${stats.value.utf8Bytes}
+GBK 字节：${stats.value.gbkBytes}
 阅读时间：约 ${stats.value.readTime} 分钟`
   
   navigator.clipboard.writeText(statsText).then(() => {
@@ -912,6 +1059,19 @@ const iconMap: Record<string, any> = {
 
 const getSceneIcon = (iconName: string) => {
   return iconMap[iconName] || Document
+}
+
+const getEncodingPercent = (type: 'utf8' | 'gbk') => {
+  const maxBytes = Math.max(stats.value.utf8Bytes, stats.value.gbkBytes)
+  if (maxBytes === 0) return 0
+  const bytes = type === 'utf8' ? stats.value.utf8Bytes : stats.value.gbkBytes
+  return Math.round((bytes / maxBytes) * 100)
+}
+
+const getEncodingSavingPercent = () => {
+  if (stats.value.utf8Bytes === 0) return '0.0'
+  const saving = ((stats.value.utf8Bytes - stats.value.gbkBytes) / stats.value.utf8Bytes) * 100
+  return saving.toFixed(1)
 }
 
 const formatTime = (dateStr: string) => {
@@ -1145,6 +1305,106 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+}
+
+.encoding-compare {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px dashed #e4e7ed;
+}
+
+.encoding-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 16px;
+}
+
+.encoding-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.encoding-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.encoding-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 60px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.encoding-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.encoding-dot.utf8 {
+  background: linear-gradient(135deg, #409eff, #165DFF);
+}
+
+.encoding-dot.gbk {
+  background: linear-gradient(135deg, #67c23a, #529e2e);
+}
+
+.encoding-bar {
+  flex: 1;
+  height: 12px;
+  background: #e4e7ed;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.encoding-fill {
+  height: 100%;
+  transition: width 0.5s ease;
+}
+
+.encoding-fill.utf8 {
+  background: linear-gradient(135deg, #409eff, #66b1ff);
+}
+
+.encoding-fill.gbk {
+  background: linear-gradient(135deg, #67c23a, #85ce61);
+}
+
+.encoding-value {
+  width: 180px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.encoding-note {
+  font-size: 12px;
+  font-weight: normal;
+  color: #909399;
+  margin-left: 4px;
+}
+
+.encoding-desc {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #606266;
 }
 
 .detail-item {
