@@ -103,7 +103,10 @@
             </div>
 
             <div class="output-item">
-              <div class="output-label">徽章 URL</div>
+              <div class="output-header">
+                <div class="output-label">徽章 URL</div>
+                <el-tag size="small" type="info">最常用</el-tag>
+              </div>
               <div class="output-content">
                 <el-input v-model="badgeUrl" readonly />
                 <el-button type="primary" @click="copyToClipboard(badgeUrl, 'URL')">
@@ -111,10 +114,17 @@
                   复制
                 </el-button>
               </div>
+              <div class="output-tip">
+                <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>直接复制图片链接，可用于任何支持图片 URL 的地方，如论坛、博客、聊天工具等</span>
+              </div>
             </div>
 
             <div class="output-item">
-              <div class="output-label">Markdown</div>
+              <div class="output-header">
+                <div class="output-label">Markdown</div>
+                <el-tag size="small" type="success">GitHub README</el-tag>
+              </div>
               <div class="output-content">
                 <el-input v-model="markdownCode" readonly type="textarea" :rows="2" />
                 <el-button type="primary" @click="copyToClipboard(markdownCode, 'Markdown')">
@@ -122,16 +132,27 @@
                   复制
                 </el-button>
               </div>
+              <div class="output-tip">
+                <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>推荐用于 GitHub README.md、Gitee、GitLab、掘金、简书等支持 Markdown 的平台</span>
+              </div>
             </div>
 
             <div class="output-item">
-              <div class="output-label">HTML</div>
+              <div class="output-header">
+                <div class="output-label">HTML</div>
+                <el-tag size="small" type="warning">网页嵌入</el-tag>
+              </div>
               <div class="output-content">
                 <el-input v-model="htmlCode" readonly type="textarea" :rows="2" />
                 <el-button type="primary" @click="copyToClipboard(htmlCode, 'HTML')">
                   <el-icon><CopyDocument /></el-icon>
                   复制
                 </el-button>
+              </div>
+              <div class="output-tip">
+                <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>用于个人网站、项目文档页面、博客文章等 HTML 环境中嵌入徽章</span>
               </div>
             </div>
 
@@ -145,6 +166,70 @@
                 重置
               </el-button>
             </div>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card class="usage-guide-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="16" color="#165DFF">
+            <Guide />
+          </el-icon>
+          <span>使用场景指南</span>
+        </div>
+      </template>
+      <div class="usage-cards">
+        <div class="usage-card">
+          <div class="usage-icon github">
+            <el-icon><Odometer /></el-icon>
+          </div>
+          <div class="usage-title">GitHub README</div>
+          <div class="usage-desc">在项目 README 顶部展示构建状态、版本号、许可证等信息</div>
+          <div class="usage-code">复制 Markdown 代码 → 粘贴到 README.md</div>
+          <div class="usage-badge">
+            <img src="https://img.shields.io/badge/build-passing-4c1?style=flat" />
+            <img src="https://img.shields.io/badge/version-v1.0.0-007ec6?style=flat" />
+            <img src="https://img.shields.io/badge/license-MIT-9333ea?style=flat" />
+          </div>
+        </div>
+
+        <div class="usage-card">
+          <div class="usage-icon website">
+            <el-icon><Monitor /></el-icon>
+          </div>
+          <div class="usage-title">个人网站/博客</div>
+          <div class="usage-desc">在个人主页或文章中嵌入技术栈、项目状态徽章</div>
+          <div class="usage-code">复制 HTML 代码 → 嵌入网页模板</div>
+          <div class="usage-badge">
+            <img src="https://img.shields.io/badge/Vue.js-3.x-4fc08d?style=flat&logo=vuedotjs" />
+            <img src="https://img.shields.io/badge/TypeScript-5.0-3178c6?style=flat&logo=typescript" />
+          </div>
+        </div>
+
+        <div class="usage-card">
+          <div class="usage-icon forum">
+            <el-icon><ChatDotRound /></el-icon>
+          </div>
+          <div class="usage-title">论坛/社区分享</div>
+          <div class="usage-desc">在技术论坛、问答社区分享项目时附带状态徽章</div>
+          <div class="usage-code">复制徽章 URL → 插入图片链接</div>
+          <div class="usage-badge">
+            <img src="https://img.shields.io/badge/PRs-welcome-4c1?style=flat" />
+            <img src="https://img.shields.io/badge/chat-discord-7289da?style=flat" />
+          </div>
+        </div>
+
+        <div class="usage-card">
+          <div class="usage-icon offline">
+            <el-icon><Picture /></el-icon>
+          </div>
+          <div class="usage-title">离线文档/PDF</div>
+          <div class="usage-desc">下载 SVG 图片用于离线文档、PPT、PDF 等场景</div>
+          <div class="usage-code">点击下载按钮 → 保存为本地图片</div>
+          <div class="usage-badge">
+            <img src="https://img.shields.io/badge/download-SVG-ff69b4?style=flat" />
           </div>
         </div>
       </div>
@@ -166,7 +251,7 @@
         </div>
         <div class="tip-item">
           <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-          <span>支持多种样式风格：塑料风、扁平风、圆角方形等</span>
+          <span>支持多种样式风格：塑料风、扁平风、圆角方形、大徽章、社交风格</span>
         </div>
         <div class="tip-item">
           <el-icon color="#67c23a"><SuccessFilled /></el-icon>
@@ -174,7 +259,7 @@
         </div>
         <div class="tip-item">
           <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-          <span>支持添加 Simple Icons 库中的图标作为 Logo</span>
+          <span>支持添加 Simple Icons 库中的图标作为 Logo，让徽章更专业</span>
         </div>
       </div>
     </el-card>
@@ -193,7 +278,12 @@ import {
   InfoFilled,
   SuccessFilled,
   MagicStick,
-  CopyDocument
+  CopyDocument,
+  Guide,
+  Odometer,
+  Monitor,
+  ChatDotRound,
+  Picture
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -552,12 +642,117 @@ const handleImageError = () => {
   flex: 1;
 }
 
+.output-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.output-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
+}
+
 .output-actions {
   display: flex;
   justify-content: center;
   gap: 16px;
   padding-top: 16px;
   border-top: 1px solid #ebeef5;
+}
+
+.usage-guide-card {
+  margin-bottom: 24px;
+}
+
+.usage-cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.usage-card {
+  padding: 16px;
+  border: 1px solid #ebeef5;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+  transition: all 0.3s;
+}
+
+.usage-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: #165DFF;
+}
+
+.usage-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.usage-icon.github {
+  background: linear-gradient(135deg, #333 0%, #24292e 100%);
+}
+
+.usage-icon.website {
+  background: linear-gradient(135deg, #165DFF 0%, #4080ff 100%);
+}
+
+.usage-icon.forum {
+  background: linear-gradient(135deg, #00b42a 0%, #4caf50 100%);
+}
+
+.usage-icon.offline {
+  background: linear-gradient(135deg, #722ed1 0%, #9254de 100%);
+}
+
+.usage-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.usage-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.usage-code {
+  font-size: 12px;
+  color: #165DFF;
+  font-weight: 500;
+  padding: 6px 10px;
+  background: #f0f7ff;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.usage-badge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.usage-badge img {
+  height: 20px;
 }
 
 .tips-card {
@@ -578,6 +773,12 @@ const handleImageError = () => {
   color: #606266;
 }
 
+@media (max-width: 1200px) {
+  .usage-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 900px) {
   .generator-container {
     grid-template-columns: 1fr;
@@ -585,6 +786,10 @@ const handleImageError = () => {
   
   .preset-list {
     grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .usage-cards {
+    grid-template-columns: 1fr;
   }
 }
 </style>
