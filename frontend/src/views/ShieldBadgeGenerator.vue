@@ -235,6 +235,150 @@
       </div>
     </el-card>
 
+    <el-card class="tutorial-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="16" color="#165DFF">
+            <Reading />
+          </el-icon>
+          <span>GitHub README 详细教程</span>
+          <el-tag size="small" type="primary">新手必看</el-tag>
+        </div>
+      </template>
+      
+      <el-collapse v-model="activeTutorial" accordion>
+        <el-collapse-item name="step1">
+          <template #title>
+            <span class="tutorial-step-title">
+              <span class="step-number">1</span>
+              生成并复制徽章代码
+            </span>
+          </template>
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div class="step-desc">
+                <p>① 在左侧配置区域输入徽章的<strong>左侧标签</strong>和<strong>右侧状态</strong></p>
+                <p>② 选择喜欢的<strong>颜色</strong>和<strong>样式</strong>（可添加 Logo）</p>
+                <p>③ 在「生成代码」区域点击 <el-button size="small" type="primary" disabled>复制</el-button> 按钮复制 Markdown 代码</p>
+              </div>
+              <div class="step-preview">
+                <div class="mock-copy-area">
+                  <div class="mock-input">![build: passing](https://img.shields.io/badge/build-passing-4c1)</div>
+                  <el-button size="small" type="primary">复制</el-button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+
+        <el-collapse-item name="step2">
+          <template #title>
+            <span class="tutorial-step-title">
+              <span class="step-number">2</span>
+              打开 GitHub 项目
+            </span>
+          </template>
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div class="step-desc">
+                <p>① 打开 <el-link href="https://github.com" target="_blank" type="primary">GitHub</el-link> 并登录</p>
+                <p>② 进入你的项目仓库</p>
+                <p>③ 找到 <code>README.md</code> 文件，点击进入编辑模式</p>
+              </div>
+              <div class="step-screenshot">
+                <div class="mock-github">
+                  <div class="mock-file-path">your-project / README.md</div>
+                  <div class="mock-edit-btn">
+                    <el-button size="small" type="primary">
+                      <el-icon><Edit /></el-icon>
+                      编辑
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+
+        <el-collapse-item name="step3">
+          <template #title>
+            <span class="tutorial-step-title">
+              <span class="step-number">3</span>
+              粘贴徽章代码
+            </span>
+          </template>
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div class="step-desc">
+                <p>① 在 README 文件的<strong>顶部标题下方</strong>粘贴代码</p>
+                <p>② 多个徽章可以并排排列，用空格或换行分隔</p>
+                <p>③ 建议位置：项目名称下方，描述文字上方</p>
+              </div>
+              <div class="step-code-block">
+                <div class="code-header">README.md</div>
+                <pre><code># 我的项目名称
+
+![build: passing](https://img.shields.io/badge/build-passing-4c1) ![version: v1.0.0](https://img.shields.io/badge/version-v1.0.0-007ec6) ![license: MIT](https://img.shields.io/badge/license-MIT-9333ea)
+
+这是一个很棒的项目描述...</code></pre>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+
+        <el-collapse-item name="step4">
+          <template #title>
+            <span class="tutorial-step-title">
+              <span class="step-number">4</span>
+              预览并保存
+            </span>
+          </template>
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div class="step-desc">
+                <p>① 点击「Preview changes」查看徽章效果</p>
+                <p>② 确认显示正常后，滚动到页面底部</p>
+                <p>③ 填写提交信息，点击「Commit changes」保存</p>
+              </div>
+              <div class="step-success">
+                <el-icon color="#67c23a" :size="32"><CircleCheck /></el-icon>
+                <div class="success-text">
+                  <strong>完成！</strong>
+                  <p>徽章已成功添加到你的 README 文件中</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+
+        <el-collapse-item name="step5">
+          <template #title>
+            <span class="tutorial-step-title">
+              <span class="step-number">5</span>
+              进阶：添加可点击的徽章链接
+            </span>
+          </template>
+          <div class="tutorial-content">
+            <div class="tutorial-step">
+              <div class="step-desc">
+                <p>让徽章变成可点击的链接，跳转到对应的页面：</p>
+              </div>
+              <div class="step-code-block">
+                <div class="code-header">带链接的 Markdown 语法</div>
+                <pre><code>[![build: passing](https://img.shields.io/badge/build-passing-4c1)](https://github.com/your-name/your-project/actions)
+
+[![stars](https://img.shields.io/github/stars/your-name/your-project)](https://github.com/your-name/your-project/stargazers)</code></pre>
+              </div>
+              <div class="step-tip">
+                <el-icon color="#e6a23c"><Warning /></el-icon>
+                <span>格式说明：<code>[![徽章描述](徽章图片地址)](跳转链接地址)</code></span>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
+    </el-card>
+
     <el-card class="tips-card">
       <template #header>
         <div class="card-header">
@@ -283,7 +427,10 @@ import {
   Odometer,
   Monitor,
   ChatDotRound,
-  Picture
+  Picture,
+  Reading,
+  CircleCheck,
+  Warning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -306,6 +453,7 @@ const badgeConfig = ref<BadgeConfig>({
 })
 
 const previewBg = ref('light')
+const activeTutorial = ref('step1')
 
 const presetColors = [
   { name: '成功绿', value: '#4c1' },
@@ -753,6 +901,178 @@ const handleImageError = () => {
 
 .usage-badge img {
   height: 20px;
+}
+
+.tutorial-card {
+  margin-bottom: 24px;
+}
+
+.tutorial-step-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080ff 100%);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.tutorial-content {
+  padding: 16px 0;
+}
+
+.tutorial-step {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-desc p {
+  margin: 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.step-desc code {
+  background: #f5f7fa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #e74c3c;
+}
+
+.step-preview,
+.step-screenshot {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px dashed #d9d9d9;
+}
+
+.mock-copy-area {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.mock-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  color: #606266;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mock-github {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #24292e;
+  border-radius: 6px;
+  color: #fff;
+}
+
+.mock-file-path {
+  font-size: 14px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.mock-edit-btn {
+  opacity: 0.9;
+}
+
+.step-code-block {
+  background: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.code-header {
+  padding: 8px 16px;
+  background: #2d2d2d;
+  color: #ccc;
+  font-size: 12px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  border-bottom: 1px solid #404040;
+}
+
+.step-code-block pre {
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+}
+
+.step-code-block code {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  color: #d4d4d4;
+  line-height: 1.6;
+}
+
+.step-success {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: #f0f9eb;
+  border-radius: 8px;
+  border: 1px solid #e1f3d8;
+}
+
+.success-text strong {
+  display: block;
+  font-size: 16px;
+  color: #67c23a;
+  margin-bottom: 4px;
+}
+
+.success-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #606266;
+}
+
+.step-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #b88230;
+}
+
+.step-tip code {
+  background: #fff3e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #e6a23c;
 }
 
 .tips-card {
