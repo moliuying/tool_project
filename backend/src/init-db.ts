@@ -27,7 +27,8 @@ async function bootstrap() {
       { name: '节拍练习器', path: '/metronome', icon: 'VideoPlay', parentId: null, sort: 10, component: 'views/Metronome.vue' },
       { name: 'PDF页面调整', path: '/pdf-adjuster', icon: 'Document', parentId: null, sort: 11, component: 'views/PdfAdjuster.vue' },
       { name: '节日头像制作', path: '/holiday-avatar', icon: 'Picture', parentId: null, sort: 12, component: 'views/HolidayAvatarMaker.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 13, component: null },
+      { name: '颜色空间转换', path: '/color-converter', icon: 'Brush', parentId: null, sort: 13, component: 'views/ColorConverter.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 14, component: null },
       { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 13, sort: 1, component: 'views/Menu.vue' },
     ];
 

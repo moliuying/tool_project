@@ -85,6 +85,11 @@ const routes: RouteRecordRaw[] = [
         path: '/holiday-avatar',
         name: 'HolidayAvatarMaker',
         component: () => import('@/views/HolidayAvatarMaker.vue')
+      },
+      {
+        path: '/color-converter',
+        name: 'ColorConverter',
+        component: () => import('@/views/ColorConverter.vue')
       }
     ]
   }
