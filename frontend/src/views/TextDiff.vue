@@ -34,6 +34,25 @@
       </div>
     </el-card>
 
+    <el-card class="limit-card" v-if="showLimitWarning">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#e6a23c">
+            <Warning />
+          </el-icon>
+          <span>性能提示</span>
+        </div>
+      </template>
+      <el-alert :type="limitAlertType" :closable="false" show-icon>
+        <template #title>
+          <span>{{ limitAlertTitle }}</span>
+        </template>
+        <template #default>
+          <span>{{ limitAlertMessage }}</span>
+        </template>
+      </el-alert>
+    </el-card>
+
     <el-card class="diff-card">
       <template #header>
         <div class="card-header">
@@ -93,17 +112,33 @@
                 粘贴
               </el-button>
               <el-tag size="small" type="danger">{{ leftLineCount }} 行</el-tag>
+              <el-tag 
+                size="small" 
+                :type="leftCharCount > MAX_CHARS ? 'danger' : leftCharCount > WARNING_CHARS ? 'warning' : 'info'"
+              >
+                {{ formatCharCount(leftCharCount) }} / {{ formatCharCount(MAX_CHARS) }}
+              </el-tag>
             </div>
           </div>
           <el-input
             v-model="leftText"
             type="textarea"
             :rows="15"
-            placeholder="请输入或粘贴原始文本..."
+            :placeholder="leftPlaceholder"
             resize="vertical"
             class="text-editor"
-            @input="handleInput"
+            :class="{ 'editor-over-limit': leftCharCount > MAX_CHARS, 'editor-near-limit': leftCharCount > WARNING_CHARS && leftCharCount <= MAX_CHARS }"
+            @input="handleLeftInput"
+            maxlength="1000000"
           />
+          <div class="char-progress">
+            <el-progress 
+              :percentage="Math.min(100, (leftCharCount / MAX_CHARS) * 100)" 
+              :stroke-width="4"
+              :color="leftCharCount > MAX_CHARS ? '#f56c6c' : leftCharCount > WARNING_CHARS ? '#e6a23c' : '#67c23a'"
+              show-text="false"
+            />
+          </div>
         </div>
 
         <div class="editor-divider">
@@ -122,17 +157,33 @@
                 粘贴
               </el-button>
               <el-tag size="small" type="success">{{ rightLineCount }} 行</el-tag>
+              <el-tag 
+                size="small" 
+                :type="rightCharCount > MAX_CHARS ? 'danger' : rightCharCount > WARNING_CHARS ? 'warning' : 'info'"
+              >
+                {{ formatCharCount(rightCharCount) }} / {{ formatCharCount(MAX_CHARS) }}
+              </el-tag>
             </div>
           </div>
           <el-input
             v-model="rightText"
             type="textarea"
             :rows="15"
-            placeholder="请输入或粘贴新文本..."
+            :placeholder="rightPlaceholder"
             resize="vertical"
             class="text-editor"
-            @input="handleInput"
+            :class="{ 'editor-over-limit': rightCharCount > MAX_CHARS, 'editor-near-limit': rightCharCount > WARNING_CHARS && rightCharCount <= MAX_CHARS }"
+            @input="handleRightInput"
+            maxlength="1000000"
           />
+          <div class="char-progress">
+            <el-progress 
+              :percentage="Math.min(100, (rightCharCount / MAX_CHARS) * 100)" 
+              :stroke-width="4"
+              :color="rightCharCount > MAX_CHARS ? '#f56c6c' : rightCharCount > WARNING_CHARS ? '#e6a23c' : '#67c23a'"
+              show-text="false"
+            />
+          </div>
         </div>
       </div>
 
@@ -285,9 +336,14 @@ import {
   Edit,
   Select,
   View,
-  CopyDocument
+  CopyDocument,
+  Warning
 } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
+
+const MAX_CHARS = 500000
+const WARNING_CHARS = 400000
+const PERFORMANCE_THRESHOLD = 50000
 
 interface DiffLine {
   type: 'added' | 'removed' | 'unchanged' | 'empty'
@@ -310,6 +366,11 @@ const rightText = ref('')
 const autoCompare = ref(true)
 const viewMode = ref<'split' | 'unified'>('split')
 const diffResult = ref<DiffLine[]>([])
+const wasAutoCompare = ref(true)
+
+const leftCharCount = computed(() => leftText.value.length)
+const rightCharCount = computed(() => rightText.value.length)
+const totalCharCount = computed(() => leftCharCount.value + rightCharCount.value)
 
 const leftLineCount = computed(() => {
   return leftText.value ? leftText.value.split('\n').length : 0
@@ -318,6 +379,67 @@ const leftLineCount = computed(() => {
 const rightLineCount = computed(() => {
   return rightText.value ? rightText.value.split('\n').length : 0
 })
+
+const leftPlaceholder = computed(() => {
+  if (leftCharCount.value >= MAX_CHARS) {
+    return `已达到最大字符限制 ${formatCharCount(MAX_CHARS)}，请精简内容后再输入`
+  }
+  return '请输入或粘贴原始文本...'
+})
+
+const rightPlaceholder = computed(() => {
+  if (rightCharCount.value >= MAX_CHARS) {
+    return `已达到最大字符限制 ${formatCharCount(MAX_CHARS)}，请精简内容后再输入`
+  }
+  return '请输入或粘贴新文本...'
+})
+
+const showLimitWarning = computed(() => {
+  return totalCharCount.value > PERFORMANCE_THRESHOLD
+})
+
+const limitAlertType = computed(() => {
+  if (leftCharCount.value > MAX_CHARS || rightCharCount.value > MAX_CHARS) {
+    return 'error'
+  }
+  if (totalCharCount.value > 200000) {
+    return 'warning'
+  }
+  return 'info'
+})
+
+const limitAlertTitle = computed(() => {
+  if (leftCharCount.value > MAX_CHARS || rightCharCount.value > MAX_CHARS) {
+    return '已超出最大字符限制'
+  }
+  if (!autoCompare.value && totalCharCount.value > PERFORMANCE_THRESHOLD) {
+    return '大文本处理模式'
+  }
+  return '性能优化提示'
+})
+
+const limitAlertMessage = computed(() => {
+  if (leftCharCount.value > MAX_CHARS || rightCharCount.value > MAX_CHARS) {
+    return `单篇文本最大支持 ${formatCharCount(MAX_CHARS)} 字符，超出部分可能无法正常比对。建议精简内容后再使用。`
+  }
+  if (totalCharCount.value > 200000) {
+    return `当前文本量较大（共 ${formatCharCount(totalCharCount.value)} 字符），比对可能需要较长时间。已自动切换为手动比对模式，编辑完成后请点击「开始比对」按钮。`
+  }
+  if (totalCharCount.value > PERFORMANCE_THRESHOLD) {
+    return `当前文本量为 ${formatCharCount(totalCharCount.value)} 字符，比对性能可能受影响。如需提升响应速度，建议精简内容。`
+  }
+  return `当前文本量为 ${formatCharCount(totalCharCount.value)} 字符，比对性能良好。`
+})
+
+const formatCharCount = (count: number): string => {
+  if (count >= 1000000) {
+    return (count / 1000000).toFixed(1) + 'M'
+  }
+  if (count >= 1000) {
+    return (count / 1000).toFixed(1) + 'K'
+  }
+  return count.toString()
+}
 
 const hasDiff = computed(() => {
   return diffResult.value.length > 0 && (leftText.value || rightText.value)
@@ -502,13 +624,56 @@ const compare = () => {
     return
   }
 
-  const dp = lcs(leftLines, rightLines)
-  diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
+  const totalLines = leftLines.length + rightLines.length
+  if (totalLines > 10000) {
+    ElMessageBox.confirm(
+      `当前文本共 ${totalLines.toLocaleString()} 行，比对可能需要较长时间（预计 ${Math.ceil(totalLines / 1000)} 秒），是否继续？`,
+      '大文本比对提示',
+      {
+        confirmButtonText: '继续比对',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    ).then(() => {
+      const dp = lcs(leftLines, rightLines)
+      diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
+    }).catch(() => {
+    })
+  } else {
+    const dp = lcs(leftLines, rightLines)
+    diffResult.value = backtrack(dp, leftLines, rightLines, leftLines.length, rightLines.length)
+  }
 }
 
-const handleInput = () => {
+const handleLeftInput = (value: string) => {
+  if (value.length > MAX_CHARS) {
+    leftText.value = value.substring(0, MAX_CHARS)
+    ElMessage.warning(`已达到最大字符限制 ${formatCharCount(MAX_CHARS)}，超出部分已被截断`)
+  }
+  checkPerformanceMode()
   if (autoCompare.value) {
     compare()
+  }
+}
+
+const handleRightInput = (value: string) => {
+  if (value.length > MAX_CHARS) {
+    rightText.value = value.substring(0, MAX_CHARS)
+    ElMessage.warning(`已达到最大字符限制 ${formatCharCount(MAX_CHARS)}，超出部分已被截断`)
+  }
+  checkPerformanceMode()
+  if (autoCompare.value) {
+    compare()
+  }
+}
+
+const checkPerformanceMode = () => {
+  if (totalCharCount.value > 200000 && autoCompare.value) {
+    wasAutoCompare.value = true
+    autoCompare.value = false
+  } else if (totalCharCount.value <= 200000 && wasAutoCompare.value && !autoCompare.value) {
+    autoCompare.value = true
+    wasAutoCompare.value = false
   }
 }
 
@@ -567,8 +732,16 @@ const pasteLeft = async () => {
   try {
     const text = await navigator.clipboard.readText()
     if (text) {
-      leftText.value += text
-      ElMessage.success('已粘贴到左侧')
+      const newText = leftText.value + text
+      if (newText.length > MAX_CHARS) {
+        const truncated = newText.substring(0, MAX_CHARS)
+        leftText.value = truncated
+        ElMessage.warning(`粘贴内容较大，已截断至 ${formatCharCount(MAX_CHARS)} 字符`)
+      } else {
+        leftText.value = newText
+        ElMessage.success('已粘贴到左侧')
+      }
+      handleLeftInput(leftText.value)
     } else {
       ElMessage.warning('剪贴板为空')
     }
@@ -581,8 +754,16 @@ const pasteRight = async () => {
   try {
     const text = await navigator.clipboard.readText()
     if (text) {
-      rightText.value += text
-      ElMessage.success('已粘贴到右侧')
+      const newText = rightText.value + text
+      if (newText.length > MAX_CHARS) {
+        const truncated = newText.substring(0, MAX_CHARS)
+        rightText.value = truncated
+        ElMessage.warning(`粘贴内容较大，已截断至 ${formatCharCount(MAX_CHARS)} 字符`)
+      } else {
+        rightText.value = newText
+        ElMessage.success('已粘贴到右侧')
+      }
+      handleRightInput(rightText.value)
     } else {
       ElMessage.warning('剪贴板为空')
     }
@@ -604,11 +785,11 @@ const copyDiffResult = () => {
   })
 }
 
-watch([leftText, rightText], () => {
-  if (autoCompare.value) {
-    compare()
+watch(totalCharCount, (newCount) => {
+  if (newCount > PERFORMANCE_THRESHOLD) {
+    checkPerformanceMode()
   }
-}, { debounce: 300 })
+})
 </script>
 
 <style scoped>
@@ -954,5 +1135,40 @@ watch([leftText, rightText], () => {
 
 .diff-line.unchanged .line-content {
   color: #303133;
+}
+
+.limit-card {
+  margin-bottom: 24px;
+}
+
+.limit-card :deep(.el-alert) {
+  border: none;
+}
+
+.char-progress {
+  margin-top: 8px;
+  padding: 0 2px;
+}
+
+.text-editor :deep(.el-textarea__inner) {
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.text-editor.editor-near-limit :deep(.el-textarea__inner) {
+  border-color: #e6a23c;
+  box-shadow: 0 0 0 2px rgba(230, 162, 60, 0.1);
+}
+
+.text-editor.editor-over-limit :deep(.el-textarea__inner) {
+  border-color: #f56c6c;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.1);
+  background: #fef0f0;
+}
+
+.editor-actions .el-tag {
+  transition: all 0.3s ease;
 }
 </style>
