@@ -5,6 +5,20 @@ export interface CharacterComponent {
   radical?: boolean
 }
 
+export interface SchoolDecomposition {
+  schoolName: string
+  schoolType: 'shuowen' | 'modern' | 'wubi' | 'cangjie' | 'calligraphy' | 'etymology'
+  description: string
+  structure: string
+  components: CharacterComponent[]
+  decompositionTree: {
+    level: number
+    parts: string[]
+  }[]
+  order: string[]
+  explanation?: string
+}
+
 export interface CharacterDecomposition {
   char: string
   pinyin: string[]
@@ -20,6 +34,46 @@ export interface CharacterDecomposition {
   }[]
   order: string[]
   words?: string[]
+  schools?: SchoolDecomposition[]
+}
+
+export const schoolInfo: Record<string, { name: string; description: string; color: string; icon: string }> = {
+  modern: {
+    name: '现代规范',
+    description: '国家语言文字工作委员会颁布的规范拆字标准',
+    color: '#165DFF',
+    icon: 'Document'
+  },
+  shuowen: {
+    name: '说文解字',
+    description: '东汉许慎编撰的最早汉字字源学著作',
+    color: '#67c23a',
+    icon: 'Reading'
+  },
+  etymology: {
+    name: '字源演变',
+    description: '从甲骨文到楷书的字形演变分析',
+    color: '#e6a23c',
+    icon: 'Time'
+  },
+  wubi: {
+    name: '五笔字型',
+    description: '王永民发明的五笔输入法拆分规则',
+    color: '#f56c6c',
+    icon: 'Keyboard'
+  },
+  cangjie: {
+    name: '仓颉输入法',
+    description: '朱邦复发明的仓颉输入法取码规则',
+    color: '#909399',
+    icon: 'Key'
+  },
+  calligraphy: {
+    name: '书法结构',
+    description: '书法学习中的间架结构分析',
+    color: '#9b59b6',
+    icon: 'Brush'
+  }
 }
 
 export const characterDatabase: Record<string, CharacterDecomposition> = {
@@ -40,7 +94,105 @@ export const characterDatabase: Record<string, CharacterDecomposition> = {
       { level: 2, parts: ['女', '子'] }
     ],
     order: ['女', '子'],
-    words: ['好人', '美好', '爱好', '好事']
+    words: ['好人', '美好', '爱好', '好事'],
+    schools: [
+      {
+        schoolName: '现代规范',
+        schoolType: 'modern',
+        description: '国家规范标准拆分',
+        structure: '左右结构',
+        components: [
+          { name: '女', meaning: '部首，表女性', strokeCount: 3, radical: true },
+          { name: '子', meaning: '声旁兼表意', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '从女从子，会意字，表示男女相得、美好之意。'
+      },
+      {
+        schoolName: '说文解字',
+        schoolType: 'shuowen',
+        description: '《说文解字》字源分析',
+        structure: '会意字',
+        components: [
+          { name: '女', meaning: '女子、妇人', strokeCount: 3, radical: true },
+          { name: '子', meaning: '男子、丈夫', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '【卷十二】【女部】好：美也。从女、子。徐锴曰："子者，男子之美稱。"'
+      },
+      {
+        schoolName: '字源演变',
+        schoolType: 'etymology',
+        description: '甲骨文到楷书演变',
+        structure: '会意字',
+        components: [
+          { name: '女', meaning: '跪坐的女子', strokeCount: 3, radical: true },
+          { name: '子', meaning: '襁褓中的婴儿', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '甲骨文象女子抱子之形，本义为母子相亲、美好之意。金文、小篆延续此形，楷书简化为今形。'
+      },
+      {
+        schoolName: '五笔字型',
+        schoolType: 'wubi',
+        description: '86版五笔拆分',
+        structure: '左右型',
+        components: [
+          { name: '女', meaning: '字根 V 键', strokeCount: 3, radical: true },
+          { name: '子', meaning: '字根 B 键', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '五笔编码：VB（二级简码）。识别码：G（末笔横，左右型）。全码：VBG。'
+      },
+      {
+        schoolName: '仓颉输入法',
+        schoolType: 'cangjie',
+        description: '仓颉五代取码',
+        structure: '左至右',
+        components: [
+          { name: '女', meaning: '仓颉字码 V', strokeCount: 3, radical: true },
+          { name: '子', meaning: '仓颉字码 ND', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '仓颉编码：VND。女(V) + 子(弓木=ND)。'
+      },
+      {
+        schoolName: '书法结构',
+        schoolType: 'calligraphy',
+        description: '楷书间架结构',
+        structure: '左右对等',
+        components: [
+          { name: '女', meaning: '左部占位约45%', strokeCount: 3, radical: true },
+          { name: '子', meaning: '右部占位约55%', strokeCount: 3, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['好'] },
+          { level: 2, parts: ['女', '子'] }
+        ],
+        order: ['女', '子'],
+        explanation: '左右结构，左让右。左部"女"字横画右不出头，右部"子"字竖钩挺拔，横画穿插于左部点下。'
+      }
+    ]
   },
   '明': {
     char: '明',
@@ -59,7 +211,89 @@ export const characterDatabase: Record<string, CharacterDecomposition> = {
       { level: 2, parts: ['日', '月'] }
     ],
     order: ['日', '月'],
-    words: ['明天', '聪明', '光明', '明白']
+    words: ['明天', '聪明', '光明', '明白'],
+    schools: [
+      {
+        schoolName: '现代规范',
+        schoolType: 'modern',
+        description: '国家规范标准拆分',
+        structure: '左右结构',
+        components: [
+          { name: '日', meaning: '部首，表太阳', strokeCount: 4, radical: true },
+          { name: '月', meaning: '表月亮', strokeCount: 4, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['明'] },
+          { level: 2, parts: ['日', '月'] }
+        ],
+        order: ['日', '月'],
+        explanation: '从日从月，会意字，表示日月交相辉映、光明之意。'
+      },
+      {
+        schoolName: '说文解字',
+        schoolType: 'shuowen',
+        description: '《说文解字》字源分析',
+        structure: '会意字',
+        components: [
+          { name: '囧', meaning: '窗户，古文明从囧', strokeCount: 7, radical: false },
+          { name: '月', meaning: '月亮', strokeCount: 4, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['明'] },
+          { level: 2, parts: ['囧', '月'] }
+        ],
+        order: ['囧', '月'],
+        explanation: '【卷七】【朙部】明：照也。从月从囧。凡明之属皆从明。'
+      },
+      {
+        schoolName: '字源演变',
+        schoolType: 'etymology',
+        description: '甲骨文到楷书演变',
+        structure: '会意字',
+        components: [
+          { name: '日', meaning: '太阳', strokeCount: 4, radical: true },
+          { name: '月', meaning: '月亮', strokeCount: 4, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['明'] },
+          { level: 2, parts: ['日', '月'] }
+        ],
+        order: ['日', '月'],
+        explanation: '甲骨文或从日从月，或从囧从月，均表示光明之意。小篆从囧从月，隶书后简化为从日从月。'
+      },
+      {
+        schoolName: '五笔字型',
+        schoolType: 'wubi',
+        description: '86版五笔拆分',
+        structure: '左右型',
+        components: [
+          { name: '日', meaning: '字根 J 键', strokeCount: 4, radical: true },
+          { name: '月', meaning: '字根 E 键', strokeCount: 4, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['明'] },
+          { level: 2, parts: ['日', '月'] }
+        ],
+        order: ['日', '月'],
+        explanation: '五笔编码：JE（二级简码）。识别码：G（末笔横，左右型）。全码：JEG。'
+      },
+      {
+        schoolName: '书法结构',
+        schoolType: 'calligraphy',
+        description: '楷书间架结构',
+        structure: '左窄右宽',
+        components: [
+          { name: '日', meaning: '左部占位约45%', strokeCount: 4, radical: true },
+          { name: '月', meaning: '右部占位约55%', strokeCount: 4, radical: true }
+        ],
+        decompositionTree: [
+          { level: 1, parts: ['明'] },
+          { level: 2, parts: ['日', '月'] }
+        ],
+        order: ['日', '月'],
+        explanation: '左右结构，左小右大。左部"日"字居中靠上，右部"月"字竖撇挺拔，两横匀称。'
+      }
+    ]
   },
   '林': {
     char: '林',

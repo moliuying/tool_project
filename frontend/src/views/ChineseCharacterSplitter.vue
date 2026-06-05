@@ -109,10 +109,122 @@
 
       <el-divider />
 
+      <div v-if="result.schools && result.schools.length > 0" class="schools-section">
+        <div class="section-title">
+          <el-icon :size="18" color="#165DFF"><Files /></el-icon>
+          <span>拆字流派对比</span>
+          <el-tag size="small" type="success" effect="plain">多数据源</el-tag>
+        </div>
+
+        <div class="schools-filter">
+          <span class="filter-label">显示模式：</span>
+          <el-radio-group v-model="displayMode" size="small">
+            <el-radio-button value="tabs">标签切换</el-radio-button>
+            <el-radio-button value="compare">并排对比</el-radio-button>
+          </el-radio-group>
+        </div>
+
+        <div v-if="displayMode === 'tabs'" class="schools-tabs">
+          <el-tabs v-model="activeSchoolTab" type="card">
+            <el-tab-pane
+              v-for="school in result.schools"
+              :key="school.schoolType"
+              :label="school.schoolName"
+              :name="school.schoolType"
+            >
+              <div class="school-detail">
+                <div class="school-header">
+                  <el-tag :style="{ background: getSchoolColor(school.schoolType), borderColor: getSchoolColor(school.schoolType) }">
+                    {{ school.schoolName }}
+                  </el-tag>
+                  <span class="school-desc">{{ school.description }}</span>
+                </div>
+                <div class="school-structure">
+                  <span class="structure-label">结构类型：</span>
+                  <el-tag type="info" size="small">{{ school.structure }}</el-tag>
+                </div>
+                <div class="school-tree">
+                  <div class="tree-title">拆分结构：</div>
+                  <div class="decomposition-tree">
+                    <div
+                      v-for="level in school.decompositionTree"
+                      :key="level.level"
+                      class="tree-level"
+                    >
+                      <div class="level-label">第{{ level.level }}层</div>
+                      <div class="level-parts">
+                        <span
+                          v-for="(part, idx) in level.parts"
+                          :key="idx"
+                          class="part-box"
+                          :style="{ borderColor: getSchoolColor(school.schoolType) }"
+                        >
+                          {{ part }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="school.explanation" class="school-explanation">
+                  <div class="explanation-title">
+                    <el-icon size="14"><InfoFilled /></el-icon>
+                    流派说明：
+                  </div>
+                  <p class="explanation-text">{{ school.explanation }}</p>
+                </div>
+              </div>
+            </el-tab-pane>
+          </el-tabs>
+        </div>
+
+        <div v-else class="schools-compare">
+          <el-row :gutter="16">
+            <el-col
+              v-for="school in result.schools"
+              :key="school.schoolType"
+              :xs="24"
+              :sm="12"
+              :md="result.schools.length > 4 ? 6 : (result.schools.length > 2 ? 8 : 12)"
+            >
+              <div class="school-card" :style="{ borderTopColor: getSchoolColor(school.schoolType) }">
+                <div class="school-card-header">
+                  <el-tag size="small" :style="{ background: getSchoolColor(school.schoolType), borderColor: getSchoolColor(school.schoolType) }">
+                    {{ school.schoolName }}
+                  </el-tag>
+                </div>
+                <div class="school-card-structure">
+                  <span class="label">结构：</span>
+                  <span class="value">{{ school.structure }}</span>
+                </div>
+                <div class="school-card-parts">
+                  <div class="parts-label">拆分：</div>
+                  <div class="parts-list">
+                    <span
+                      v-for="(part, idx) in school.order"
+                      :key="idx"
+                      class="part-small"
+                      :style="{ borderColor: getSchoolColor(school.schoolType) }"
+                    >
+                      {{ part }}
+                    </span>
+                  </div>
+                </div>
+                <div v-if="school.explanation" class="school-card-note">
+                  <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+                  <span>{{ school.explanation.substring(0, 50) }}...</span>
+                </div>
+              </div>
+            </el-col>
+          </el-row>
+        </div>
+      </div>
+
+      <el-divider />
+
       <div class="decomposition-section">
         <div class="section-title">
           <el-icon :size="18" color="#165DFF"><Share /></el-icon>
-          <span>拆分结构</span>
+          <span>标准拆分结构</span>
         </div>
 
         <div class="decomposition-tree">
@@ -253,6 +365,37 @@
       </el-row>
     </el-card>
 
+    <el-card class="schools-intro-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#165DFF">
+            <Files />
+          </el-icon>
+          <span>拆字流派介绍</span>
+        </div>
+      </template>
+
+      <el-row :gutter="16">
+        <el-col :xs="24" :sm="12" :md="8" v-for="(info, key) in schoolInfo" :key="key">
+          <div class="school-intro-card" :style="{ borderLeftColor: info.color }">
+            <div class="school-intro-header">
+              <div class="school-intro-icon" :style="{ background: info.color }">
+                <el-icon :size="20">{{ info.icon || 'Document' }}</el-icon>
+              </div>
+              <div class="school-intro-name">{{ info.name }}</div>
+            </div>
+            <div class="school-intro-desc">{{ info.description }}</div>
+            <div class="school-intro-usage" v-if="key === 'modern'">适用场景：汉字教学、规范用字</div>
+            <div class="school-intro-usage" v-else-if="key === 'shuowen'">适用场景：字源研究、国学学习</div>
+            <div class="school-intro-usage" v-else-if="key === 'etymology'">适用场景：文字学研究、历史研究</div>
+            <div class="school-intro-usage" v-else-if="key === 'wubi'">适用场景：五笔输入法学习</div>
+            <div class="school-intro-usage" v-else-if="key === 'cangjie'">适用场景：仓颉输入法学习</div>
+            <div class="school-intro-usage" v-else-if="key === 'calligraphy'">适用场景：书法学习、字体设计</div>
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-card class="database-card">
       <template #header>
         <div class="card-header">
@@ -292,7 +435,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   Reading,
   Search,
@@ -311,12 +454,16 @@ import {
   Monitor,
   MagicStick,
   TrendCharts,
-  Tips
+  Tips,
+  Files,
+  InfoFilled
 } from '@element-plus/icons-vue'
-import { characterDatabase, type CharacterDecomposition } from '@/data/characterDecomposition'
+import { characterDatabase, type CharacterDecomposition, schoolInfo } from '@/data/characterDecomposition'
 
 const searchChar = ref('好')
 const selectedRadical = ref('')
+const displayMode = ref<'tabs' | 'compare'>('tabs')
+const activeSchoolTab = ref('modern')
 
 const quickChars = ['好', '明', '林', '森', '休', '想', '国', '家', '安', '学', '请', '清', '情', '晴', '晶', '品']
 
@@ -405,6 +552,17 @@ const isRadical = (part: string): boolean => {
   const radicalChars = ['氵', '亻', '扌', '艹', '宀', '讠', '忄', '纟', '囗', '门', '女', '子', '日', '月', '木', '火', '土', '金', '水', '山', '石', '田', '目', '口', '耳', '手', '足', '心', '禾', '王', '马', '牛', '羊', '虫']
   return radicalChars.includes(part)
 }
+
+const getSchoolColor = (schoolType: string): string => {
+  return schoolInfo[schoolType]?.color || '#165DFF'
+}
+
+watch(searchChar, (newChar) => {
+  const charData = characterDatabase[newChar]
+  if (charData?.schools && charData.schools.length > 0) {
+    activeSchoolTab.value = charData.schools[0].schoolType
+  }
+})
 </script>
 
 <style scoped>
@@ -826,6 +984,238 @@ const isRadical = (part: string): boolean => {
 .char-pinyin {
   font-size: 11px;
   color: #909399;
+}
+
+.schools-section {
+  margin-bottom: 10px;
+}
+
+.schools-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filter-label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.schools-tabs {
+  margin-top: 16px;
+}
+
+.school-detail {
+  padding: 16px 4px;
+}
+
+.school-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.school-desc {
+  font-size: 14px;
+  color: #606266;
+}
+
+.school-structure {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.structure-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.school-tree {
+  margin-bottom: 20px;
+}
+
+.tree-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+  margin-bottom: 12px;
+}
+
+.school-explanation {
+  padding: 16px;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border-radius: 12px;
+  border-left: 4px solid #165DFF;
+}
+
+.explanation-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.explanation-text {
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.schools-compare {
+  margin-top: 16px;
+}
+
+.school-card {
+  padding: 20px;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border: 1px solid #e4e7ed;
+  border-radius: 12px;
+  border-top: 4px solid #165DFF;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+
+.school-card:hover {
+  border-color: #165DFF;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.school-card-header {
+  margin-bottom: 12px;
+}
+
+.school-card-structure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.school-card-structure .label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #909399;
+}
+
+.school-card-structure .value {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.school-card-parts {
+  margin-bottom: 12px;
+}
+
+.parts-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.parts-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.part-small {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+  background: white;
+  border: 2px solid #93c5fd;
+  border-radius: 8px;
+  color: #165DFF;
+  font-family: 'STKaiti', 'KaiTi', serif;
+}
+
+.school-card-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px;
+  background: white;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.schools-intro-card {
+  margin-bottom: 24px;
+}
+
+.school-intro-card {
+  padding: 20px;
+  background: white;
+  border: 1px solid #e4e7ed;
+  border-radius: 12px;
+  border-left: 4px solid #165DFF;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+
+.school-intro-card:hover {
+  border-color: #165DFF;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.school-intro-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.school-intro-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.school-intro-name {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.school-intro-desc {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.school-intro-usage {
+  font-size: 12px;
+  color: #165DFF;
+  padding: 6px 12px;
+  background: #f0f7ff;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 @media (max-width: 768px) {
