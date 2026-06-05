@@ -56,12 +56,30 @@
                   </el-tooltip>
                   <el-input
                     v-model="colorInput"
-                    placeholder="例如: #FF5733, rgb(255, 87, 51), hsl(14, 100%, 60%)"
+                    placeholder="输入颜色值，如: #FF5733、rgb(255,87,51)、hsl(14,100%,60%)"
                     size="large"
                     clearable
                     @input="handleInput"
                     @keyup.enter="convertColor"
-                  />
+                  >
+                    <template #append>
+                      <el-button @click="convertColor">
+                        <el-icon><Refresh /></el-icon>
+                      </el-button>
+                    </template>
+                  </el-input>
+                </div>
+                <div class="format-hints">
+                  <span class="hints-label">快速输入：</span>
+                  <el-tag
+                    v-for="fmt in formatExamples"
+                    :key="fmt.label"
+                    size="small"
+                    class="format-tag"
+                    @click="applyFormatExample(fmt.value)"
+                  >
+                    {{ fmt.label }}
+                  </el-tag>
                 </div>
                 <div class="quick-colors">
                   <span class="quick-label">常用颜色：</span>
@@ -84,15 +102,6 @@
                   show-alpha
                   @change="handlePickerChange"
                 />
-                <el-button
-                  type="primary"
-                  size="large"
-                  @click="convertColor"
-                  style="margin-left: 12px"
-                >
-                  <el-icon><Refresh /></el-icon>
-                  转换
-                </el-button>
               </el-form-item>
             </el-col>
           </el-row>
@@ -299,6 +308,16 @@ const quickColors = [
   { name: '黑色', hex: '#000000' },
   { name: '白色', hex: '#FFFFFF' },
   { name: '灰色', hex: '#9E9E9E' }
+]
+
+const formatExamples = [
+  { label: '#FF5733', value: '#FF5733' },
+  { label: 'rgb(255,87,51)', value: 'rgb(255,87,51)' },
+  { label: 'rgba(255,87,51,0.8)', value: 'rgba(255,87,51,0.8)' },
+  { label: 'hsl(14,100%,60%)', value: 'hsl(14,100%,60%)' },
+  { label: 'hsv(14,80%,100%)', value: 'hsv(14,80%,100%)' },
+  { label: 'cmyk(0,66,80,0)', value: 'cmyk(0,66,80,0)' },
+  { label: 'red', value: 'red' }
 ]
 
 const colorSpaces: Record<string, { name: string; desc: string }> = {
@@ -780,6 +799,11 @@ const copySingleValue = (value: string) => {
   })
 }
 
+const applyFormatExample = (value: string) => {
+  colorInput.value = value
+  convertColor()
+}
+
 watch(pickerColor, (val) => {
   if (val) {
     colorInput.value = val
@@ -877,6 +901,35 @@ pickerColor.value = '#165DFF'
   color: #909399;
   cursor: help;
   flex-shrink: 0;
+}
+
+.format-hints {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-radius: 8px;
+}
+
+.hints-label {
+  font-size: 13px;
+  color: #165DFF;
+  font-weight: 500;
+}
+
+.format-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+}
+
+.format-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.3);
 }
 
 .quick-colors {
