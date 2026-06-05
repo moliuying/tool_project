@@ -120,6 +120,11 @@ const routes: RouteRecordRaw[] = [
         path: '/shield-badge',
         name: 'ShieldBadgeGenerator',
         component: () => import('@/views/ShieldBadgeGenerator.vue')
+      },
+      {
+        path: '/text-diff',
+        name: 'TextDiff',
+        component: () => import('@/views/TextDiff.vue')
       }
     ]
   }
