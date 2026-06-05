@@ -28,8 +28,10 @@ async function bootstrap() {
       { name: 'PDF页面调整', path: '/pdf-adjuster', icon: 'Document', parentId: null, sort: 11, component: 'views/PdfAdjuster.vue' },
       { name: '节日头像制作', path: '/holiday-avatar', icon: 'Picture', parentId: null, sort: 12, component: 'views/HolidayAvatarMaker.vue' },
       { name: '颜色空间转换', path: '/color-converter', icon: 'Brush', parentId: null, sort: 13, component: 'views/ColorConverter.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 14, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 13, sort: 1, component: 'views/Menu.vue' },
+      { name: '图片水印', path: '/image-watermark', icon: 'Stamp', parentId: null, sort: 14, component: 'views/ImageWatermark.vue' },
+      { name: '字幕拼图生成', path: '/subtitle-puzzle', icon: 'Grid', parentId: null, sort: 15, component: 'views/SubtitlePuzzleMaker.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 16, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 16, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

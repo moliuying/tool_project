@@ -95,6 +95,11 @@ const routes: RouteRecordRaw[] = [
         path: '/image-watermark',
         name: 'ImageWatermark',
         component: () => import('@/views/ImageWatermark.vue')
+      },
+      {
+        path: '/subtitle-puzzle',
+        name: 'SubtitlePuzzleMaker',
+        component: () => import('@/views/SubtitlePuzzleMaker.vue')
       }
     ]
   }
