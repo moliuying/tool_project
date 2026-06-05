@@ -331,13 +331,42 @@
 
         <el-tab-pane label="原始数据" name="raw">
           <div class="raw-data-section">
-            <el-input
-              type="textarea"
-              :model-value="whoisResult.rawData"
-              :rows="20"
-              readonly
-              class="raw-textarea"
-            />
+            <div class="raw-toolbar">
+              <div class="quick-jump">
+                <span class="jump-label">快速定位：</span>
+                <el-tag
+                  v-for="keyword in highlightKeywords"
+                  :key="keyword.label"
+                  size="small"
+                  :type="keyword.highlight ? 'primary' : 'info'"
+                  class="jump-tag"
+                  @click="scrollToKeyword(keyword.value)"
+                >
+                  <el-icon><Aim /></el-icon>
+                  {{ keyword.label }}
+                </el-tag>
+              </div>
+              <div class="search-box">
+                <el-input
+                  v-model="searchKeyword"
+                  placeholder="搜索关键词..."
+                  size="small"
+                  clearable
+                  style="width: 200px"
+                >
+                  <template #prefix>
+                    <el-icon><Search /></el-icon>
+                  </template>
+                </el-input>
+              </div>
+            </div>
+            <div class="raw-content-wrapper">
+              <pre
+                ref="rawContentRef"
+                class="raw-content"
+                v-html="highlightedRawData"
+              ></pre>
+            </div>
           </div>
         </el-tab-pane>
       </el-tabs>
@@ -346,7 +375,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   Search,
   InfoFilled,
@@ -366,7 +395,8 @@ import {
   Location,
   View,
   MagicStick,
-  DataLine
+  DataLine,
+  Aim
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { whoisApi, type WhoisResult } from '@/api/whois'
@@ -376,6 +406,19 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const whoisResult = ref<WhoisResult>({})
 const activeTab = ref('basic')
+const searchKeyword = ref('')
+const rawContentRef = ref<HTMLElement | null>(null)
+
+const highlightKeywords = [
+  { label: '注册时间', value: 'Creation Date', highlight: true },
+  { label: '到期时间', value: 'Expiration Date', highlight: true },
+  { label: '注册商', value: 'Registrar', highlight: true },
+  { label: '域名状态', value: 'Domain Status', highlight: true },
+  { label: 'DNS服务器', value: 'Name Server', highlight: true },
+  { label: '注册人', value: 'Registrant Name', highlight: false },
+  { label: '管理员', value: 'Admin Name', highlight: false },
+  { label: '技术联系人', value: 'Tech Name', highlight: false }
+]
 
 const exampleDomains = [
   'google.com',
@@ -556,6 +599,78 @@ ${(result.nameServers || []).map(ns => '  - ' + ns).join('\n') || '  -'}
     ElMessage.error('复制失败')
   })
 }
+
+const highlightedRawData = computed(() => {
+  let text = whoisResult.value.rawData || ''
+  if (!text) return ''
+
+  text = escapeHtml(text)
+
+  const importantKeywords = [
+    { pattern: /(Creation Date|Created|Registered on|Registration Date):?[^\n]*/gi, class: 'highlight-creation' },
+    { pattern: /(Expir(?:ation|y) Date|Registry Expiry Date|Expires):?[^\n]*/gi, class: 'highlight-expiration' },
+    { pattern: /(Registrar|Sponsoring Registrar):?[^\n]*/gi, class: 'highlight-registrar' },
+    { pattern: /(Domain Status):?[^\n]*/gi, class: 'highlight-status' },
+    { pattern: /(Name Server|Nserver|NS\d*):?[^\n]*/gi, class: 'highlight-nameserver' }
+  ]
+
+  importantKeywords.forEach(({ pattern, class: className }) => {
+    text = text.replace(pattern, (match) => {
+      return `<span class="${className}">${match}</span>`
+    })
+  })
+
+  if (searchKeyword.value.trim()) {
+    const keyword = escapeHtml(searchKeyword.value.trim())
+    const regex = new RegExp(`(${keyword})`, 'gi')
+    text = text.replace(regex, '<mark class="search-highlight">$1</mark>')
+  }
+
+  return text
+})
+
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+const scrollToKeyword = (keyword: string) => {
+  activeTab.value = 'raw'
+  
+  nextTick(() => {
+    if (!rawContentRef.value) return
+
+    const text = whoisResult.value.rawData || ''
+    const lines = text.split('\n')
+    let lineIndex = -1
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].toLowerCase().includes(keyword.toLowerCase())) {
+        lineIndex = i
+        break
+      }
+    }
+
+    if (lineIndex >= 0) {
+      const lineHeight = 20
+      const scrollTop = lineIndex * lineHeight - 100
+      rawContentRef.value.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth'
+      })
+      ElMessage.info(`已定位到: ${keyword}`)
+    } else {
+      ElMessage.warning(`未找到: ${keyword}`)
+    }
+  })
+}
+
+watch(searchKeyword, () => {
+  if (searchKeyword.value.trim() && activeTab.value !== 'raw') {
+    activeTab.value = 'raw'
+  }
+})
 </script>
 
 <style scoped>
@@ -856,9 +971,133 @@ ${(result.nameServers || []).map(ns => '  - ' + ns).join('\n') || '  -'}
   padding: 16px 0;
 }
 
-.raw-textarea {
+.raw-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.quick-jump {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.jump-label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.jump-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.jump-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.3);
+}
+
+.search-box {
+  flex-shrink: 0;
+}
+
+.raw-content-wrapper {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fafafa;
+}
+
+.raw-content {
+  max-height: 500px;
+  overflow-y: auto;
+  padding: 16px;
+  margin: 0;
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 12px;
+  line-height: 1.8;
+  color: #303133;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.raw-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.raw-content::-webkit-scrollbar-thumb {
+  background: #c0c4cc;
+  border-radius: 4px;
+}
+
+.raw-content::-webkit-scrollbar-track {
+  background: #f5f7fa;
+}
+
+.highlight-creation {
+  display: block;
+  background: linear-gradient(90deg, #e1f3d8 0%, transparent 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 0;
+  border-left: 3px solid #67c23a;
+}
+
+.highlight-expiration {
+  display: block;
+  background: linear-gradient(90deg, #fef0f0 0%, transparent 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 0;
+  border-left: 3px solid #f56c6c;
+}
+
+.highlight-registrar {
+  display: block;
+  background: linear-gradient(90deg, #ecf5ff 0%, transparent 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 0;
+  border-left: 3px solid #409eff;
+}
+
+.highlight-status {
+  display: block;
+  background: linear-gradient(90deg, #fdf6ec 0%, transparent 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 0;
+  border-left: 3px solid #e6a23c;
+}
+
+.highlight-nameserver {
+  display: block;
+  background: linear-gradient(90deg, #f0f9eb 0%, transparent 100%);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 2px 0;
+  border-left: 3px solid #85ce61;
+}
+
+.search-highlight {
+  background: #fff7b3;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 600;
+  color: #c45600;
 }
 
 :deep(.el-tabs__content) {
