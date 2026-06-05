@@ -115,6 +115,11 @@ const routes: RouteRecordRaw[] = [
         path: '/domain-whois',
         name: 'DomainWhois',
         component: () => import('@/views/DomainWhois.vue')
+      },
+      {
+        path: '/shield-badge',
+        name: 'ShieldBadgeGenerator',
+        component: () => import('@/views/ShieldBadgeGenerator.vue')
       }
     ]
   }
