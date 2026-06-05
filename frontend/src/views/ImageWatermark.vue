@@ -186,22 +186,69 @@
                   </div>
                 </el-form-item>
 
-                <el-form-item label="预设模板">
-                  <div class="template-list">
-                    <el-tag
-                      v-for="tpl in templates"
-                      :key="tpl"
-                      class="template-tag"
-                      @click="applyTemplate(tpl)"
-                      closable
-                      @close="deleteTemplate(tpl)"
-                    >
-                      {{ tpl }}
-                    </el-tag>
-                    <el-button size="small" text @click="saveTemplate">
-                      <el-icon><Plus /></el-icon>保存当前
-                    </el-button>
-                  </div>
+                <el-form-item label="场景模板">
+                  <el-tabs v-model="activeTemplateTab" size="small" class="template-tabs">
+                    <el-tab-pane label="🏢 平台认证" name="platform">
+                      <div class="template-grid">
+                        <div
+                          v-for="tpl in platformTemplates"
+                          :key="tpl.text"
+                          class="template-card"
+                          @click="applyTemplate(tpl.text)"
+                        >
+                          <div class="template-text">{{ tpl.text }}</div>
+                          <div class="template-desc">{{ tpl.desc }}</div>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="📅 日期限定" name="date">
+                      <div class="template-grid">
+                        <div
+                          v-for="tpl in dateTemplates"
+                          :key="tpl.text"
+                          class="template-card"
+                          @click="applyTemplate(tpl.text)"
+                        >
+                          <div class="template-text">{{ tpl.text }}</div>
+                          <div class="template-desc">{{ tpl.desc }}</div>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="🎯 专用声明" name="special">
+                      <div class="template-grid">
+                        <div
+                          v-for="tpl in specialTemplates"
+                          :key="tpl.text"
+                          class="template-card"
+                          @click="applyTemplate(tpl.text)"
+                        >
+                          <div class="template-text">{{ tpl.text }}</div>
+                          <div class="template-desc">{{ tpl.desc }}</div>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <el-tab-pane label="💾 我的收藏" name="custom">
+                      <div class="custom-template-header">
+                        <span class="custom-tip">点击模板可直接应用</span>
+                        <el-button size="small" text @click="saveTemplate">
+                          <el-icon><Plus /></el-icon>保存当前文字
+                        </el-button>
+                      </div>
+                      <div class="template-list" v-if="customTemplates.length > 0">
+                        <el-tag
+                          v-for="tpl in customTemplates"
+                          :key="tpl"
+                          class="template-tag"
+                          @click="applyTemplate(tpl)"
+                          closable
+                          @close="deleteTemplate(tpl)"
+                        >
+                          {{ tpl }}
+                        </el-tag>
+                      </div>
+                      <el-empty v-else description="暂无收藏模板" :image-size="80" />
+                    </el-tab-pane>
+                  </el-tabs>
                 </el-form-item>
 
                 <el-divider />
@@ -351,11 +398,43 @@ const tileGapY = ref(150)
 const isDragging = ref(false)
 const dragOffset = ref({ x: 0, y: 0 })
 
-const templates = ref<string[]>([
+const activeTemplateTab = ref('platform')
+
+interface TemplateItem {
+  text: string
+  desc: string
+}
+
+const platformTemplates: TemplateItem[] = [
+  { text: '仅用于支付宝实名认证 他用无效', desc: '格式：平台 + 用途 + 声明' },
+  { text: '微信绑定账号专用 再次复印无效', desc: '格式：平台 + 专用 + 声明' },
+  { text: 'QQ账号申诉使用 其他用途无效', desc: '格式：平台 + 用途 + 声明' },
+  { text: '淘宝开店认证使用 他用无效', desc: '格式：平台 + 用途 + 声明' },
+  { text: '抖音账号实名认证 专用', desc: '格式：平台 + 用途 + 专用' },
+  { text: '京东金融开户使用 再次复印无效', desc: '格式：平台 + 用途 + 声明' }
+]
+
+const dateTemplates: TemplateItem[] = [
+  { text: '仅限2024年6月办理入职使用', desc: '格式：日期 + 用途' },
+  { text: '2024.06.05 办理居住证专用', desc: '格式：日期 + 用途 + 专用' },
+  { text: '有效期至2024.12.31 逾期无效', desc: '格式：有效期 + 声明' },
+  { text: '2024年第二季度 社保开户使用', desc: '格式：时间段 + 用途' },
+  { text: '仅用于2024年6月贷款审批', desc: '格式：日期 + 具体用途' },
+  { text: '2024年6月5日 仅限本次使用', desc: '格式：日期 + 仅限本次' }
+]
+
+const specialTemplates: TemplateItem[] = [
+  { text: 'XX公司入职专用 再次复印无效', desc: '格式：公司 + 专用 + 声明' },
+  { text: '办理XX银行信用卡 他用无效', desc: '格式：机构 + 业务 + 声明' },
+  { text: '房屋租赁备案使用 其他用途无效', desc: '格式：具体业务 + 声明' },
+  { text: '车辆过户专用 仅供本次使用', desc: '格式：业务 + 专用 + 限定' },
+  { text: '公积金提取专用 再次复印无效', desc: '格式：业务 + 专用 + 声明' },
+  { text: '专利申请代理使用 他用无效', desc: '格式：业务 + 用途 + 声明' }
+]
+
+const customTemplates = ref<string[]>([
   '仅用于XX业务办理 他用无效',
-  '仅限实名认证使用',
-  '再次复印无效',
-  '仅供入职使用'
+  '再次复印无效'
 ])
 
 const scenes = [
@@ -439,18 +518,19 @@ const saveTemplate = () => {
     ElMessage.warning('请先输入水印文字')
     return
   }
-  if (templates.value.includes(watermarkText.value)) {
+  if (customTemplates.value.includes(watermarkText.value)) {
     ElMessage.warning('该模板已存在')
     return
   }
-  templates.value.push(watermarkText.value)
-  ElMessage.success('模板已保存')
+  customTemplates.value.push(watermarkText.value)
+  activeTemplateTab.value = 'custom'
+  ElMessage.success('模板已保存到"我的收藏"')
 }
 
 const deleteTemplate = (tpl: string) => {
-  const index = templates.value.indexOf(tpl)
+  const index = customTemplates.value.indexOf(tpl)
   if (index > -1) {
-    templates.value.splice(index, 1)
+    customTemplates.value.splice(index, 1)
   }
 }
 
@@ -1096,6 +1176,78 @@ onMounted(() => {
 .principle-text strong {
   color: #303133;
   font-weight: 600;
+}
+
+.template-tabs :deep(.el-tabs__header) {
+  margin-bottom: 12px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.template-card {
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-card:hover {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+  border-color: #409eff;
+  transform: translateX(2px);
+}
+
+.template-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 2px;
+  line-height: 1.4;
+}
+
+.template-desc {
+  font-size: 11px;
+  color: #909399;
+}
+
+.custom-template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.custom-tip {
+  font-size: 12px;
+  color: #909399;
+}
+
+.template-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.template-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.template-tag:hover {
+  transform: translateY(-1px);
+}
+
+.template-tabs :deep(.el-empty) {
+  padding: 20px 0;
 }
 
 @media (max-width: 992px) {
