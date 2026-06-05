@@ -110,6 +110,11 @@ const routes: RouteRecordRaw[] = [
         path: '/character-splitter',
         name: 'CharacterSplitter',
         component: () => import('@/views/ChineseCharacterSplitter.vue')
+      },
+      {
+        path: '/domain-whois',
+        name: 'DomainWhois',
+        component: () => import('@/views/DomainWhois.vue')
       }
     ]
   }
