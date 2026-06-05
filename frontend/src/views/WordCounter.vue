@@ -194,6 +194,43 @@
 
       <el-divider />
 
+      <div class="quick-guide">
+        <div class="guide-header">
+          <el-icon :size="16" color="#165DFF"><MagicStick /></el-icon>
+          <span>快速选择指南</span>
+          <span class="guide-subtitle">根据您的身份，重点关注以下统计维度</span>
+        </div>
+        <el-row :gutter="12" class="guide-grid">
+          <el-col :span="6" v-for="role in roleGuides" :key="role.name">
+            <div 
+              class="guide-card" 
+              :class="{ active: activeRole === role.name }"
+              @click="setActiveRole(role.name)"
+            >
+              <div class="guide-icon" :style="{ color: role.color, background: role.color + '15' }">
+                <component :is="getRoleIcon(role.icon)" />
+              </div>
+              <div class="guide-info">
+                <div class="guide-name">{{ role.name }}</div>
+                <div class="guide-focus">重点：{{ role.focus }}</div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+        <el-alert v-if="activeRole" type="info" :closable="false" class="role-alert">
+          <template #title>
+            <div class="alert-content">
+              <strong>{{ activeRole }} 推荐关注：</strong>
+              <span class="alert-metrics">
+                <el-tag v-for="metric in getRoleMetrics(activeRole)" :key="metric" size="small" type="success">
+                  {{ metric }}
+                </el-tag>
+              </span>
+            </div>
+          </template>
+        </el-alert>
+      </div>
+
       <div class="stats-section">
         <div class="stats-header">
           <el-icon :size="18" color="#165DFF"><DataLine /></el-icon>
@@ -204,11 +241,16 @@
 
         <el-row :gutter="16" class="stats-grid">
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>所有字符（含空格、标点、换行）
-                  <br /><strong>适用：</strong>编程、数据传输
+                  <strong>📏 统计规则</strong>
+                  <br />统计文本中<strong>所有字符</strong>的数量
+                  <br />包括：中文、英文、数字、空格、标点、换行符
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 编程开发：验证字符串长度
+                  <br />• 数据传输：估算传输大小
+                  <br />• 文本编码：计算存储需求
                 </div>
               </template>
               <div class="stat-card primary">
@@ -221,16 +263,23 @@
                     总字符数
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">含空格和标点</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>仅 Unicode 汉字（\u4e00-\u9fa5）
-                  <br /><strong>适用：</strong>中文写作、稿件审核
+                  <strong>📏 统计规则</strong>
+                  <br />仅统计<strong>Unicode 汉字</strong>（\u4e00-\u9fa5）
+                  <br />包括简体和繁体中文
+                  <br /><strong>不含</strong>标点、数字、英文
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 中文写作：作文/稿件字数
+                  <br />• 稿件审核：纯汉字统计
+                  <br />• 论文查重：字符数计算
                 </div>
               </template>
               <div class="stat-card success">
@@ -243,16 +292,23 @@
                     中文字符
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">纯汉字</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>a-z, A-Z 英文字母
-                  <br /><strong>适用：</strong>英文写作、翻译统计
+                  <strong>📏 统计规则</strong>
+                  <br />统计大小写英文字母 a-z, A-Z
+                  <br />每个字母单独计数
+                  <br />示例："Hello" 计为 <strong>5 个字符</strong>
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 英文写作：字母数统计
+                  <br />• 外语学习：词汇量统计
+                  <br />• 翻译统计：字符数对比
                 </div>
               </template>
               <div class="stat-card warning">
@@ -265,16 +321,23 @@
                     英文字符
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">按字母</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>0-9 阿拉伯数字
-                  <br /><strong>适用：</strong>数据统计、财务报表
+                  <strong>📏 统计规则</strong>
+                  <br />统计 0-9 阿拉伯数字
+                  <br />每个数字单独计数
+                  <br />示例："123" 计为 <strong>3 个字符</strong>
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 数据统计：数字出现频率
+                  <br />• 财务报表：金额数字统计
+                  <br />• 编号统计：单号/编号长度
                 </div>
               </template>
               <div class="stat-card danger">
@@ -287,6 +350,7 @@
                     数字字符
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">按数字</div>
                 </div>
               </div>
             </el-tooltip>
@@ -295,11 +359,17 @@
 
         <el-row :gutter="16" class="stats-grid">
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>中文字数 + 英文单词数
-                  <br /><strong>适用：</strong>稿费计算、作文评分
+                  <strong>📏 统计规则</strong>
+                  <br />中文按「字」计算，英文按「单词」计算
+                  <br />总字数 = 中文字符数 + 英文单词数
+                  <br /><strong>不含</strong>标点和空格
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 稿费计算：多数媒体平台标准
+                  <br />• 作文评分：语文作文字数
+                  <br />• 内容审核：文章长度评估
                 </div>
               </template>
               <div class="stat-card info">
@@ -312,16 +382,22 @@
                     总字数
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">中文按字/英文按词</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>去除所有空白字符
-                  <br /><strong>适用：</strong>严格字数限制、投稿要求
+                  <strong>📏 统计规则</strong>
+                  <br />去除所有空格、制表符、换行符
+                  <br /><strong>仍包含</strong>标点符号
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 严格字数限制：投稿/论文要求
+                  <br />• 表单验证：字段长度校验
+                  <br />• 学术论文：期刊投稿标准
                 </div>
               </template>
               <div class="stat-card info">
@@ -334,16 +410,22 @@
                     不含空格
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">含标点</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>按换行符 \n 分割计数
-                  <br /><strong>适用：</strong>文档排版、代码统计
+                  <strong>📏 统计规则</strong>
+                  <br />按换行符 \n 分割计数
+                  <br />空行也计入行数
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 文档排版：页面布局规划
+                  <br />• 代码统计：代码行数统计
+                  <br />• 内容编辑：段落结构
                 </div>
               </template>
               <div class="stat-card info">
@@ -356,16 +438,22 @@
                     行数
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">按换行符</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="6">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>按空行分割，非空内容为一段
-                  <br /><strong>适用：</strong>文章结构分析
+                  <strong>📏 统计规则</strong>
+                  <br />按空行分割，非空内容为一段
+                  <br />连续内容视为一个段落
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 文章结构：段落分析
+                  <br />• 阅读体验：段落长度评估
+                  <br />• 排版设计：段落间距
                 </div>
               </template>
               <div class="stat-card info">
@@ -378,6 +466,7 @@
                     段落数
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">按空行</div>
                 </div>
               </div>
             </el-tooltip>
@@ -386,12 +475,19 @@
 
         <el-row :gutter="16" class="stats-grid">
           <el-col :span="12">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>UTF-8 编码字节数
-                  <br /><strong>说明：</strong>中文占 3 字节，英文/数字占 1 字节
-                  <br /><strong>适用：</strong>Web 开发、API 接口、数据库存储
+                  <strong>📏 统计规则</strong>
+                  <br />按 UTF-8 编码计算字节数
+                  <br />• 中文：<strong>3 字节</strong>
+                  <br />• 英文/数字/半角标点：<strong>1 字节</strong>
+                  <br />• 全角标点：<strong>3 字节</strong>
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• Web 开发：前端/后端接口
+                  <br />• API 设计：请求体大小限制
+                  <br />• 数据库：字段长度估算
+                  <br />• 国际化：多语言系统
                 </div>
               </template>
               <div class="stat-card primary">
@@ -404,17 +500,25 @@
                     UTF-8 字节
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">中文3字节</div>
                 </div>
               </div>
             </el-tooltip>
           </el-col>
           <el-col :span="12">
-            <el-tooltip placement="top" :show-after="300">
+            <el-tooltip placement="top" :show-after="200">
               <template #content>
                 <div class="tooltip-content">
-                  <strong>统计规则：</strong>GBK/GB2312 编码字节数
-                  <br /><strong>说明：</strong>中文占 2 字节，英文/数字占 1 字节
-                  <br /><strong>适用：</strong>中文系统、Legacy 系统、Windows 编码
+                  <strong>📏 统计规则</strong>
+                  <br />按 GBK/GB2312 编码计算字节数
+                  <br />• 中文：<strong>2 字节</strong>
+                  <br />• 英文/数字/半角标点：<strong>1 字节</strong>
+                  <br />• 全角标点：<strong>2 字节</strong>
+                  <br /><br /><strong>💡 何时使用</strong>
+                  <br />• 中文系统：国内 Legacy 应用
+                  <br />• Windows 编码：非 Unicode 程序
+                  <br />• 中文数据库：旧版 MySQL/Gbase
+                  <br />• 存储空间：比 UTF-8 节省约 33%
                 </div>
               </template>
               <div class="stat-card success">
@@ -427,6 +531,7 @@
                     GBK 字节
                     <el-icon class="label-help"><QuestionFilled /></el-icon>
                   </div>
+                  <div class="stat-tag">中文2字节</div>
                 </div>
               </div>
             </el-tooltip>
@@ -606,46 +711,62 @@
           <el-tag size="small" type="success">直接使用，无需二次计算</el-tag>
         </div>
         <div class="scene-content">
-          <div 
-            class="scene-item" 
+          <el-tooltip 
             v-for="scene in stats.sceneStats" 
             :key="scene.name"
+            placement="left" 
+            :show-after="200"
           >
-            <div class="scene-left">
-              <div class="scene-icon" :style="{ background: scene.color + '20', color: scene.color }">
-                <component :is="getSceneIcon(scene.icon)" />
-              </div>
-              <div class="scene-info">
-                <div class="scene-name">{{ scene.name }}</div>
-                <div class="scene-desc">{{ scene.description }}</div>
-              </div>
-            </div>
-            <div class="scene-right">
-              <div class="scene-count" :style="{ color: scene.color }">
-                {{ scene.count }}
-                <span class="scene-unit">{{ scene.unit }}</span>
-              </div>
-              <el-progress 
-                v-if="scene.limit > 0"
-                :percentage="Math.min(100, Math.round((scene.count / scene.limit) * 100))"
-                :stroke-width="6"
-                :color="scene.count > scene.limit ? '#f56c6c' : scene.color"
-                class="scene-progress"
-              />
-              <div v-if="scene.limit > 0" class="scene-limit">
-                限制 {{ scene.limit }}{{ scene.unit }}
-                <span 
-                  class="scene-status"
-                  :class="scene.count > scene.limit ? 'over' : 'ok'"
-                >
-                  {{ scene.count > scene.limit ? '已超出' : '未超出' }}
+            <template #content>
+              <div class="tooltip-content">
+                <strong>📊 统计口径</strong>
+                <br />{{ scene.includes }}
+                <br /><br /><strong>🎯 使用建议</strong>
+                <br />{{ scene.description }}
+                <br v-if="scene.limit > 0" />
+                <span v-if="scene.limit > 0">
+                  <br /><strong>⚠️ 限制说明</strong>
+                  <br />最多 {{ scene.limit }}{{ scene.unit }}
                 </span>
               </div>
-              <div v-else class="scene-includes">
-                <el-tag size="small" type="info">{{ scene.includes }}</el-tag>
+            </template>
+            <div class="scene-item">
+              <div class="scene-left">
+                <div class="scene-icon" :style="{ background: scene.color + '20', color: scene.color }">
+                  <component :is="getSceneIcon(scene.icon)" />
+                </div>
+                <div class="scene-info">
+                  <div class="scene-name">{{ scene.name }}</div>
+                  <div class="scene-desc">{{ scene.description }}</div>
+                  <div class="scene-includes-inline">
+                    <el-tag size="small" type="info">{{ scene.includes }}</el-tag>
+                  </div>
+                </div>
+              </div>
+              <div class="scene-right">
+                <div class="scene-count" :style="{ color: scene.color }">
+                  {{ scene.count }}
+                  <span class="scene-unit">{{ scene.unit }}</span>
+                </div>
+                <el-progress 
+                  v-if="scene.limit > 0"
+                  :percentage="Math.min(100, Math.round((scene.count / scene.limit) * 100))"
+                  :stroke-width="6"
+                  :color="scene.count > scene.limit ? '#f56c6c' : scene.color"
+                  class="scene-progress"
+                />
+                <div v-if="scene.limit > 0" class="scene-limit">
+                  限制 {{ scene.limit }}{{ scene.unit }}
+                  <span 
+                    class="scene-status"
+                    :class="scene.count > scene.limit ? 'over' : 'ok'"
+                  >
+                    {{ scene.count > scene.limit ? '已超出' : '未超出' }}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          </el-tooltip>
         </div>
         <el-alert type="info" :closable="false" class="scene-alert">
           <template #title>
@@ -714,7 +835,8 @@ import {
   ChatDotRound,
   Files,
   Folder,
-  TrendCharts
+  TrendCharts,
+  User
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -796,6 +918,46 @@ const calculateGBKBytes = (str: string): number => {
 const text = ref('')
 const history = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
+const activeRole = ref('')
+
+interface RoleGuide {
+  name: string
+  icon: string
+  focus: string
+  color: string
+  metrics: string[]
+}
+
+const roleGuides: RoleGuide[] = [
+  {
+    name: '公众号编辑',
+    icon: 'ChatDotRound',
+    focus: '总字数/标点',
+    color: '#07c160',
+    metrics: ['总字数', '中文字符', '标点符号']
+  },
+  {
+    name: '学术写作者',
+    icon: 'Document',
+    focus: '字符数/不含空格',
+    color: '#409eff',
+    metrics: ['不含空格', '总字符数', '平均句长']
+  },
+  {
+    name: '文案策划',
+    icon: 'Edit',
+    focus: '总字数/阅读时间',
+    color: '#e6a23c',
+    metrics: ['总字数', '阅读时间', '段落数']
+  },
+  {
+    name: '开发工程师',
+    icon: 'Files',
+    focus: '编码字节/字符',
+    color: '#722ed1',
+    metrics: ['UTF-8 字节', 'GBK 字节', '总字符数']
+  }
+]
 
 const hasContent = computed(() => text.value.length > 0)
 
@@ -1054,7 +1216,22 @@ const iconMap: Record<string, any> = {
   Document,
   Tickets,
   Edit,
-  ChatLineRound
+  ChatLineRound,
+  Files,
+  User
+}
+
+const setActiveRole = (roleName: string) => {
+  activeRole.value = activeRole.value === roleName ? '' : roleName
+}
+
+const getRoleIcon = (iconName: string) => {
+  return iconMap[iconName] || User
+}
+
+const getRoleMetrics = (roleName: string): string[] => {
+  const role = roleGuides.find(r => r.name === roleName)
+  return role?.metrics || []
 }
 
 const getSceneIcon = (iconName: string) => {
@@ -1135,6 +1312,103 @@ onMounted(() => {
   color: #606266;
   font-weight: 500;
   white-space: nowrap;
+}
+
+.quick-guide {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border-radius: 12px;
+  border: 1px solid #bae7ff;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.guide-subtitle {
+  font-size: 13px;
+  font-weight: normal;
+  color: #909399;
+  margin-left: auto;
+}
+
+.guide-grid {
+  margin-bottom: 16px;
+}
+
+.guide-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.guide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.15);
+}
+
+.guide-card.active {
+  border-color: #165DFF;
+  background: linear-gradient(135deg, #e6f4ff 0%, #f0f7ff 100%);
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.2);
+}
+
+.guide-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.guide-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.guide-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.guide-focus {
+  font-size: 12px;
+  color: #909399;
+}
+
+.role-alert {
+  margin-bottom: 0;
+}
+
+.alert-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alert-metrics {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .input-section {
@@ -1284,6 +1558,17 @@ onMounted(() => {
   font-size: 13px;
   color: #606266;
   margin-top: 4px;
+}
+
+.stat-tag {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: #909399;
+  background: #f5f7fa;
+  border-radius: 4px;
+  white-space: nowrap;
 }
 
 .detail-stats-card {
@@ -1790,6 +2075,10 @@ onMounted(() => {
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.scene-includes-inline {
+  margin-top: 4px;
 }
 
 .scene-alert {
