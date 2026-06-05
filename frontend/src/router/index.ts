@@ -80,6 +80,11 @@ const routes: RouteRecordRaw[] = [
         path: '/pdf-adjuster',
         name: 'PdfAdjuster',
         component: () => import('@/views/PdfAdjuster.vue')
+      },
+      {
+        path: '/holiday-avatar',
+        name: 'HolidayAvatarMaker',
+        component: () => import('@/views/HolidayAvatarMaker.vue')
       }
     ]
   }
