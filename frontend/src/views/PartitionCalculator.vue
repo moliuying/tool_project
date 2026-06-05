@@ -230,6 +230,54 @@
         </template>
       </el-alert>
 
+      <div class="quick-guide-card">
+        <div class="guide-header">
+          <el-icon :size="18" color="#165DFF"><Promotion /></el-icon>
+          <h4>快速使用指南 - 如何在分区工具中填入数值</h4>
+        </div>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <div class="guide-step">
+              <div class="step-icon windows">
+                <el-icon><Monitor /></el-icon>
+              </div>
+              <h5>Windows 用户</h5>
+              <ul>
+                <li><strong>磁盘管理：</strong>简单卷大小填 <el-tag size="small" type="primary">{{ formatNumber(Math.floor(result.actualSize * 1024)) }} MB</el-tag></li>
+                <li><strong>Diskpart：</strong>size参数填 <el-tag size="small" type="primary">{{ formatNumber(Math.floor(result.actualSize * 1024)) }}</el-tag></li>
+                <li>复制下方"Diskpart命令"直接执行</li>
+              </ul>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="guide-step">
+              <div class="step-icon linux">
+                <el-icon><Ubuntu /></el-icon>
+              </div>
+              <h5>Linux 用户 (fdisk)</h5>
+              <ul>
+                <li><strong>起始扇区：</strong>填 <el-tag size="small" type="success">{{ formatNumber(result.startSector) }}</el-tag></li>
+                <li><strong>结束扇区：</strong>填 <el-tag size="small" type="success">+{{ formatNumber(result.totalSectors) }}</el-tag></li>
+                <li>或使用 +{{ formatNumber(Math.floor(result.actualSize * 1024)) }}M 指定大小</li>
+              </ul>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="guide-step">
+              <div class="step-icon parted">
+                <el-icon><Files /></el-icon>
+              </div>
+              <h5>Linux 用户 (parted)</h5>
+              <ul>
+                <li><strong>mkpart命令：</strong>结束位置填 <el-tag size="small" type="warning">{{ result.actualSize.toFixed(2) }}GB</el-tag></li>
+                <li>单位建议使用 GB 或 MiB</li>
+                <li>复制下方"parted命令"直接执行</li>
+              </ul>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
       <div class="result-section-title">
         <h4>
           <el-icon :size="16" color="#165DFF"><Files /></el-icon>
@@ -238,42 +286,50 @@
         <el-row :gutter="16" class="result-grid">
           <el-col :xs="12" :sm="8" :md="6">
             <div class="result-item">
+              <div class="result-label">MB值 <el-tag size="small" type="warning">最常用</el-tag></div>
+              <div class="result-value highlight-primary">{{ formatNumber(Math.floor(result.actualSize * 1024) }}</div>
+              <div class="result-unit">单位：兆字节 (MB)</div>
+              <div class="result-desc">Windows磁盘管理/Diskpart的size参数</div>
+              <el-button size="small" type="primary" link @click="copyValue(Math.floor(result.actualSize * 1024), 'MB值')">
+                <el-icon><CopyDocument /></el-icon>
+                复制
+              </el-button>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
               <div class="result-label">总扇区数</div>
               <div class="result-value">{{ formatNumber(result.totalSectors) }}</div>
               <div class="result-unit">单位：扇区 (Sectors)</div>
-              <el-tooltip content="分区占用的总扇区数量，用于分区工具中指定分区大小" placement="top">
-                <el-button size="small" type="primary" link @click="copyValue(result.totalSectors, '总扇区数')">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-              </el-tooltip>
+              <div class="result-desc">fdisk/sfdisk等Linux分区工具使用</div>
+              <el-button size="small" type="primary" link @click="copyValue(result.totalSectors, '总扇区数')">
+                <el-icon><CopyDocument /></el-icon>
+                复制
+              </el-button>
             </div>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
             <div class="result-item">
-              <div class="result-label">柱面数</div>
-              <div class="result-value">{{ formatNumber(result.cylinders) }}</div>
-              <div class="result-unit">单位：柱面 (Cylinders)</div>
-              <el-tooltip content="分区占用的柱面数量，CHS模式下使用" placement="top">
-                <el-button size="small" type="primary" link @click="copyValue(result.cylinders, '柱面数')">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-              </el-tooltip>
+              <div class="result-label">起始扇区</div>
+              <div class="result-value">{{ formatNumber(result.startSector) }}</div>
+              <div class="result-unit">单位：逻辑块地址 (LBA)</div>
+              <div class="result-desc">fdisk/parted手动分区时填写</div>
+              <el-button size="small" type="primary" link @click="copyValue(result.startSector, '起始扇区')">
+                <el-icon><CopyDocument /></el-icon>
+                复制
+              </el-button>
             </div>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
             <div class="result-item">
-              <div class="result-label">每柱面扇区</div>
-              <div class="result-value">{{ formatNumber(result.sectorsPerCylinder) }}</div>
-              <div class="result-unit">单位：扇区/柱面 (Sectors/Cyl)</div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <div class="result-item">
-              <div class="result-label">总字节数</div>
-              <div class="result-value">{{ formatBytes(result.totalBytes) }}</div>
-              <div class="result-unit">单位：字节 (Bytes)</div>
+              <div class="result-label">GB实际值</div>
+              <div class="result-value">{{ result.actualSize.toFixed(3) }}</div>
+              <div class="result-unit">单位：吉字节 (GB)</div>
+              <div class="result-desc">parted/gparted图形化工具使用</div>
+              <el-button size="small" type="primary" link @click="copyValue(result.actualSize.toFixed(3), 'GB实际值')">
+                <el-icon><CopyDocument /></el-icon>
+                复制
+              </el-button>
             </div>
           </el-col>
         </el-col>
@@ -284,40 +340,23 @@
       <div class="result-section-title">
         <h4>
           <el-icon :size="16" color="#165DFF"><TrendCharts /></el-icon>
-          容量换算表
+          更多参数参考
         </h4>
         <el-row :gutter="16" class="result-grid">
           <el-col :xs="12" :sm="8" :md="6">
             <div class="result-item">
-              <div class="result-label">MB值</div>
-              <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024) }}</div>
-              <div class="result-unit">单位：兆字节 (MB)</div>
-              <el-tooltip content="可在Diskpart等工具中使用size参数" placement="top">
-                <el-button size="small" type="primary" link @click="copyValue(Math.floor(result.actualSize * 1024), 'MB值')">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-              </el-tooltip>
+              <div class="result-label">柱面数</div>
+              <div class="result-value">{{ formatNumber(result.cylinders) }}</div>
+              <div class="result-unit">单位：柱面 (Cylinders)</div>
+              <div class="result-desc">传统CHS模式下使用</div>
             </div>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
             <div class="result-item">
-              <div class="result-label">KB值</div>
-              <div class="result-value">{{ formatNumber(Math.floor(result.actualSize * 1024 * 1024) }}</div>
-              <div class="result-unit">单位：千字节 (KB)</div>
-            </div>
-          </el-col>
-          <el-col :xs="12" :sm="8" :md="6">
-            <div class="result-item">
-              <div class="result-label">起始扇区</div>
-              <div class="result-value">{{ formatNumber(result.startSector) }}</div>
-              <div class="result-unit">单位：逻辑块地址 (LBA)</div>
-              <el-tooltip content="分区的起始扇区位置，LBA寻址方式" placement="top">
-                <el-button size="small" type="primary" link @click="copyValue(result.startSector, '起始扇区')">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-              </el-tooltip>
+              <div class="result-label">每柱面扇区</div>
+              <div class="result-value">{{ formatNumber(result.sectorsPerCylinder) }}</div>
+              <div class="result-unit">单位：扇区/柱面</div>
+              <div class="result-desc">对齐粒度参考</div>
             </div>
           </el-col>
           <el-col :xs="12" :sm="8" :md="6">
@@ -325,12 +364,15 @@
               <div class="result-label">结束扇区</div>
               <div class="result-value">{{ formatNumber(result.endSector) }}</div>
               <div class="result-unit">单位：逻辑块地址 (LBA)</div>
-              <el-tooltip content="分区的结束扇区位置" placement="top">
-                <el-button size="small" type="primary" link @click="copyValue(result.endSector, '结束扇区')">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-              </el-tooltip>
+              <div class="result-desc">精确分区边界使用</div>
+            </div>
+          </el-col>
+          <el-col :xs="12" :sm="8" :md="6">
+            <div class="result-item">
+              <div class="result-label">总字节数</div>
+              <div class="result-value">{{ formatBytes(result.totalBytes) }}</div>
+              <div class="result-unit">单位：字节 (Bytes)</div>
+              <div class="result-desc">技术参考使用</div>
             </div>
           </el-col>
         </el-row>
@@ -525,7 +567,10 @@ import {
   Guide,
   Folder,
   FolderOpened,
-  Folders
+  Folders,
+  Promotion,
+  Monitor,
+  Ubuntu
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -1061,6 +1106,103 @@ onMounted(() => {
 .filesystem-card.fat32 {
   background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
   border: 1px solid #f5dab1;
+}
+
+.quick-guide-card {
+  padding: 20px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e8f3ff 100%);
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #b3d8ff;
+}
+
+.guide-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.guide-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.guide-step {
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  height: 100%;
+  border: 1px solid #e4e7ed;
+  transition: all 0.3s;
+}
+
+.guide-step:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+}
+
+.step-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  font-size: 20px;
+  color: #fff;
+}
+
+.step-icon.windows {
+  background: linear-gradient(135deg, #0078d4 0%, #00bcf2 100%);
+}
+
+.step-icon.linux {
+  background: linear-gradient(135deg, #dd4814 0%, #e95420 100%);
+}
+
+.step-icon.parted {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.guide-step h5 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #303133;
+  font-weight: 600;
+}
+
+.guide-step ul {
+  margin: 0;
+  padding-left: 16px;
+}
+
+.guide-step li {
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.guide-step li:last-child {
+  margin-bottom: 0;
+}
+
+.highlight-primary {
+  color: #165DFF !important;
+}
+
+.result-desc {
+  font-size: 11px;
+  color: #909399;
+  margin-bottom: 8px;
+  padding: 2px 6px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  display: inline-block;
 }
 
 .filesystem-card.exfat {
