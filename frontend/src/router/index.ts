@@ -90,6 +90,11 @@ const routes: RouteRecordRaw[] = [
         path: '/color-converter',
         name: 'ColorConverter',
         component: () => import('@/views/ColorConverter.vue')
+      },
+      {
+        path: '/image-watermark',
+        name: 'ImageWatermark',
+        component: () => import('@/views/ImageWatermark.vue')
       }
     ]
   }
