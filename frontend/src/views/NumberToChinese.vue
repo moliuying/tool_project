@@ -36,7 +36,7 @@
           <el-col :span="12">
             <div class="rule-item">
               <div class="rule-label">金额单位</div>
-              <div class="rule-desc">元、角、分；无角分时加"整"字</div>
+              <div class="rule-desc">必含"元"字；无角分时加"整"字</div>
             </div>
           </el-col>
           <el-col :span="12">
@@ -46,6 +46,116 @@
             </div>
           </el-col>
         </el-row>
+      </div>
+    </el-card>
+
+    <el-card class="preview-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#67c23a">
+            <View />
+          </el-icon>
+          <span>结果格式预览</span>
+          <el-tag size="small" type="success" class="header-tag">转换前即可确认格式</el-tag>
+        </div>
+      </template>
+
+      <div class="format-cases">
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small" type="success">整数金额</el-tag>
+            <span class="case-subtitle">无小数位 → 加"整"字</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：1,000.00</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">壹仟元整</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>无角分必须写"整"字，"元"字不可省略</span>
+          </div>
+        </div>
+
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small" type="primary">有角无分</el-tag>
+            <span class="case-subtitle">仅角位有数 → 可以不加"整"</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：1,001.50</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">壹仟零壹元伍角</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>元后有角无分，末尾不写"整"字，中间连续零只写一个"零"</span>
+          </div>
+        </div>
+
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small" type="warning">角分俱全</el-tag>
+            <span class="case-subtitle">角分都有 → 不加"整"字</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：123.45</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">壹佰贰拾叁元肆角伍分</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>有角有分，末尾不写"整"字</span>
+          </div>
+        </div>
+
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small" type="info">仅分有值</el-tag>
+            <span class="case-subtitle">元角为零 → "零元X分"格式</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：0.05</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">零元伍分</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>金额小于1元时，"零元"必须保留</span>
+          </div>
+        </div>
+
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small" type="danger">负数金额</el-tag>
+            <span class="case-subtitle">小于零 → 前面加"负"字</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：-123.45</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">负壹佰贰拾叁元肆角伍分</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>负数金额在最前面加"负"字，后面格式不变</span>
+          </div>
+        </div>
+
+        <div class="case-item">
+          <div class="case-header">
+            <el-tag size="small">大额金额</el-tag>
+            <span class="case-subtitle">万/亿级 → 按4位分组</span>
+          </div>
+          <div class="case-example">
+            <span class="case-input">输入：12,345.67</span>
+            <el-icon class="case-arrow"><ArrowRight /></el-icon>
+            <span class="case-output">壹万贰仟叁佰肆拾伍元陆角柒分</span>
+          </div>
+          <div class="case-note">
+            <el-icon :size="12" color="#67c23a"><SuccessFilled /></el-icon>
+            <span>支持最大亿亿级（16位整数），完全符合财务记账规范</span>
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -81,10 +191,30 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="实时预览">
+          <el-switch v-model="enableLivePreview" />
+          <span class="form-hint">
+            <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+            开启后输入数字即时显示转换结果
+          </span>
+        </el-form-item>
+
         <el-form-item label="显示千分位">
           <el-switch v-model="showThousands" @change="handleThousandsToggle" />
         </el-form-item>
       </el-form>
+
+      <div v-if="enableLivePreview && livePreviewResult" class="live-preview-box">
+        <div class="live-preview-label">
+          <el-icon :size="14" color="#67c23a"><View /></el-icon>
+          <span>实时预览结果：</span>
+        </div>
+        <div class="live-preview-content">
+          <span class="live-preview-text">{{ livePreviewResult }}</span>
+          <el-tag v-if="inputValue" size="small" type="success">实时</el-tag>
+          <el-tag v-else size="small" type="info">等待输入</el-tag>
+        </div>
+      </div>
 
       <div class="action-bar">
         <el-button type="primary" size="large" :icon="Transfer" @click="convert" style="min-width: 160px">
@@ -183,7 +313,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   Money,
   DataLine,
@@ -193,13 +323,17 @@ import {
   Transfer,
   Refresh,
   CopyDocument,
-  Files
+  Files,
+  View,
+  ArrowRight,
+  SuccessFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { numberToChinese, formatNumberWithThousands, removeThousandsSeparator, type ConvertResult } from '@/utils/numberToChinese'
 
 const inputValue = ref<string>('')
 const showThousands = ref<boolean>(true)
+const enableLivePreview = ref<boolean>(true)
 const convertResult = ref<ConvertResult>({
   success: false,
   result: ''
@@ -217,6 +351,13 @@ const examples = [
   { input: '0.05', output: '零元伍分' },
   { input: '-123.45', output: '负壹佰贰拾叁元肆角伍分' }
 ]
+
+const livePreviewResult = computed(() => {
+  if (!enableLivePreview.value) return ''
+  if (!inputValue.value.trim()) return ''
+  const res = numberToChinese(inputValue.value)
+  return res.success ? res.result : ''
+})
 
 const displayValue = computed(() => {
   const raw = removeThousandsSeparator(inputValue.value)
@@ -339,6 +480,84 @@ const resetAll = () => {
   padding: 10px 0;
 }
 
+.preview-card {
+  margin-bottom: 24px;
+}
+
+.format-cases {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.case-item {
+  padding: 16px;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.case-item:hover {
+  border-color: #165DFF;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+}
+
+.case-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.case-subtitle {
+  font-size: 12px;
+  color: #909399;
+  font-weight: 500;
+}
+
+.case-example {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  border: 1px solid #ebeef5;
+}
+
+.case-input {
+  font-size: 14px;
+  color: #606266;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-weight: 500;
+}
+
+.case-arrow {
+  font-size: 14px;
+  color: #165DFF;
+  flex-shrink: 0;
+}
+
+.case-output {
+  font-size: 16px;
+  font-weight: bold;
+  color: #67c23a;
+  letter-spacing: 1px;
+  word-break: break-all;
+}
+
+.case-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
 .converter-card {
   margin-bottom: 24px;
 }
@@ -364,6 +583,15 @@ const resetAll = () => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.form-hint {
+  margin-left: 12px;
+  font-size: 12px;
+  color: #909399;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .help-icon {
@@ -401,6 +629,40 @@ const resetAll = () => {
   background: #165DFF;
   border-color: #165DFF;
   color: #fff;
+}
+
+.live-preview-box {
+  margin: 16px 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
+  border: 1px dashed #67c23a;
+  border-radius: 8px;
+}
+
+.live-preview-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #67c23a;
+  margin-bottom: 10px;
+}
+
+.live-preview-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.live-preview-text {
+  font-size: 20px;
+  font-weight: bold;
+  color: #67c23a;
+  letter-spacing: 2px;
+  word-break: break-all;
+  line-height: 1.5;
 }
 
 .action-bar {
@@ -548,5 +810,11 @@ const resetAll = () => {
   font-size: 12px;
   color: #606266;
   line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+  .format-cases {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
