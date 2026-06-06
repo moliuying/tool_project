@@ -155,6 +155,11 @@ const routes: RouteRecordRaw[] = [
         path: '/http-headers',
         name: 'HttpHeadersChecker',
         component: () => import('@/views/HttpHeadersChecker.vue')
+      },
+      {
+        path: '/cidr-calculator',
+        name: 'CidrCalculator',
+        component: () => import('@/views/CidrCalculator.vue')
       }
     ]
   }

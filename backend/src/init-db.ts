@@ -41,8 +41,9 @@ async function bootstrap() {
       { name: 'HTTP头查询', path: '/http-headers', icon: 'Connection', parentId: null, sort: 24, component: 'views/HttpHeadersChecker.vue' },
       { name: '徽章生成器', path: '/shield-badge', icon: 'Medal', parentId: null, sort: 25, component: 'views/ShieldBadgeGenerator.vue' },
       { name: '文本对比', path: '/text-diff', icon: 'DocumentCopy', parentId: null, sort: 26, component: 'views/TextDiff.vue' },
+      { name: 'CIDR网段计算', path: '/cidr-calculator', icon: 'Connection', parentId: null, sort: 27, component: 'views/CidrCalculator.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 27, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 28, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
