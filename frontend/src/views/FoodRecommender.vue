@@ -9,11 +9,11 @@
           <span>使用说明</span>
         </div>
       </template>
-      <el-steps :active="0" finish-status="wait" simple class="guide-steps">
+      <el-steps :active="currentStep" finish-status="success" simple class="guide-steps">
         <el-step title="选择场景" description="选择午餐、晚餐或周末大餐等场景" />
         <el-step title="设置偏好（可选）" description="按菜系、辣度、价格等条件筛选" />
-        <el-step title="点击开始" description="点击按钮，让命运决定今天吃什么" />
-        <el-step title="查看结果" description="等待抽奖动画结束，查看推荐详情" />
+        <el-step title="开始推荐" description="老虎机滚动，正在为你挑选中…" />
+        <el-step title="查看结果" description="推荐完成，查看你的今日美食" />
       </el-steps>
     </el-card>
 
@@ -28,9 +28,9 @@
         </div>
       </template>
 
-      <div class="scene-selector">
+      <div class="scene-selector" :class="{ disabled: isSpinning }">
         <span class="selector-label">用餐场景：</span>
-        <el-radio-group v-model="selectedScene" size="default">
+        <el-radio-group v-model="selectedScene" size="default" :disabled="isSpinning">
           <el-radio-button v-for="scene in scenes" :key="scene.value" :value="scene.value">
             <el-icon><component :is="scene.icon" /></el-icon>
             {{ scene.label }}
@@ -38,66 +38,79 @@
         </el-radio-group>
       </div>
 
-      <el-collapse class="filter-collapse">
-        <el-collapse-item title="高级筛选（可选）" name="filter">
-          <el-row :gutter="24">
-            <el-col :span="12">
-              <div class="filter-item">
-                <span class="filter-label">菜系偏好</span>
-                <el-checkbox-group v-model="selectedCuisines">
-                  <el-checkbox v-for="c in cuisineOptions" :key="c" :label="c" />
-                </el-checkbox-group>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="filter-item">
-                <span class="filter-label">辣度选择</span>
-                <el-radio-group v-model="selectedSpicy">
-                  <el-radio-button value="all">全部</el-radio-button>
-                  <el-radio-button value="none">不辣</el-radio-button>
-                  <el-radio-button value="mild">微辣</el-radio-button>
-                  <el-radio-button value="spicy">辣</el-radio-button>
-                  <el-radio-button value="very">变态辣</el-radio-button>
-                </el-radio-group>
-              </div>
-            </el-col>
-          </el-row>
-          <el-row :gutter="24" style="margin-top: 16px">
-            <el-col :span="12">
-              <div class="filter-item">
-                <span class="filter-label">价格区间</span>
-                <el-slider
-                  v-model="priceRange"
-                  range
-                  :min="0"
-                  :max="200"
-                  :step="5"
-                  show-stops
-                />
-                <div class="price-range-text">
-                  <el-tag size="small">¥{{ priceRange[0] }}</el-tag>
-                  <span style="margin: 0 8px">~</span>
-                  <el-tag size="small" type="warning">¥{{ priceRange[1] }}</el-tag>
+      <div class="filter-area" :class="{ disabled: isSpinning }">
+        <el-collapse class="filter-collapse">
+          <el-collapse-item title="高级筛选（可选）" name="filter">
+            <el-row :gutter="24">
+              <el-col :span="12">
+                <div class="filter-item">
+                  <span class="filter-label">菜系偏好</span>
+                  <el-checkbox-group v-model="selectedCuisines" :disabled="isSpinning">
+                    <el-checkbox v-for="c in cuisineOptions" :key="c" :label="c" />
+                  </el-checkbox-group>
                 </div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="filter-item">
-                <span class="filter-label">用餐方式</span>
-                <el-checkbox-group v-model="selectedTypes">
-                  <el-checkbox label="堂食" />
-                  <el-checkbox label="外卖" />
-                  <el-checkbox label="自己做" />
-                </el-checkbox-group>
-              </div>
-            </el-col>
-          </el-row>
-          <div class="filter-actions">
-            <el-button size="small" @click="resetFilters">重置筛选</el-button>
-            <el-tag size="small" type="info">共 {{ filteredMeals.length }} 道菜可选</el-tag>
-          </div>
-        </el-collapse-item>
-      </el-collapse>
+              </el-col>
+              <el-col :span="12">
+                <div class="filter-item">
+                  <span class="filter-label">辣度选择</span>
+                  <el-radio-group v-model="selectedSpicy" :disabled="isSpinning">
+                    <el-radio-button value="all">全部</el-radio-button>
+                    <el-radio-button value="none">不辣</el-radio-button>
+                    <el-radio-button value="mild">微辣</el-radio-button>
+                    <el-radio-button value="spicy">辣</el-radio-button>
+                    <el-radio-button value="very">变态辣</el-radio-button>
+                  </el-radio-group>
+                </div>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24" style="margin-top: 16px">
+              <el-col :span="12">
+                <div class="filter-item">
+                  <span class="filter-label">价格区间</span>
+                  <el-slider
+                    v-model="priceRange"
+                    range
+                    :min="0"
+                    :max="200"
+                    :step="5"
+                    show-stops
+                    :disabled="isSpinning"
+                  />
+                  <div class="price-range-text">
+                    <el-tag size="small">¥{{ priceRange[0] }}</el-tag>
+                    <span style="margin: 0 8px">~</span>
+                    <el-tag size="small" type="warning">¥{{ priceRange[1] }}</el-tag>
+                  </div>
+                </div>
+              </el-col>
+              <el-col :span="12">
+                <div class="filter-item">
+                  <span class="filter-label">用餐方式</span>
+                  <el-checkbox-group v-model="selectedTypes" :disabled="isSpinning">
+                    <el-checkbox label="堂食" />
+                    <el-checkbox label="外卖" />
+                    <el-checkbox label="自己做" />
+                  </el-checkbox-group>
+                </div>
+              </el-col>
+            </el-row>
+            <div class="filter-actions">
+              <el-button size="small" @click="resetFilters" :disabled="isSpinning">重置筛选</el-button>
+              <el-tag size="small" type="info">共 {{ filteredMeals.length }} 道菜可选</el-tag>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+
+      <div class="spinning-status-bar" v-if="isSpinning">
+        <div class="spinning-dots">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+        <span class="spinning-text">🎲 正在为你精挑细选今日美食</span>
+        <span class="spinning-hint">老虎机随机滚动中，请稍候…</span>
+      </div>
 
       <div class="slot-machine" :class="{ spinning: isSpinning, idle: !isSpinning && !recommendedMeal }">
         <template v-if="isSpinning || recommendedMeal">
@@ -151,11 +164,20 @@
         </template>
       </div>
 
-      <div class="result-container" v-if="recommendedMeal && !isSpinning">
+      <div class="result-container" v-if="recommendedMeal && !isSpinning" :class="{ 'result-appear': resultAppearTrigger }">
         <el-card class="result-card" shadow="never">
+          <div class="result-celebration">
+            <span class="celebration-emoji">🎉</span>
+            <span class="celebration-emoji" style="animation-delay: 0.2s">✨</span>
+            <span class="celebration-emoji" style="animation-delay: 0.4s">🍽️</span>
+          </div>
           <div class="result-badge">
             <el-icon :size="16"><Star /></el-icon>
-            <span>今日推荐</span>
+            <span>选定啦 · 今日推荐</span>
+          </div>
+          <div class="result-success-tag">
+            <el-icon :size="14"><CircleCheck /></el-icon>
+            <span>已为你精选</span>
           </div>
           <div class="result-body">
             <div class="result-emoji">{{ recommendedMeal.emoji }}</div>
@@ -240,13 +262,20 @@
         <el-button
           type="warning"
           size="large"
-          :icon="MagicStick"
+          :icon="buttonIcon"
           @click="startRecommend"
           :disabled="isSpinning || filteredMeals.length === 0"
           :loading="isSpinning"
           class="recommend-button"
+          :class="{ 'has-result': recommendedMeal && !isSpinning }"
         >
-          {{ isSpinning ? '为你挑选中...' : '开始推荐' }}
+          <template #loading>
+            <span class="btn-loading-text">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              为你挑选中
+            </span>
+          </template>
+          {{ buttonText }}
         </el-button>
         <el-button
           size="large"
@@ -367,7 +396,10 @@ import {
   Calendar,
   Food,
   QuestionFilled,
-  View
+  View,
+  Loading,
+  CircleCheck,
+  RefreshRight
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -554,10 +586,30 @@ const recommendedMeal = ref<Meal | null>(null)
 const slotDisplay = ref<Meal[]>([])
 const recommendHistory = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
+const resultAppearTrigger = ref(false)
 
 const emojiSlotRef = ref<HTMLElement | null>(null)
 const nameSlotRef = ref<HTMLElement | null>(null)
 const cuisineSlotRef = ref<HTMLElement | null>(null)
+
+const currentStep = computed(() => {
+  if (recommendedMeal.value && !isSpinning.value) return 3
+  if (isSpinning.value) return 2
+  if (selectedCuisines.value.length > 0 || selectedSpicy.value !== 'all' ||
+      selectedTypes.value.length > 0 || priceRange.value[0] > 0 || priceRange.value[1] < 200) return 1
+  return 0
+})
+
+const buttonText = computed(() => {
+  if (isSpinning.value) return '为你挑选中…'
+  if (recommendedMeal.value) return '再来一次'
+  return '开始推荐'
+})
+
+const buttonIcon = computed(() => {
+  if (recommendedMeal.value && !isSpinning.value) return RefreshRight
+  return MagicStick
+})
 
 const filteredMeals = computed(() => {
   return meals.filter(meal => {
@@ -703,6 +755,7 @@ const resetFilters = () => {
 const resetAll = () => {
   recommendedMeal.value = null
   selectedScene.value = 'lunch'
+  resultAppearTrigger.value = false
   resetFilters()
   initSlotDisplay()
 }
@@ -761,7 +814,16 @@ const startRecommend = () => {
         scene: selectedScene.value,
         time: new Date().toISOString()
       })
-      ElMessage.success('今日美食已为你选定！')
+      resultAppearTrigger.value = false
+      requestAnimationFrame(() => {
+        resultAppearTrigger.value = true
+      })
+      ElMessage.success({
+        message: '🎉 今日美食已为你选定！',
+        type: 'success',
+        duration: 2500,
+        showClose: true
+      })
     }
   }
 
@@ -823,6 +885,23 @@ const formatTime = (dateStr: string) => {
   padding: 16px;
   background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
   border-radius: 8px;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.scene-selector.disabled {
+  opacity: 0.5;
+  filter: grayscale(0.3);
+  pointer-events: none;
+}
+
+.filter-area {
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.filter-area.disabled {
+  opacity: 0.5;
+  filter: grayscale(0.3);
+  pointer-events: none;
 }
 
 .selector-label {
@@ -863,6 +942,56 @@ const formatTime = (dateStr: string) => {
   margin-top: 20px;
   padding-top: 16px;
   border-top: 1px solid #ebeef5;
+}
+
+.spinning-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #e6a23c 0%, #f5a623 100%);
+  border-radius: 12px;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(230, 162, 60, 0.4);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(230, 162, 60, 0.4); }
+  50% { box-shadow: 0 4px 24px rgba(230, 162, 60, 0.6); }
+}
+
+.spinning-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.spinning-dots .dot {
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border-radius: 50%;
+  animation: dot-bounce 1.2s ease-in-out infinite;
+}
+
+.spinning-dots .dot:nth-child(2) { animation-delay: 0.2s; }
+.spinning-dots .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+  40% { transform: scale(1.2); opacity: 1; }
+}
+
+.spinning-text {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.spinning-hint {
+  font-size: 13px;
+  opacity: 0.85;
+  margin-left: auto;
 }
 
 .slot-machine {
@@ -951,6 +1080,28 @@ const formatTime = (dateStr: string) => {
 .slot-machine::after {
   bottom: 20px;
   background: linear-gradient(0deg, rgba(31, 31, 31, 0.9) 0%, transparent 100%);
+}
+
+.slot-machine.spinning {
+  animation: slot-pulse 0.6s ease-in-out infinite;
+  border-color: #f56c6c;
+  box-shadow: 0 8px 40px rgba(245, 108, 108, 0.5), 0 0 0 2px rgba(245, 108, 108, 0.2);
+}
+
+@keyframes slot-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.008); }
+}
+
+.slot-machine.spinning .slot-pointer {
+  background: linear-gradient(90deg, transparent, #f56c6c, #f56c6c, transparent);
+  box-shadow: 0 0 20px rgba(245, 108, 108, 1);
+  animation: pointer-flash 0.3s ease-in-out infinite;
+}
+
+@keyframes pointer-flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .slot-machine.spinning .slot-inner {
@@ -1092,11 +1243,100 @@ const formatTime = (dateStr: string) => {
 
 .result-container {
   margin-bottom: 24px;
+  transform-origin: center top;
+}
+
+.result-container.result-appear {
+  animation: result-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes result-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .result-card {
+  position: relative;
   background: linear-gradient(135deg, #fffbe6 0%, #faecd8 100%);
   border: 2px solid #e6a23c;
+}
+
+.result-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #e6a23c, #f56c6c, #67c23a, #e6a23c);
+  background-size: 300% 300%;
+  opacity: 0;
+  z-index: -1;
+  animation: border-glow 3s ease-in-out infinite;
+  animation-delay: 0.3s;
+}
+
+.result-container.result-appear .result-card::before {
+  opacity: 0.6;
+}
+
+@keyframes border-glow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.result-celebration {
+  position: absolute;
+  top: -20px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  z-index: 5;
+}
+
+.celebration-emoji {
+  font-size: 32px;
+  display: inline-block;
+  animation: celebrate-bounce 0.8s ease-out both;
+}
+
+@keyframes celebrate-bounce {
+  0% { opacity: 0; transform: translateY(20px) scale(0) rotate(-20deg); }
+  60% { opacity: 1; transform: translateY(-10px) scale(1.2) rotate(10deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0); }
+}
+
+.result-success-tag {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: #67c23a;
+  color: #fff;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  animation: tag-pop 0.5s ease-out 0.4s both;
+}
+
+@keyframes tag-pop {
+  0% { opacity: 0; transform: scale(0); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .result-badge {
@@ -1179,6 +1419,32 @@ const formatTime = (dateStr: string) => {
   width: 220px;
   height: 56px;
   font-size: 18px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.recommend-button.has-result {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  border-color: #67c23a;
+}
+
+.recommend-button.has-result:hover,
+.recommend-button.has-result:focus {
+  background: linear-gradient(135deg, #5daf34 0%, #67c23a 100%);
+  border-color: #5daf34;
+}
+
+.recommend-button:deep(.el-icon.is-loading) {
+  width: 20px;
+  height: 20px;
+  margin-right: 4px;
+}
+
+.btn-loading-text {
+  display: inline-flex;
+  align-items: center;
+  font-size: 16px;
 }
 
 .empty-warning {
@@ -1287,6 +1553,16 @@ const formatTime = (dateStr: string) => {
     width: 100%;
   }
 
+  .spinning-status-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .spinning-hint {
+    margin-left: 0;
+  }
+
   .slot-idle-columns {
     flex-direction: column;
     align-items: center;
@@ -1314,6 +1590,21 @@ const formatTime = (dateStr: string) => {
   .result-tags,
   .result-ways {
     justify-content: center;
+  }
+
+  .result-celebration {
+    top: -16px;
+    right: 8px;
+  }
+
+  .celebration-emoji {
+    font-size: 24px;
+  }
+
+  .result-success-tag {
+    top: auto;
+    bottom: 12px;
+    right: 12px;
   }
 
   .scene-selector {
