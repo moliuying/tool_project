@@ -41,6 +41,8 @@
                     :step="10"
                     controls-position="right"
                     size="large"
+                    @input="(val: number | undefined) => handleSizeInput('width', val)"
+                    @change="triggerDraw"
                   />
                   <span class="size-separator">×</span>
                   <el-input-number
@@ -50,6 +52,8 @@
                     :step="10"
                     controls-position="right"
                     size="large"
+                    @input="(val: number | undefined) => handleSizeInput('height', val)"
+                    @change="triggerDraw"
                   />
                   <span class="size-unit">px</span>
                 </div>
@@ -259,6 +263,12 @@
           <div class="preview-wrapper">
             <div class="preview-container" ref="previewContainer">
               <canvas ref="canvas" class="preview-canvas" />
+              <transition name="fade">
+                <div v-if="showUpdatedBadge" class="updated-badge">
+                  <el-icon><CircleCheckFilled /></el-icon>
+                  <span>已自动更新</span>
+                </div>
+              </transition>
             </div>
           </div>
 
@@ -318,7 +328,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   InfoFilled,
   Setting,
@@ -339,6 +349,7 @@ import { ElMessage } from 'element-plus'
 
 const canvas = ref<HTMLCanvasElement | null>(null)
 const previewContainer = ref<HTMLDivElement | null>(null)
+const showUpdatedBadge = ref(false)
 
 const width = ref(800)
 const height = ref(600)
@@ -348,6 +359,43 @@ const textColor = ref('#ffffff')
 const fontSizePercent = ref(20)
 const format = ref<'png' | 'jpeg' | 'webp'>('png')
 const quality = ref(90)
+
+let drawTimer: ReturnType<typeof setTimeout> | null = null
+let badgeTimer: ReturnType<typeof setTimeout> | null = null
+
+const debouncedDraw = () => {
+  if (drawTimer) clearTimeout(drawTimer)
+  drawTimer = setTimeout(() => {
+    nextTick(() => {
+      drawPlaceholder()
+      showUpdatedBadge.value = true
+      if (badgeTimer) clearTimeout(badgeTimer)
+      badgeTimer = setTimeout(() => {
+        showUpdatedBadge.value = false
+      }, 1200)
+    })
+  }, 80)
+}
+
+const handleSizeInput = (field: 'width' | 'height', val: number | undefined) => {
+  const num = Number(val)
+  if (!isNaN(num) && num >= 1 && num <= 4096) {
+    if (field === 'width') {
+      width.value = num
+    } else {
+      height.value = num
+    }
+  }
+  debouncedDraw()
+}
+
+const triggerDraw = () => {
+  debouncedDraw()
+}
+
+const onWindowResize = () => {
+  debouncedDraw()
+}
 
 interface Preset {
   name: string
@@ -578,16 +626,25 @@ const copyImageUrl = async () => {
 watch(
   [width, height, text, bgColor, textColor, fontSizePercent],
   () => {
-    nextTick(() => drawPlaceholder())
-  }
+    debouncedDraw()
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
-  nextTick(() => drawPlaceholder())
+  window.addEventListener('resize', onWindowResize)
+})
 
-  window.addEventListener('resize', () => {
-    nextTick(() => drawPlaceholder())
-  })
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onWindowResize)
+  if (drawTimer) {
+    clearTimeout(drawTimer)
+    drawTimer = null
+  }
+  if (badgeTimer) {
+    clearTimeout(badgeTimer)
+    badgeTimer = null
+  }
 })
 </script>
 
@@ -858,6 +915,39 @@ onMounted(() => {
   justify-content: center;
   overflow: auto;
   padding: 16px;
+  position: relative;
+}
+
+.updated-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+  color: #fff;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.4);
+  z-index: 10;
+}
+
+.updated-badge .el-icon {
+  font-size: 14px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .preview-canvas {
