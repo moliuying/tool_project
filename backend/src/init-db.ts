@@ -32,7 +32,8 @@ async function bootstrap() {
       { name: '字幕拼图生成', path: '/subtitle-puzzle', icon: 'Grid', parentId: null, sort: 15, component: 'views/SubtitlePuzzleMaker.vue' },
       { name: 'Linux命令查询', path: '/linux-command', icon: 'Terminal', parentId: null, sort: 16, component: 'views/LinuxCommandHelper.vue' },
       { name: '成语查询', path: '/idiom-query', icon: 'Reading', parentId: null, sort: 17, component: 'views/IdiomQuery.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 18, component: null },
+      { name: '九宫格切图', path: '/nine-grid-cutter', icon: 'Grid', parentId: null, sort: 18, component: 'views/NineGridCutter.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 19, component: null },
       { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 18, sort: 1, component: 'views/Menu.vue' },
     ];
 

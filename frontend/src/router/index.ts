@@ -135,6 +135,11 @@ const routes: RouteRecordRaw[] = [
         path: '/idiom-query',
         name: 'IdiomQuery',
         component: () => import('@/views/IdiomQuery.vue')
+      },
+      {
+        path: '/nine-grid-cutter',
+        name: 'NineGridCutter',
+        component: () => import('@/views/NineGridCutter.vue')
       }
     ]
   }
