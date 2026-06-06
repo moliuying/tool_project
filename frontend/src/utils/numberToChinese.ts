@@ -2,14 +2,31 @@ const DIGITS = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '
 const UNITS = ['', '拾', '佰', '仟']
 const BIG_UNITS = ['', '万', '亿', '万亿', '亿亿']
 
+export type CurrencyUnit = 'yuan' | 'circle'
+
+export interface NumberToChineseOptions {
+  currencyUnit?: CurrencyUnit
+}
+
 export interface ConvertResult {
   success: boolean
   result: string
   message?: string
 }
 
-export const numberToChinese = (input: string | number): ConvertResult => {
+const CURRENCY_MAP: Record<CurrencyUnit, { yuan: string; jiao: string; fen: string; whole: string }> = {
+  yuan: { yuan: '元', jiao: '角', fen: '分', whole: '整' },
+  circle: { yuan: '圆', jiao: '角', fen: '分', whole: '整' }
+}
+
+export const numberToChinese = (
+  input: string | number,
+  options: NumberToChineseOptions = {}
+): ConvertResult => {
   try {
+    const { currencyUnit = 'yuan' } = options
+    const currency = CURRENCY_MAP[currencyUnit]
+
     let numStr = typeof input === 'number' ? input.toString() : input
 
     if (numStr === undefined || numStr === null || numStr.trim() === '') {
@@ -43,12 +60,12 @@ export const numberToChinese = (input: string | number): ConvertResult => {
       result = convertInteger(integerPart)
     }
 
-    result += '元'
+    result += currency.yuan
 
     if (decimalPart) {
-      result += convertDecimal(decimalPart, BigInt(integerPart) === 0n)
+      result += convertDecimal(decimalPart, BigInt(integerPart) === 0n, currency)
     } else {
-      result += '整'
+      result += currency.whole
     }
 
     if (isNegative) {
@@ -62,7 +79,6 @@ export const numberToChinese = (input: string | number): ConvertResult => {
 }
 
 const convertInteger = (integerStr: string): string => {
-  const len = integerStr.length
   let result = ''
   let zeroFlag = false
 
@@ -117,7 +133,18 @@ const convertGroup = (group: string): string => {
   return result
 }
 
-const convertDecimal = (decimalStr: string, isZeroInteger: boolean): string => {
+interface CurrencyConfig {
+  yuan: string
+  jiao: string
+  fen: string
+  whole: string
+}
+
+const convertDecimal = (
+  decimalStr: string,
+  isZeroInteger: boolean,
+  currency: CurrencyConfig
+): string => {
   let result = ''
   let jiao = 0
   let fen = 0
@@ -130,7 +157,7 @@ const convertDecimal = (decimalStr: string, isZeroInteger: boolean): string => {
   }
 
   if (jiao === 0 && fen === 0) {
-    return '整'
+    return currency.whole
   }
 
   if (jiao === 0) {
@@ -138,11 +165,11 @@ const convertDecimal = (decimalStr: string, isZeroInteger: boolean): string => {
       result += '零'
     }
   } else {
-    result += DIGITS[jiao] + '角'
+    result += DIGITS[jiao] + currency.jiao
   }
 
   if (fen !== 0) {
-    result += DIGITS[fen] + '分'
+    result += DIGITS[fen] + currency.fen
   }
 
   return result
