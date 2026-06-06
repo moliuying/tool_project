@@ -130,6 +130,11 @@ const routes: RouteRecordRaw[] = [
         path: '/linux-command',
         name: 'LinuxCommand',
         component: () => import('@/views/LinuxCommandHelper.vue')
+      },
+      {
+        path: '/idiom-query',
+        name: 'IdiomQuery',
+        component: () => import('@/views/IdiomQuery.vue')
       }
     ]
   }

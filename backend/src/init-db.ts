@@ -31,8 +31,9 @@ async function bootstrap() {
       { name: '图片水印', path: '/image-watermark', icon: 'Stamp', parentId: null, sort: 14, component: 'views/ImageWatermark.vue' },
       { name: '字幕拼图生成', path: '/subtitle-puzzle', icon: 'Grid', parentId: null, sort: 15, component: 'views/SubtitlePuzzleMaker.vue' },
       { name: 'Linux命令查询', path: '/linux-command', icon: 'Terminal', parentId: null, sort: 16, component: 'views/LinuxCommandHelper.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 17, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 17, sort: 1, component: 'views/Menu.vue' },
+      { name: '成语查询', path: '/idiom-query', icon: 'Reading', parentId: null, sort: 17, component: 'views/IdiomQuery.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 18, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 18, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
