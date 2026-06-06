@@ -136,22 +136,23 @@
       </div>
     </el-card>
 
-    <el-card class="results-card" v-if="results.length > 0">
+    <el-card class="results-card">
       <template #header>
         <div class="card-header">
           <el-icon :size="20" color="#165DFF">
             <Document />
           </el-icon>
           <span>生成结果</span>
-          <el-tag size="small" type="success">共 {{ results.length }} 条</el-tag>
-          <div class="header-actions">
-            <el-button size="small" :icon="CopyDocument" @click="copyAll">复制全部</el-button>
+          <el-tag v-if="results.length > 0" size="small" type="success">共 {{ results.length }} 条</el-tag>
+          <el-tag v-else size="small" type="info">预览格式</el-tag>
+          <div class="header-actions" v-if="results.length > 0">
+            <el-button size="small" :icon="CopyDocument" @click="copyAll">复制全部（换行分隔）</el-button>
             <el-button size="small" type="danger" text :icon="Delete" @click="clearResults">清空</el-button>
           </div>
         </div>
       </template>
 
-      <div class="results-list">
+      <div class="results-list" v-if="results.length > 0">
         <div
           v-for="(result, index) in results"
           :key="index"
@@ -177,6 +178,87 @@
             >
               复制
             </el-button>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="results-preview-empty">
+        <div class="preview-empty-header">
+          <el-icon :size="48" color="#c0c4cc"><Document /></el-icon>
+          <p class="preview-empty-title">尚未生成结果</p>
+          <p class="preview-empty-desc">以下是生成后结果的展示格式说明</p>
+        </div>
+
+        <el-divider content-position="left">格式说明</el-divider>
+
+        <div class="format-demo">
+          <div class="format-demo-title">
+            <el-icon><Grid /></el-icon>
+            <span>展示格式：每行一条，独立编号</span>
+          </div>
+          <div class="format-demo-list">
+            <div class="result-item demo-item">
+              <div class="result-index">1</div>
+              <div class="result-content">
+                <code class="result-code result-demo-code">xK9$mP2vQr7&Lp3N</code>
+                <div class="result-meta">
+                  <el-tag size="small" type="info">长度: 16</el-tag>
+                  <span class="strength-badge strong">强度: 强</span>
+                </div>
+              </div>
+              <div class="result-actions">
+                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+              </div>
+            </div>
+            <div class="result-item demo-item">
+              <div class="result-index">2</div>
+              <div class="result-content">
+                <code class="result-code result-demo-code">bW5#t8YzRq@4fCj1Ks</code>
+                <div class="result-meta">
+                  <el-tag size="small" type="info">长度: 18</el-tag>
+                  <span class="strength-badge strong">强度: 强</span>
+                </div>
+              </div>
+              <div class="result-actions">
+                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+              </div>
+            </div>
+            <div class="result-item demo-item">
+              <div class="result-index">3</div>
+              <div class="result-content">
+                <code class="result-code result-demo-code">Hj$2nQpX9vBm&zL7rT4k</code>
+                <div class="result-meta">
+                  <el-tag size="small" type="info">长度: 20</el-tag>
+                  <span class="strength-badge strong">强度: 强</span>
+                </div>
+              </div>
+              <div class="result-actions">
+                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <el-divider content-position="left">复制方式</el-divider>
+
+        <div class="copy-methods">
+          <div class="copy-method-item">
+            <div class="copy-method-header">
+              <el-tag type="primary" size="small">方式一</el-tag>
+              <span class="copy-method-title">单条复制</span>
+            </div>
+            <p class="copy-method-desc">点击每条结果右侧的「复制」按钮，仅复制该条字符串到剪贴板</p>
+            <code class="copy-method-result">xK9$mP2vQr7&Lp3N</code>
+          </div>
+          <div class="copy-method-item">
+            <div class="copy-method-header">
+              <el-tag type="success" size="small">方式二</el-tag>
+              <span class="copy-method-title">复制全部</span>
+            </div>
+            <p class="copy-method-desc">点击顶部「复制全部（换行分隔）」按钮，多条结果以换行符分隔</p>
+            <code class="copy-method-result copy-method-multiline">xK9$mP2vQr7&Lp3N
+bW5#t8YzRq@4fCj1Ks
+Hj$2nQpX9vBm&zL7rT4k</code>
           </div>
         </div>
       </div>
@@ -240,7 +322,8 @@ import {
   CopyDocument,
   Delete,
   Clock,
-  DataLine
+  DataLine,
+  Grid
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -792,6 +875,112 @@ const formatTime = (dateStr: string) => {
   flex-shrink: 0;
 }
 
+.results-preview-empty {
+  padding: 8px 0;
+}
+
+.preview-empty-header {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.preview-empty-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #606266;
+  margin: 12px 0 4px;
+}
+
+.preview-empty-desc {
+  font-size: 13px;
+  color: #909399;
+  margin: 0;
+}
+
+.format-demo {
+  margin-bottom: 8px;
+}
+
+.format-demo-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.format-demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.demo-item {
+  background: #fafafa;
+  opacity: 0.75;
+  border: 1px dashed #dcdfe6;
+}
+
+.result-demo-code {
+  color: #909399;
+  background: #f5f7fa;
+}
+
+.copy-methods {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.copy-method-item {
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.copy-method-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.copy-method-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.copy-method-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+}
+
+.copy-method-result {
+  display: block;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  color: #165DFF;
+  background: #ecf5ff;
+  border: 1px solid #d9ecff;
+  border-radius: 4px;
+  padding: 8px 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.copy-method-multiline {
+  color: #67c23a;
+  background: #f0f9eb;
+  border-color: #e1f3d8;
+}
+
 .history-card {
   margin-bottom: 24px;
 }
@@ -864,6 +1053,10 @@ const formatTime = (dateStr: string) => {
   .history-content {
     max-width: 100%;
     white-space: normal;
+  }
+
+  .copy-methods {
+    grid-template-columns: 1fr;
   }
 }
 </style>
