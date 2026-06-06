@@ -125,6 +125,11 @@ const routes: RouteRecordRaw[] = [
         path: '/text-diff',
         name: 'TextDiff',
         component: () => import('@/views/TextDiff.vue')
+      },
+      {
+        path: '/linux-command',
+        name: 'LinuxCommand',
+        component: () => import('@/views/LinuxCommandHelper.vue')
       }
     ]
   }
