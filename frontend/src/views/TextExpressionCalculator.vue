@@ -12,7 +12,7 @@
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
         <el-step title="输入文本" description="在左侧输入自然语言和数学表达式，如 60 * 60" />
         <el-step title="自动识别" description="系统自动识别并计算其中的数学表达式" />
-        <el-step title="查看结果" description="右侧实时展示每行的计算结果" />
+        <el-step title="查看结果" description="右侧同步展示每行计算结果，滚动和高亮联动" />
       </el-steps>
     </el-card>
 
@@ -75,19 +75,44 @@
           <div class="panel-header">
             <el-icon color="#165DFF"><Edit /></el-icon>
             <span class="panel-title">输入文本</span>
-            <el-tag size="small" type="info">支持自然语言 + 表达式混合</el-tag>
+            <el-tag size="small" type="info">自然语言 + 表达式混合</el-tag>
           </div>
-          <el-input
-            v-model="inputText"
-            type="textarea"
-            :rows="20"
-            placeholder="在此输入文本，支持数学表达式自动计算&#10;&#10;示例：&#10;项目预算：5000 * 12 = ?&#10;日工资：8000 / 22 = ?&#10;税后收入：10000 - 10000 * 0.1 = ?&#10;总价：(100 + 50) * 3 = ?&#10;百分比：500 * 20% = ?"
-            resize="vertical"
-            class="text-input"
-          />
+
+          <div class="editor-wrapper">
+            <div class="line-numbers" ref="leftLineNumbersRef">
+              <div
+                v-for="(line, index) in parsedLines"
+                :key="index"
+                class="line-num"
+                :class="{ 
+                  'hovered': hoveredLineIndex === index,
+                  'has-expr': line.hasExpression && !line.error,
+                  'has-error': line.error
+                }"
+                @mouseenter="setHoveredLine(index)"
+                @mouseleave="clearHoveredLine"
+              >
+                {{ index + 1 }}
+              </div>
+            </div>
+            <div class="textarea-container" ref="textareaContainerRef">
+              <textarea
+                ref="textareaRef"
+                v-model="inputText"
+                class="editor-textarea"
+                :rows="Math.max(20, parsedLines.length)"
+                placeholder="在此输入文本，支持数学表达式自动计算&#10;&#10;示例：&#10;项目预算：5000 * 12 = ?&#10;日工资：8000 / 22 = ?&#10;税后收入：10000 - 10000 * 0.1 = ?&#10;总价：(100 + 50) * 3 = ?&#10;百分比：500 * 20% = ?"
+                @scroll="syncScrollFromLeft"
+                @mouseenter="onLeftAreaEnter"
+                @mouseleave="onLeftAreaLeave"
+              />
+            </div>
+          </div>
+
           <div class="input-footer">
             <el-tag size="small" type="info">共 {{ lineCount }} 行</el-tag>
             <el-tag size="small" type="success">识别到 {{ expressionCount }} 个表达式</el-tag>
+            <el-tag size="small" type="warning">滚动和高亮两侧联动</el-tag>
           </div>
         </div>
 
@@ -95,6 +120,7 @@
           <div class="divider-content">
             <el-icon :size="16"><Right /></el-icon>
           </div>
+          <div class="divider-hint">左右联动</div>
         </div>
 
         <div class="result-panel">
@@ -104,31 +130,56 @@
             <el-tag v-if="hasExpressions" size="small" type="success">实时计算</el-tag>
             <el-tag v-else size="small" type="info">等待输入</el-tag>
           </div>
-          <div class="result-list" v-if="parsedLines.length > 0">
+
+          <div 
+            class="result-list" 
+            ref="resultListRef"
+            @scroll="syncScrollFromRight"
+            @mouseenter="onRightAreaEnter"
+            @mouseleave="onRightAreaLeave"
+            v-if="parsedLines.length > 0"
+          >
             <div
               v-for="(line, index) in parsedLines"
               :key="index"
               class="result-line"
-              :class="{ 'has-error': line.error, 'has-expression': line.hasExpression }"
+              :class="{ 
+                'has-error': line.error, 
+                'has-expression': line.hasExpression,
+                'hovered': hoveredLineIndex === index,
+                'is-empty': line.original === ''
+              }"
+              @mouseenter="setHoveredLine(index)"
+              @mouseleave="clearHoveredLine"
             >
-              <div class="line-number">{{ index + 1 }}</div>
+              <div class="line-number" :class="{ 
+                'hovered': hoveredLineIndex === index,
+                'has-expr': line.hasExpression && !line.error,
+                'has-error': line.error
+              }">
+                {{ index + 1 }}
+              </div>
               <div class="line-content">
                 <div class="line-original">
                   <template v-for="(segment, segIndex) in line.segments" :key="segIndex">
-                    <span v-if="segment.type === 'text'" class="seg-text">{{ segment.value }}</span>
+                    <span v-if="segment.type === 'text'" class="seg-text">{{ segment.value || ' ' }}</span>
                     <span v-else class="seg-expression" :class="{ error: segment.error }">
                       {{ segment.value }}
                     </span>
                   </template>
+                  <span v-if="line.original === ''" class="empty-line-placeholder">（空行）</span>
                 </div>
                 <div v-if="line.hasExpression" class="line-result">
                   <template v-if="!line.error">
-                    <span class="result-label">结果：</span>
+                    <span class="result-label">=</span>
                     <span class="result-value">{{ line.result }}</span>
                     <span v-if="line.resultReadable" class="result-readable">（{{ line.resultReadable }}）</span>
+                    <el-icon class="copy-inline-btn" title="复制该结果" @click.stop="copySingleResult(line)">
+                      <CopyDocument />
+                    </el-icon>
                   </template>
                   <template v-else>
-                    <span class="error-label">错误：</span>
+                    <span class="error-label">⚠️</span>
                     <span class="error-message">{{ line.error }}</span>
                   </template>
                 </div>
@@ -198,7 +249,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import {
   Calculator,
   InfoFilled,
@@ -335,6 +386,62 @@ const getExampleIcon = (iconName: string) => {
 }
 
 const inputText = ref('')
+const hoveredLineIndex = ref(-1)
+
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const textareaContainerRef = ref<HTMLDivElement | null>(null)
+const leftLineNumbersRef = ref<HTMLDivElement | null>(null)
+const resultListRef = ref<HTMLDivElement | null>(null)
+
+let isSyncingScroll = false
+let leftMouseIn = false
+let rightMouseIn = false
+
+const setHoveredLine = (index: number) => {
+  hoveredLineIndex.value = index
+}
+
+const clearHoveredLine = () => {
+  if (!leftMouseIn && !rightMouseIn) {
+    hoveredLineIndex.value = -1
+  }
+}
+
+const onLeftAreaEnter = () => { leftMouseIn = true }
+const onLeftAreaLeave = () => { leftMouseIn = false; hoveredLineIndex.value = -1 }
+const onRightAreaEnter = () => { rightMouseIn = true }
+const onRightAreaLeave = () => { rightMouseIn = false; hoveredLineIndex.value = -1 }
+
+const syncScrollFromLeft = () => {
+  if (isSyncingScroll) return
+  isSyncingScroll = true
+  requestAnimationFrame(() => {
+    if (textareaRef.value && resultListRef.value && leftLineNumbersRef.value) {
+      const scrollTop = textareaRef.value.scrollTop
+      resultListRef.value.scrollTop = scrollTop
+      leftLineNumbersRef.value.scrollTop = scrollTop
+    }
+    isSyncingScroll = false
+  })
+}
+
+const syncScrollFromRight = () => {
+  if (isSyncingScroll) return
+  isSyncingScroll = true
+  requestAnimationFrame(() => {
+    if (textareaRef.value && resultListRef.value && leftLineNumbersRef.value) {
+      const scrollTop = resultListRef.value.scrollTop
+      textareaRef.value.scrollTop = scrollTop
+      leftLineNumbersRef.value.scrollTop = scrollTop
+    }
+    isSyncingScroll = false
+  })
+}
+
+watch(parsedLines, async () => {
+  await nextTick()
+  syncScrollFromLeft()
+}, { flush: 'post' })
 
 const loadExample = (example: Example) => {
   inputText.value = example.text
@@ -358,6 +465,15 @@ const pasteFromClipboard = async () => {
   } catch (e) {
     ElMessage.error('无法访问剪贴板，请手动粘贴')
   }
+}
+
+const copySingleResult = (line: ParsedLine) => {
+  if (!line.result) return
+  navigator.clipboard.writeText(line.result).then(() => {
+    ElMessage.success(`结果「${line.result}」已复制`)
+  }).catch(() => {
+    ElMessage.error('复制失败')
+  })
 }
 
 const lineCount = computed(() => {
@@ -726,11 +842,17 @@ const copyResults = () => {
     ElMessage.error('复制失败，请手动复制')
   })
 }
+
+onMounted(() => {
+  nextTick(() => {
+    syncScrollFromLeft()
+  })
+})
 </script>
 
 <style scoped>
 .text-expression-calculator {
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -747,10 +869,6 @@ const copyResults = () => {
   gap: 8px;
   font-size: 18px;
   font-weight: bold;
-}
-
-.header-tag {
-  margin-left: 8px;
 }
 
 .header-subtitle {
@@ -830,18 +948,19 @@ const copyResults = () => {
 
 .calculator-container {
   display: grid;
-  grid-template-columns: 1fr 40px 1fr;
+  grid-template-columns: 1fr 48px 1fr;
   gap: 0;
-  min-height: 500px;
+  min-height: 520px;
 }
 
 .input-panel,
 .result-panel {
   display: flex;
   flex-direction: column;
-  border: 1px solid #ebeef5;
-  border-radius: 10px;
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
   overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
 }
 
 .input-panel {
@@ -850,10 +969,22 @@ const copyResults = () => {
   border-bottom-right-radius: 0;
 }
 
+.input-panel:focus-within {
+  border-color: #165DFF;
+  box-shadow: -4px 0 16px rgba(22, 93, 255, 0.1);
+  z-index: 2;
+}
+
 .result-panel {
   border-left: none;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+}
+
+.result-panel:hover {
+  border-color: #67c23a;
+  box-shadow: 4px 0 16px rgba(103, 194, 58, 0.1);
+  z-index: 2;
 }
 
 .panel-header {
@@ -868,19 +999,86 @@ const copyResults = () => {
   color: #303133;
 }
 
+.input-panel .panel-header {
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+}
+
+.result-panel .panel-header {
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
+}
+
 .panel-title {
   flex: 1;
 }
 
-.text-input :deep(.el-textarea__inner) {
+.editor-wrapper {
+  flex: 1;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  background: #fff;
+}
+
+.line-numbers {
+  width: 48px;
+  flex-shrink: 0;
+  background: #fafbfc;
+  border-right: 1px solid #ebeef5;
+  padding: 12px 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.line-num {
+  height: 28px;
+  line-height: 28px;
+  text-align: right;
+  padding-right: 12px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  font-size: 12px;
+  color: #a8abb2;
+  transition: all 0.2s;
+}
+
+.line-num.hovered {
+  color: #165DFF;
+  font-weight: 700;
+  background: rgba(22, 93, 255, 0.08);
+}
+
+.line-num.has-expr {
+  color: #67c23a;
+}
+
+.line-num.has-error {
+  color: #f56c6c;
+}
+
+.textarea-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
   border: none;
-  border-radius: 0;
+  outline: none;
+  resize: none;
+  padding: 12px 16px;
   font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
   font-size: 14px;
-  line-height: 1.8;
-  padding: 16px;
-  resize: none;
-  min-height: 440px;
+  line-height: 28px;
+  color: #303133;
+  background: transparent;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+
+.editor-textarea::placeholder {
+  color: #c0c4cc;
 }
 
 .input-footer {
@@ -893,10 +1091,12 @@ const copyResults = () => {
 
 .divider-line {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #f5f7fa;
+  background: linear-gradient(180deg, #ecf5ff 0%, #f0f9eb 100%);
+  gap: 6px;
 }
 
 .divider-line::before {
@@ -905,72 +1105,146 @@ const copyResults = () => {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 1px;
-  background: #dcdfe6;
+  width: 2px;
+  background: linear-gradient(180deg, #165DFF 0%, #67c23a 100%);
   transform: translateX(-50%);
 }
 
 .divider-content {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #165DFF;
+  background: linear-gradient(135deg, #165DFF 0%, #67c23a 100%);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
-  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.25);
+}
+
+.divider-hint {
+  position: relative;
+  z-index: 1;
+  font-size: 10px;
+  color: #606266;
+  font-weight: 500;
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  margin-top: 6px;
+  padding: 6px 0;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .result-list {
   flex: 1;
   overflow-y: auto;
-  padding: 8px 0;
+  padding: 4px 0;
   background: #fcfcfd;
+  scroll-behavior: smooth;
 }
 
 .result-line {
   display: flex;
-  padding: 8px 12px 8px 8px;
-  border-bottom: 1px solid #f2f3f5;
-  transition: background 0.2s;
+  padding: 0;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s;
+  cursor: default;
 }
 
-.result-line:hover {
-  background: #f5f7fa;
+.result-line.is-empty .line-original {
+  min-height: 28px;
+}
+
+.result-line:hover,
+.result-line.hovered {
+  background: #fffbeb;
+}
+
+.result-line.hovered {
+  border-bottom-color: #e6a23c;
+  border-top-color: #e6a23c;
+  background: linear-gradient(90deg, #fffbeb 0%, #fef3c7 100%);
 }
 
 .result-line.has-expression {
-  background: #f0f9eb33;
+  background: linear-gradient(90deg, #f0f9eb 0%, #ffffff 60%);
+}
+
+.result-line.has-expression.hovered,
+.result-line.has-expression:hover {
+  background: linear-gradient(90deg, #e1f3d8 0%, #fffbeb 100%);
 }
 
 .result-line.has-error {
-  background: #fef0f0;
+  background: linear-gradient(90deg, #fef0f0 0%, #ffffff 60%);
+}
+
+.result-line.has-error.hovered,
+.result-line.has-error:hover {
+  background: linear-gradient(90deg, #fde2e2 0%, #fffbeb 100%);
 }
 
 .line-number {
-  width: 32px;
+  width: 48px;
   flex-shrink: 0;
-  text-align: right;
-  padding-right: 12px;
-  color: #c0c4cc;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 0 12px 0 0;
+  margin: 4px 0;
+  border-right: 2px solid transparent;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
   font-size: 12px;
-  font-family: 'SF Mono', monospace;
-  line-height: 22px;
+  line-height: 28px;
+  color: #a8abb2;
+  transition: all 0.2s;
+}
+
+.line-number.hovered {
+  color: #165DFF;
+  font-weight: 700;
+  background: rgba(22, 93, 255, 0.08);
+  border-right-color: #165DFF;
+}
+
+.line-number.has-expr {
+  color: #67c23a;
+  font-weight: 600;
+  border-right-color: #67c23a;
+}
+
+.line-number.has-expr.hovered {
+  color: #165DFF;
+  border-right-color: #165DFF;
+}
+
+.line-number.has-error {
+  color: #f56c6c;
+  font-weight: 600;
+  border-right-color: #f56c6c;
 }
 
 .line-content {
   flex: 1;
   min-width: 0;
+  padding: 4px 12px 4px 8px;
 }
 
 .line-original {
   font-size: 14px;
-  line-height: 22px;
+  line-height: 28px;
   color: #303133;
   word-break: break-all;
+}
+
+.empty-line-placeholder {
+  color: #dcdfe6;
+  font-style: italic;
+  font-size: 13px;
 }
 
 .seg-text {
@@ -980,10 +1254,11 @@ const copyResults = () => {
 .seg-expression {
   background: #ecf5ff;
   color: #165DFF;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-weight: 500;
-  font-family: 'SF Mono', 'Monaco', monospace;
+  padding: 1px 8px;
+  border-radius: 5px;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  margin: 0 2px;
 }
 
 .seg-expression.error {
@@ -993,37 +1268,66 @@ const copyResults = () => {
 
 .line-result {
   margin-top: 4px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   background: white;
-  border-radius: 6px;
-  border-left: 3px solid #67c23a;
-  font-size: 13px;
+  border-radius: 8px;
+  border-left: 4px solid #67c23a;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
 .result-label {
   color: #909399;
+  font-weight: 600;
+  font-size: 16px;
+  font-family: 'SF Mono', monospace;
 }
 
 .result-value {
   color: #67c23a;
-  font-weight: 600;
-  font-size: 15px;
-  font-family: 'SF Mono', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  letter-spacing: 0.3px;
 }
 
 .result-readable {
   color: #e6a23c;
   font-size: 12px;
-  margin-left: 4px;
+  font-weight: 500;
+  padding: 2px 6px;
+  background: #fdf6ec;
+  border-radius: 4px;
+}
+
+.copy-inline-btn {
+  margin-left: auto;
+  color: #c0c4cc;
+  cursor: pointer;
+  padding: 3px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+
+.copy-inline-btn:hover {
+  color: #165DFF;
+  background: #ecf5ff;
 }
 
 .error-label {
   color: #f56c6c;
+  font-size: 16px;
 }
 
 .error-message {
   color: #f56c6c;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .empty-result {
@@ -1073,22 +1377,24 @@ const copyResults = () => {
   }
 
   .input-panel {
-    border-right: 1px solid #ebeef5;
-    border-radius: 10px;
+    border-right: 2px solid #e4e7ed;
+    border-radius: 12px;
     border-bottom-right-radius: 0;
     border-bottom-left-radius: 0;
   }
 
   .result-panel {
-    border-left: 1px solid #ebeef5;
-    border-radius: 10px;
+    border-left: 2px solid #e4e7ed;
+    border-radius: 12px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     min-height: 300px;
   }
 
   .divider-line {
-    height: 40px;
+    height: 52px;
+    flex-direction: row;
+    gap: 12px;
   }
 
   .divider-line::before {
@@ -1096,8 +1402,13 @@ const copyResults = () => {
     left: 0;
     right: 0;
     width: auto;
-    height: 1px;
+    height: 2px;
     transform: translateY(-50%);
+  }
+
+  .divider-hint {
+    writing-mode: horizontal-tb;
+    margin-top: 0;
   }
 }
 
