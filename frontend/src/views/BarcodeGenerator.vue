@@ -164,12 +164,23 @@
 
           <div class="preview-container" :class="{ 'bg-transparent': barcodeConfig.backgroundTransparent }">
             <div class="barcode-wrapper">
-              <svg ref="barcodeSvgRef" class="barcode-svg"></svg>
+              <svg ref="barcodeSvgRef" class="barcode-svg barcode-svg-hidden"></svg>
+              <img
+                v-if="barcodeImgUrl"
+                :src="barcodeImgUrl"
+                class="barcode-img"
+                alt="条形码图片"
+              />
             </div>
             <div v-if="!barcodeGenerated" class="preview-placeholder">
               <el-icon><Grid /></el-icon>
               <span>请输入条码号并点击生成</span>
             </div>
+          </div>
+
+          <div v-if="barcodeGenerated" class="preview-tip">
+            <el-icon size="14" color="#e6a23c"><InfoFilled /></el-icon>
+            <span>移动端长按图片可保存到相册，或点击下方按钮下载</span>
           </div>
 
           <div class="preview-info" v-if="barcodeGenerated">
@@ -375,6 +386,7 @@ const barcodeConfig = ref<BarcodeConfig>({
 })
 
 const barcodeSvgRef = ref<SVGSVGElement | null>(null)
+const barcodeImgUrl = ref('')
 const barcodeGenerated = ref(false)
 const validBarcode = ref(false)
 const svgWidth = ref(0)
@@ -460,6 +472,34 @@ const generateBarcode = async () => {
       const bbox = barcodeSvgRef.value.getBoundingClientRect()
       svgWidth.value = Math.round(bbox.width)
       svgHeight.value = Math.round(bbox.height)
+
+      const svgData = new XMLSerializer().serializeToString(barcodeSvgRef.value)
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' })
+      const url = URL.createObjectURL(svgBlob)
+
+      await new Promise<void>((resolve) => {
+        img.onload = () => {
+          canvas.width = img.width * 2
+          canvas.height = img.height * 2
+          if (ctx) {
+            ctx.scale(2, 2)
+            if (barcodeConfig.value.backgroundTransparent) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height)
+            } else {
+              ctx.fillStyle = barcodeConfig.value.background
+              ctx.fillRect(0, 0, canvas.width, canvas.height)
+            }
+            ctx.drawImage(img, 0, 0)
+          }
+          barcodeImgUrl.value = canvas.toDataURL('image/png')
+          URL.revokeObjectURL(url)
+          resolve()
+        }
+        img.src = url
+      })
     }
 
     ElMessage.success('条形码生成成功！')
@@ -467,11 +507,21 @@ const generateBarcode = async () => {
     console.error('Barcode generation error:', error)
     barcodeGenerated.value = false
     validBarcode.value = false
+    barcodeImgUrl.value = ''
     ElMessage.error(`生成失败：${error.message || '条码内容不符合格式要求'}`)
   }
 }
 
 const downloadPng = () => {
+  if (barcodeImgUrl.value) {
+    const link = document.createElement('a')
+    link.download = `barcode_${barcodeConfig.value.value}_${barcodeConfig.value.format}.png`
+    link.href = barcodeImgUrl.value
+    link.click()
+    ElMessage.success('PNG 下载成功！')
+    return
+  }
+
   if (!barcodeSvgRef.value) return
 
   const svgData = new XMLSerializer().serializeToString(barcodeSvgRef.value)
@@ -526,6 +576,27 @@ const downloadSvg = () => {
 }
 
 const copyBase64 = async () => {
+  if (barcodeImgUrl.value) {
+    try {
+      const blob = await (await fetch(barcodeImgUrl.value)).blob()
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ])
+      ElMessage.success('图片已复制到剪贴板！')
+      return
+    } catch {
+      try {
+        await navigator.clipboard.writeText(barcodeImgUrl.value)
+        ElMessage.success('Base64 已复制到剪贴板！')
+        return
+      } catch {
+        // continue to SVG fallback
+      }
+    }
+  }
+
   if (!barcodeSvgRef.value) return
 
   const svgData = new XMLSerializer().serializeToString(barcodeSvgRef.value)
@@ -595,6 +666,7 @@ const resetConfig = () => {
   }
   barcodeGenerated.value = false
   validBarcode.value = false
+  barcodeImgUrl.value = ''
   if (barcodeSvgRef.value) {
     barcodeSvgRef.value.innerHTML = ''
   }
@@ -765,6 +837,34 @@ onMounted(() => {
 .barcode-svg {
   display: block;
   max-width: 100%;
+}
+
+.barcode-svg-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.barcode-img {
+  display: block;
+  max-width: 100%;
+  -webkit-touch-callout: default;
+  touch-action: manipulation;
+}
+
+.preview-tip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: #fdf6ec;
+  border: 1px solid #faecd8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #e6a23c;
 }
 
 .preview-placeholder {

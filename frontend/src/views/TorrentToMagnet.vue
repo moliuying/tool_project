@@ -168,7 +168,7 @@
             <img :src="isDemoMode ? demoQrCodeDataUrl : qrCodeDataUrl" alt="磁力链接二维码" />
             <div class="qrcode-main-desc">
               <el-icon size="14" color="#909399"><InfoFilled /></el-icon>
-              手机扫码直接打开，或点击下方按钮下载/复制分享
+              手机扫码直接打开，长按图片可保存，或点击下方按钮
             </div>
             <div class="qrcode-actions">
               <el-button size="small" type="primary" @click="downloadQrCode">
@@ -1163,6 +1163,8 @@ const copyQrCodeImage = async () => {
   margin-bottom: 12px;
   border: 1px solid #e4e7ed;
   border-radius: 4px;
+  -webkit-touch-callout: default;
+  touch-action: manipulation;
 }
 
 .qrcode-main-desc {
