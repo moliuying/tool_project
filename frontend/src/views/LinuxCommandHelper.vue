@@ -18,7 +18,10 @@
       <el-divider />
       <el-alert type="info" :closable="false">
         <template #title>
-          <span>支持运维工程师、系统管理员、开发者和 Linux 学习者快速查询命令使用方法，无需切换终端或查阅外部文档</span>
+          <div class="alert-content">
+            <p><strong>查询能力说明：</strong>支持模糊搜索，可通过命令名、中文描述、选项名、示例内容快速定位</p>
+            <p class="example-tips">💡 试试搜索：「文件复制」「递归」「网络连接」「压缩解压」或直接输入命令名</p>
+          </div>
         </template>
       </el-alert>
     </el-card>
@@ -38,7 +41,7 @@
         <div class="search-input-wrapper">
           <el-input
             v-model="searchKeyword"
-            placeholder="输入命令名称或关键词搜索，如: ls、grep、chmod、ssh..."
+            placeholder="命令名 / 中文名 / 功能描述 / 选项 / 示例关键词，如: ls、列出目录、文件复制、ssh..."
             size="large"
             clearable
             @input="handleSearch"
@@ -47,6 +50,12 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
+          <div class="search-tips">
+            <el-tag v-for="tip in searchTips" :key="tip.label" size="small" type="info" effect="plain" class="tip-tag" @click="quickSearch(tip.keyword)">
+              <el-icon><component :is="tip.icon" /></el-icon>
+              {{ tip.label }}
+            </el-tag>
+          </div>
         </div>
 
         <div class="category-filter">
@@ -159,6 +168,25 @@
           <span class="section-title">功能描述</span>
         </div>
         <div class="section-content desc-content">{{ selectedCommand.description }}</div>
+        <div v-if="getAliasesForCmd(selectedCommand.name).length > 0" class="aliases-box">
+          <el-tag size="small" type="success" effect="plain">
+            <el-icon><Link /></el-icon>
+            别名/俗称
+          </el-tag>
+          <div class="aliases-list">
+            <el-tag
+              v-for="alias in getAliasesForCmd(selectedCommand.name)"
+              :key="alias"
+              size="small"
+              type="success"
+              effect="dark"
+              class="alias-tag"
+              @click="quickSearch(alias)"
+            >
+              {{ alias }}
+            </el-tag>
+          </div>
+        </div>
       </div>
 
       <el-divider />
@@ -284,7 +312,13 @@ import {
   Link,
   Right,
   List,
-  DataLine
+  DataLine,
+  Files,
+  Connection,
+  Folder,
+  Lock,
+  VideoPlay,
+  Grid
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { linuxCommands, type LinuxCommand } from '@/data/linuxCommands'
@@ -294,6 +328,85 @@ const activeCategory = ref('')
 const selectedCommand = ref<LinuxCommand | null>(null)
 
 const totalCommands = computed(() => linuxCommands.length)
+
+const searchTips = [
+  { label: '模糊搜索', icon: Search, keyword: '' },
+  { label: '命令名称', icon: Document, keyword: 'ls' },
+  { label: '中文关键词', icon: Files, keyword: '文件复制' },
+  { label: '选项参数', icon: Setting, keyword: '-R' },
+  { label: '使用场景', icon: Folder, keyword: '网络连接' }
+]
+
+const aliasMap: Record<string, string[]> = {
+  'ls': ['列出目录', '查看目录', '显示文件', '列文件', 'dir'],
+  'cd': ['切换目录', '进入目录', '改变目录'],
+  'pwd': ['当前路径', '当前目录', '显示当前路径'],
+  'cat': ['查看文件', '显示文件内容', '连接文件', '猫'],
+  'mkdir': ['创建目录', '新建目录', '建文件夹', 'md'],
+  'cp': ['复制文件', '拷贝', '复制', 'copy'],
+  'mv': ['移动文件', '重命名', '改名', '剪切', 'move'],
+  'rm': ['删除文件', '删除目录', '移除', 'remove', '删'],
+  'grep': ['搜索文本', '文本搜索', '查找内容', '正则搜索', '过滤'],
+  'tail': ['查看尾部', '查看末尾', '实时查看', '跟踪日志'],
+  'head': ['查看头部', '查看开头', '前几行'],
+  'sed': ['文本替换', '流编辑器', '替换字符串', '批量替换'],
+  'awk': ['文本处理', '数据提取', '格式化输出', 'awk脚本'],
+  'wc': ['统计行数', '字数统计', '字符统计', '统计词数', 'word count'],
+  'sort': ['排序', '文件排序'],
+  'uniq': ['去重', '唯一', '去除重复'],
+  'cut': ['截取', '分割', '提取列', '剪切'],
+  'less': ['分页查看', '浏览文件', 'more'],
+  'find': ['查找文件', '搜索文件', '文件搜索', '遍历目录'],
+  'tar': ['打包', '压缩解压', 'tar.gz', '归档'],
+  'chmod': ['修改权限', '权限', '改权限'],
+  'chown': ['修改所有者', '改所属', '所有者'],
+  'ps': ['查看进程', '进程列表', '进程状态'],
+  'top': ['进程监控', '系统监控', '实时进程', 'cpu占用'],
+  'kill': ['杀进程', '结束进程', '终止进程'],
+  'du': ['磁盘使用', '目录大小', '文件大小', '占用空间'],
+  'df': ['磁盘空间', '磁盘剩余', '分区信息', '硬盘空间'],
+  'ssh': ['远程连接', '远程登录', 'secure shell'],
+  'scp': ['远程复制', '跨机复制', 'ssh拷贝'],
+  'rsync': ['同步文件', '文件同步', '远程同步', '增量备份'],
+  'netstat': ['网络状态', '端口查看', '网络连接', '端口占用'],
+  'ss': ['socket统计', '网络端口', '连接信息'],
+  'curl': ['请求网址', '下载文件', 'http请求', 'api测试'],
+  'wget': ['下载', '网页下载', '批量下载'],
+  'ping': ['网络连通', '延迟测试', 'ping通', '网络测试'],
+  'systemctl': ['服务管理', '系统服务', '启动服务', '停止服务', 'systemd'],
+  'journalctl': ['查看日志', '系统日志', 'journal日志']
+}
+
+const synonymMap: Record<string, string> = {
+  '拷贝': '复制',
+  '删除': '移除',
+  '目录': '文件夹',
+  '档案': '文件',
+  '检视': '查看',
+  '搜寻': '搜索',
+  '网路': '网络',
+  '磁碟': '磁盘',
+  '权限': '许可',
+  '行程': '进程',
+  '连接埠': '端口'
+}
+
+const normalizeKeyword = (kw: string): string => {
+  let result = kw.toLowerCase().trim()
+  for (const [syn, replacement] of Object.entries(synonymMap)) {
+    result = result.replace(new RegExp(syn, 'g'), replacement)
+  }
+  return result
+}
+
+const getAliasesForCmd = (cmdName: string): string[] => {
+  return aliasMap[cmdName] || []
+}
+
+const matchByAlias = (cmd: LinuxCommand, keyword: string): boolean => {
+  const aliases = getAliasesForCmd(cmd.name)
+  return aliases.some(alias => alias.toLowerCase().includes(keyword) || keyword.includes(alias.toLowerCase()))
+}
 
 const categories = computed(() => {
   const cats = new Set(linuxCommands.map(cmd => cmd.category))
@@ -316,20 +429,24 @@ const filteredCommands = computed(() => {
   }
 
   if (searchKeyword.value.trim()) {
-    const keyword = searchKeyword.value.trim().toLowerCase()
-    result = result.filter(cmd =>
-      cmd.name.toLowerCase().includes(keyword) ||
-      cmd.description.toLowerCase().includes(keyword) ||
-      cmd.syntax.toLowerCase().includes(keyword) ||
-      cmd.options.some(opt =>
+    const keyword = normalizeKeyword(searchKeyword.value)
+    result = result.filter(cmd => {
+      if (matchByAlias(cmd, keyword)) return true
+      const nameMatch = cmd.name.toLowerCase().includes(keyword)
+      const descMatch = cmd.description.toLowerCase().includes(keyword) || cmd.description.includes(searchKeyword.value.trim())
+      const syntaxMatch = cmd.syntax.toLowerCase().includes(keyword)
+      const optionMatch = cmd.options.some(opt =>
         opt.name.toLowerCase().includes(keyword) ||
-        opt.description.toLowerCase().includes(keyword)
-      ) ||
-      cmd.examples.some(ex =>
-        ex.command.toLowerCase().includes(keyword) ||
-        ex.description.toLowerCase().includes(keyword)
+        opt.description.toLowerCase().includes(keyword) ||
+        opt.description.includes(searchKeyword.value.trim())
       )
-    )
+      const exampleMatch = cmd.examples.some(ex =>
+        ex.command.toLowerCase().includes(keyword) ||
+        ex.description.toLowerCase().includes(keyword) ||
+        ex.description.includes(searchKeyword.value.trim())
+      )
+      return nameMatch || descMatch || syntaxMatch || optionMatch || exampleMatch
+    })
   }
 
   return result
@@ -712,5 +829,78 @@ onMounted(() => {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .search-tips {
+    flex-wrap: wrap;
+  }
+
+  .aliases-box {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+}
+
+.alert-content p {
+  margin: 6px 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.alert-content .example-tips {
+  font-size: 13px;
+  color: #606266;
+  padding-left: 2px;
+}
+
+.search-tips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.tip-tag {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s;
+}
+
+.tip-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(144, 147, 153, 0.3);
+  background: #165DFF;
+  border-color: #165DFF;
+  color: #fff;
+}
+
+.aliases-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f0f9eb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.aliases-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.alias-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.alias-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
 }
 </style>
