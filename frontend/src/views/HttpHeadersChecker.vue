@@ -189,6 +189,29 @@
       <div v-if="errorMessage" class="error-message">
         <el-alert :title="errorMessage" type="error" :closable="false" show-icon />
       </div>
+
+      <el-alert
+        v-if="selectedMethod === 'HEAD'"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="head-method-warning"
+      >
+        <template #title>
+          <div class="head-warning-content">
+            <span>当前使用 <strong>HEAD</strong> 方法，服务器<strong>不会返回响应体内容</strong>，只能查看响应头信息。</span>
+            <el-button
+              type="warning"
+              size="small"
+              class="switch-to-get-btn"
+              @click="switchToGetAndQuery"
+            >
+              <el-icon><Switch /></el-icon>
+              切换到 GET 方法（查看完整响应体）
+            </el-button>
+          </div>
+        </template>
+      </el-alert>
     </el-card>
 
     <el-card v-if="!hasResult && !isLoading" class="preview-card">
@@ -226,6 +249,11 @@
             <span class="tab-icon"><Setting /></span>
             <span class="tab-label">响应头</span>
             <span class="tab-desc">完整的 HTTP 响应头键值对</span>
+          </div>
+          <div class="preview-tab">
+            <span class="tab-icon"><Notebook /></span>
+            <span class="tab-label">响应体</span>
+            <span class="tab-desc">HTML/JSON 等完整响应内容</span>
           </div>
           <div class="preview-tab">
             <span class="tab-icon"><Guide /></span>
@@ -475,6 +503,96 @@
           </div>
         </el-tab-pane>
 
+        <el-tab-pane label="响应体" name="body">
+          <div class="body-section">
+            <div class="body-toolbar">
+              <div class="body-info">
+                <el-tag size="small" type="info" v-if="headersResult.contentType">
+                  {{ headersResult.contentType }}
+                </el-tag>
+                <el-tag size="small" type="success" v-if="headersResult.bodySize">
+                  {{ formatBodySize(headersResult.bodySize) }}
+                </el-tag>
+                <el-tag size="small" type="warning" v-if="headersResult.bodyTruncated">
+                  <el-icon><Warning /></el-icon>
+                  内容已截断（超过 512KB）
+                </el-tag>
+                <el-tag
+                  v-if="headersResult.method === 'HEAD'"
+                  size="small"
+                  type="danger"
+                  effect="dark"
+                >
+                  HEAD 方法无响应体
+                </el-tag>
+              </div>
+              <div class="body-actions">
+                <el-button
+                  v-if="headersResult.method === 'HEAD'"
+                  type="warning"
+                  size="small"
+                  @click="switchToGetAndQuery"
+                >
+                  <el-icon><Switch /></el-icon>
+                  切换到 GET 查看响应体
+                </el-button>
+                <el-button
+                  v-if="headersResult.body && !isJsonBody"
+                  size="small"
+                  @click="toggleBodyWrap"
+                >
+                  <el-icon>{{ bodyWrap ? 'Aim' : 'Rank' }}</el-icon>
+                  {{ bodyWrap ? '取消自动换行' : '自动换行' }}
+                </el-button>
+                <el-button
+                  v-if="isJsonBody && headersResult.body"
+                  size="small"
+                  @click="toggleJsonFormat"
+                >
+                  <el-icon><MagicStick /></el-icon>
+                  {{ jsonFormatted ? '压缩显示' : '格式化 JSON' }}
+                </el-button>
+                <el-button size="small" @click="copyBody">
+                  <el-icon><CopyDocument /></el-icon>
+                  复制内容
+                </el-button>
+                <el-button
+                  v-if="headersResult.body"
+                  size="small"
+                  type="primary"
+                  @click="downloadBody"
+                >
+                  <el-icon><Download /></el-icon>
+                  下载文件
+                </el-button>
+              </div>
+            </div>
+            <div v-if="headersResult.method === 'HEAD' && !headersResult.body" class="body-empty-warning">
+              <el-result
+                icon="warning"
+                title="HEAD 方法不返回响应体"
+                sub-title="服务器使用 HEAD 方法时只返回响应头信息，不返回响应体内容。"
+              >
+                <template #extra>
+                  <el-button type="primary" @click="switchToGetAndQuery">
+                    <el-icon><Switch /></el-icon>
+                    切换到 GET 方法重新查询
+                  </el-button>
+                </template>
+              </el-result>
+            </div>
+            <div v-else-if="!headersResult.body" class="body-empty">
+              <el-empty description="响应体为空" />
+            </div>
+            <div v-else class="body-content-wrapper">
+              <pre
+                class="body-content"
+                :class="{ 'body-wrap': bodyWrap, 'body-json': isJsonBody }"
+              >{{ displayBody }}</pre>
+            </div>
+          </div>
+        </el-tab-pane>
+
         <el-tab-pane label="原始数据" name="raw">
           <div class="raw-data-section">
             <div class="raw-toolbar">
@@ -520,7 +638,12 @@ import {
   CircleCheckFilled,
   WarningFilled,
   CircleCloseFilled,
-  QuestionFilled
+  QuestionFilled,
+  Switch,
+  Notebook,
+  Download,
+  Aim,
+  Rank
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { httpHeadersApi, type HttpHeadersResult } from '@/api/httpHeaders'
@@ -536,6 +659,8 @@ const headersResult = ref<HttpHeadersResult>({} as HttpHeadersResult)
 const activeTab = ref('overview')
 const searchKeyword = ref('')
 const filterCategory = ref('all')
+const bodyWrap = ref(false)
+const jsonFormatted = ref(true)
 
 const httpMethods = [
   {
@@ -628,6 +753,42 @@ const demoData: HttpHeadersResult = {
   statusText: 'OK',
   responseTime: 128,
   finalUrl: 'https://example.com',
+  contentType: 'text/html; charset=UTF-8',
+  bodySize: 1256,
+  body: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example Domain</title>
+    <style>
+        body {
+            background-color: #f0f0f2;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        div {
+            width: 600px;
+            margin: 5em auto;
+            padding: 2em;
+            background-color: #fdfdff;
+            border-radius: 0.5em;
+            box-shadow: 2px 3px 7px 2px rgba(0,0,0,0.02);
+        }
+        h1 { color: #333; }
+        p { line-height: 1.6; color: #666; }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Example Domain</h1>
+        <p>This domain is for use in illustrative examples in documents.
+        You may use this domain in literature without prior coordination or asking for permission.</p>
+        <p><a href="https://www.iana.org/domains/example">More information...</a></p>
+    </div>
+</body>
+</html>`,
   headers: {
     'content-encoding': 'gzip',
     'content-type': 'text/html; charset=UTF-8',
@@ -913,9 +1074,12 @@ const copyAllResult = () => {
 状态码: ${result.status} ${result.statusText}
 响应时间: ${result.responseTime}ms
 ${result.finalUrl && result.finalUrl !== result.url ? `最终地址: ${result.finalUrl}` : ''}
+${result.contentType ? `Content-Type: ${result.contentType}` : ''}
+${result.bodySize ? `响应体大小: ${formatBodySize(result.bodySize)}` : ''}
 
 响应头:
 ${Object.entries(result.headers || {}).map(([k, v]) => `  ${k}: ${v}`).join('\n')}
+${result.body ? `\n响应体:\n${result.body}\n` : ''}
 `
   navigator.clipboard.writeText(text).then(() => {
     ElMessage.success('已复制全部查询结果')
@@ -930,6 +1094,96 @@ const copyRawData = () => {
   }).catch(() => {
     ElMessage.error('复制失败')
   })
+}
+
+const isJsonBody = computed(() => {
+  const ct = headersResult.value.contentType || ''
+  const body = headersResult.value.body || ''
+  if (ct.includes('application/json')) return true
+  const trimmed = body.trim()
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) return true
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) return true
+  return false
+})
+
+const displayBody = computed(() => {
+  const body = headersResult.value.body || ''
+  if (isJsonBody.value && jsonFormatted.value) {
+    try {
+      return JSON.stringify(JSON.parse(body), null, 2)
+    } catch {
+      return body
+    }
+  }
+  if (isJsonBody.value && !jsonFormatted.value) {
+    try {
+      return JSON.stringify(JSON.parse(body))
+    } catch {
+      return body
+    }
+  }
+  return body
+})
+
+const formatBodySize = (bytes: number): string => {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}
+
+const switchToGetAndQuery = () => {
+  selectedMethod.value = 'GET'
+  ElMessage.success('已切换到 GET 方法')
+  if (urlInput.value.trim()) {
+    queryHeaders()
+  }
+}
+
+const toggleBodyWrap = () => {
+  bodyWrap.value = !bodyWrap.value
+}
+
+const toggleJsonFormat = () => {
+  jsonFormatted.value = !jsonFormatted.value
+}
+
+const copyBody = () => {
+  const body = displayBody.value
+  if (!body) {
+    ElMessage.warning('没有可复制的响应体内容')
+    return
+  }
+  navigator.clipboard.writeText(body).then(() => {
+    ElMessage.success('已复制响应体内容')
+  }).catch(() => {
+    ElMessage.error('复制失败')
+  })
+}
+
+const downloadBody = () => {
+  const body = headersResult.value.body
+  if (!body) {
+    ElMessage.warning('没有可下载的响应体内容')
+    return
+  }
+  const ct = headersResult.value.contentType || 'text/plain'
+  let extension = 'txt'
+  if (ct.includes('text/html')) extension = 'html'
+  else if (ct.includes('application/json')) extension = 'json'
+  else if (ct.includes('application/xml') || ct.includes('text/xml')) extension = 'xml'
+  else if (ct.includes('text/css')) extension = 'css'
+  else if (ct.includes('javascript')) extension = 'js'
+
+  const blob = new Blob([body], { type: ct })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `response.${extension}`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+  ElMessage.success('响应体已下载')
 }
 </script>
 
@@ -1772,6 +2026,109 @@ const copyRawData = () => {
   background: #2d2d2d;
 }
 
+.head-method-warning {
+  margin-top: 16px;
+}
+
+.head-warning-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+}
+
+.head-warning-content strong {
+  color: #e6a23c;
+}
+
+.switch-to-get-btn {
+  flex-shrink: 0;
+}
+
+.body-section {
+  padding: 8px 0;
+}
+
+.body-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.body-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.body-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.body-empty-warning {
+  margin: 40px 0;
+}
+
+.body-empty {
+  padding: 60px 0;
+}
+
+.body-content-wrapper {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.body-content {
+  max-height: 700px;
+  overflow-y: auto;
+  overflow-x: auto;
+  padding: 20px;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #d4d4d4;
+  white-space: pre;
+  word-break: normal;
+}
+
+.body-content.body-wrap {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.body-content.body-json {
+  color: #9cdcfe;
+}
+
+.body-content::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.body-content::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+.body-content::-webkit-scrollbar-track {
+  background: #2d2d2d;
+}
+
 :deep(.el-tabs__content) {
   padding-top: 16px;
 }
@@ -1794,6 +2151,28 @@ const copyRawData = () => {
   .status-meta {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .head-warning-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .switch-to-get-btn {
+    width: 100%;
+  }
+
+  .body-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .body-actions {
+    width: 100%;
+  }
+
+  .preview-tabs {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>

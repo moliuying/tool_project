@@ -12,6 +12,10 @@ export interface HttpHeadersResult {
   statusText: string
   responseTime: number
   headers: Record<string, string>
+  body?: string
+  bodySize?: number
+  bodyTruncated?: boolean
+  contentType?: string
   redirects?: string[]
   finalUrl?: string
 }

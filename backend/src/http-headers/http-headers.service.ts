@@ -8,6 +8,10 @@ export interface HttpHeadersResult {
   statusText: string;
   responseTime: number;
   headers: Record<string, string>;
+  body?: string;
+  bodySize?: number;
+  bodyTruncated?: boolean;
+  contentType?: string;
   redirects?: string[];
   finalUrl?: string;
 }
@@ -54,6 +58,25 @@ export class HttpHeadersService {
       const responseTime = Date.now() - startTime;
 
       const normalizedHeaders = this.normalizeHeaders(response.headers);
+      const contentType = normalizedHeaders['content-type'] || '';
+
+      let body = '';
+      let bodySize = 0;
+      let bodyTruncated = false;
+      const MAX_BODY_SIZE = 512 * 1024;
+
+      if (response.data && method.toUpperCase() !== 'HEAD') {
+        const rawBody = typeof response.data === 'string'
+          ? response.data
+          : JSON.stringify(response.data, null, 2);
+        bodySize = Buffer.byteLength(rawBody, 'utf-8');
+        if (bodySize > MAX_BODY_SIZE) {
+          body = rawBody.substring(0, MAX_BODY_SIZE);
+          bodyTruncated = true;
+        } else {
+          body = rawBody;
+        }
+      }
 
       const result: HttpHeadersResult = {
         url: cleanUrl,
@@ -62,6 +85,10 @@ export class HttpHeadersService {
         statusText: response.statusText,
         responseTime,
         headers: normalizedHeaders,
+        contentType,
+        body,
+        bodySize,
+        bodyTruncated,
         finalUrl: response.request?.res?.responseUrl || cleanUrl
       };
 
@@ -73,13 +100,38 @@ export class HttpHeadersService {
     } catch (error: any) {
       if (error.response) {
         const responseTime = Date.now() - startTime;
+        const normalizedHeaders = this.normalizeHeaders(error.response.headers || {});
+        const contentType = normalizedHeaders['content-type'] || '';
+
+        let body = '';
+        let bodySize = 0;
+        let bodyTruncated = false;
+        const MAX_BODY_SIZE = 512 * 1024;
+
+        if (error.response.data && method.toUpperCase() !== 'HEAD') {
+          const rawBody = typeof error.response.data === 'string'
+            ? error.response.data
+            : JSON.stringify(error.response.data, null, 2);
+          bodySize = Buffer.byteLength(rawBody, 'utf-8');
+          if (bodySize > MAX_BODY_SIZE) {
+            body = rawBody.substring(0, MAX_BODY_SIZE);
+            bodyTruncated = true;
+          } else {
+            body = rawBody;
+          }
+        }
+
         return {
           url: cleanUrl,
           method: method.toUpperCase(),
           status: error.response.status,
           statusText: error.response.statusText || 'Error',
           responseTime,
-          headers: this.normalizeHeaders(error.response.headers || {})
+          headers: normalizedHeaders,
+          contentType,
+          body,
+          bodySize,
+          bodyTruncated
         };
       }
       throw new Error(`请求失败: ${error.message}`);
