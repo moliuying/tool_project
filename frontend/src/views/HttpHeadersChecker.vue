@@ -28,6 +28,49 @@
           <li>适用于前端开发者、运维工程师、SEO 优化人员和安全研究人员</li>
         </ul>
       </div>
+      <el-divider />
+      <div class="method-guide-section">
+        <h4 class="tips-title">
+          <el-icon :size="16" color="#165DFF"><Connection /></el-icon>
+          HTTP 请求方法说明
+        </h4>
+        <div class="method-guide-list">
+          <div
+            v-for="method in httpMethods"
+            :key="method.value"
+            class="method-guide-item"
+            :class="{ recommended: method.recommended }"
+          >
+            <div class="method-guide-header">
+              <span :class="['method-label', method.color]">{{ method.label }}</span>
+              <span class="method-short-desc">{{ method.shortDesc }}</span>
+              <el-tag v-if="method.recommended" size="small" type="success" effect="light">推荐</el-tag>
+            </div>
+            <p class="method-guide-desc">{{ method.description }}</p>
+            <div class="method-guide-info">
+              <div class="method-guide-row">
+                <span class="method-guide-label">对结果的影响：</span>
+                <span class="method-guide-value">{{ method.impact }}</span>
+              </div>
+              <div class="method-guide-row">
+                <span class="method-guide-label">适用场景：</span>
+                <div class="method-guide-usecases">
+                  <el-tag
+                    v-for="(useCase, idx) in method.useCases"
+                    :key="idx"
+                    size="small"
+                    type="info"
+                    effect="plain"
+                    class="usecase-tag"
+                  >
+                    {{ useCase }}
+                  </el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </el-card>
 
     <el-card class="query-card">
@@ -82,17 +125,41 @@
           <el-row :gutter="24">
             <el-col :xs="24" :sm="12" :md="8">
               <el-form-item label="请求方法">
-                <el-select v-model="selectedMethod" size="large" style="width: 100%">
-                  <el-option
-                    v-for="method in httpMethods"
-                    :key="method.value"
-                    :label="method.label"
-                    :value="method.value"
-                  >
-                    <span style="float: left">{{ method.label }}</span>
-                    <span :class="['method-tag', method.color]">{{ method.desc }}</span>
-                  </el-option>
-                </el-select>
+                <div class="method-select-wrapper">
+                  <el-select v-model="selectedMethod" size="large" style="width: 100%" placeholder="请选择请求方法">
+                    <el-option
+                      v-for="method in httpMethods"
+                      :key="method.value"
+                      :label="method.label"
+                      :value="method.value"
+                    >
+                      <div class="method-option">
+                        <span class="method-option-label">{{ method.label }}</span>
+                        <span :class="['method-tag', method.color]">{{ method.shortDesc }}</span>
+                        <el-tag v-if="method.recommended" size="small" type="success" effect="dark">推荐</el-tag>
+                      </div>
+                    </el-option>
+                  </el-select>
+                  <el-tooltip placement="right" effect="dark" :width="280">
+                    <template #content>
+                      <div class="method-tooltip">
+                        <div class="method-tooltip-title">
+                          <el-tag :type="currentMethodInfo?.recommended ? 'success' : 'info'" size="small">
+                            {{ currentMethodInfo?.label }}
+                          </el-tag>
+                          <span class="method-tooltip-subtitle">{{ currentMethodInfo?.shortDesc }}</span>
+                        </div>
+                        <p class="method-tooltip-desc">{{ currentMethodInfo?.description }}</p>
+                        <div class="method-tooltip-impact">
+                          <strong>对结果的影响：</strong>{{ currentMethodInfo?.impact }}
+                        </div>
+                      </div>
+                    </template>
+                    <span class="method-help-icon">
+                      <el-icon><QuestionFilled /></el-icon>
+                    </span>
+                  </el-tooltip>
+                </div>
               </el-form-item>
             </el-col>
             <el-col :xs="24" :sm="12" :md="8">
@@ -452,7 +519,8 @@ import {
   Lock,
   CircleCheckFilled,
   WarningFilled,
-  CircleCloseFilled
+  CircleCloseFilled,
+  QuestionFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { httpHeadersApi, type HttpHeadersResult } from '@/api/httpHeaders'
@@ -470,13 +538,76 @@ const searchKeyword = ref('')
 const filterCategory = ref('all')
 
 const httpMethods = [
-  { label: 'GET', value: 'GET', desc: '获取资源', color: 'tag-green' },
-  { label: 'HEAD', value: 'HEAD', desc: '仅获取头', color: 'tag-blue' },
-  { label: 'POST', value: 'POST', desc: '提交数据', color: 'tag-orange' },
-  { label: 'PUT', value: 'PUT', desc: '更新资源', color: 'tag-purple' },
-  { label: 'DELETE', value: 'DELETE', desc: '删除资源', color: 'tag-red' },
-  { label: 'OPTIONS', value: 'OPTIONS', desc: '跨域预检', color: 'tag-cyan' },
-  { label: 'PATCH', value: 'PATCH', desc: '部分更新', color: 'tag-pink' }
+  {
+    label: 'GET',
+    value: 'GET',
+    shortDesc: '获取资源',
+    color: 'tag-green',
+    recommended: true,
+    description: '最常用的请求方法，用于获取服务器资源。服务器会返回完整的响应头和响应体。大多数情况下应使用此方法进行头信息查询。',
+    impact: '响应头完整，部分服务器对 GET 和 HEAD 的响应头可能略有差异',
+    useCases: ['常规网站配置检查', '缓存策略核查', '服务器类型识别', 'SEO 优化检查']
+  },
+  {
+    label: 'HEAD',
+    value: 'HEAD',
+    shortDesc: '仅获取头',
+    color: 'tag-blue',
+    recommended: false,
+    description: '与 GET 类似，但服务器只返回响应头，不返回响应体。理论上更高效，但部分网站可能未正确实现 HEAD 请求支持。',
+    impact: '响应体为空，某些服务器可能返回不同的头信息（如缺少 Content-Length 等）',
+    useCases: ['检查资源是否存在', '验证缓存有效性', '获取文件大小而不下载', '带宽受限环境下的检测']
+  },
+  {
+    label: 'POST',
+    value: 'POST',
+    shortDesc: '提交数据',
+    color: 'tag-orange',
+    recommended: false,
+    description: '用于向服务器提交数据。POST 请求通常会改变服务器状态，不同服务器对 POST 的响应头可能与 GET 不同。',
+    impact: '可能触发服务器端逻辑（如创建资源），响应头可能包含 Location、Set-Cookie 等',
+    useCases: ['测试表单提交接口', '检查登录/注册接口头信息', 'API 接口安全检测']
+  },
+  {
+    label: 'PUT',
+    value: 'PUT',
+    shortDesc: '更新资源',
+    color: 'tag-purple',
+    recommended: false,
+    description: '用于更新服务器上的资源。与 POST 类似，但 PUT 通常用于替换整个资源。',
+    impact: '可能修改服务器资源，响应头可能反映更新状态',
+    useCases: ['RESTful API 测试', '资源更新接口检测']
+  },
+  {
+    label: 'DELETE',
+    value: 'DELETE',
+    shortDesc: '删除资源',
+    color: 'tag-red',
+    recommended: false,
+    description: '用于删除服务器上的资源。',
+    impact: '可能删除服务器资源，请谨慎使用',
+    useCases: ['RESTful API 测试', '删除接口安全检测']
+  },
+  {
+    label: 'OPTIONS',
+    value: 'OPTIONS',
+    shortDesc: '跨域预检',
+    color: 'tag-cyan',
+    recommended: false,
+    description: '用于获取目标资源支持的通信选项。常用于 CORS 跨域预检请求。',
+    impact: '响应头通常包含 Allow、Access-Control-Allow-* 等 CORS 相关头信息',
+    useCases: ['CORS 跨域配置检查', '查看服务器支持的 HTTP 方法', 'API 跨域策略验证']
+  },
+  {
+    label: 'PATCH',
+    value: 'PATCH',
+    shortDesc: '部分更新',
+    color: 'tag-pink',
+    recommended: false,
+    description: '用于对资源进行部分更新。与 PUT 不同，PATCH 只更新指定字段。',
+    impact: '可能修改服务器资源的部分内容',
+    useCases: ['RESTful API 测试', '增量更新接口检测']
+  }
 ]
 
 const exampleUrls = [
@@ -485,6 +616,10 @@ const exampleUrls = [
   'https://www.taobao.com',
   'https://www.bing.com'
 ]
+
+const currentMethodInfo = computed(() => {
+  return httpMethods.find(m => m.value === selectedMethod.value)
+})
 
 const demoData: HttpHeadersResult = {
   url: 'https://example.com',
@@ -1026,6 +1161,180 @@ const copyRawData = () => {
 .tag-red { background: #fef0f0; color: #f56c6c; }
 .tag-cyan { background: #e1f3f8; color: #13c2c2; }
 .tag-pink { background: #fff0f6; color: #eb2f96; }
+
+.method-guide-section {
+  padding: 0 4px;
+}
+
+.method-guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.method-guide-item {
+  padding: 16px;
+  background: #fafafa;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.method-guide-item:hover {
+  border-color: #165DFF;
+  background: #f0f7ff;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.1);
+}
+
+.method-guide-item.recommended {
+  border-left: 4px solid #67c23a;
+  background: linear-gradient(135deg, #f0f9eb 0%, #fafafa 100%);
+}
+
+.method-guide-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.method-label {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.method-short-desc {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.method-guide-desc {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.method-guide-info {
+  padding-top: 12px;
+  border-top: 1px dashed #e4e7ed;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.method-guide-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.method-guide-label {
+  font-size: 12px;
+  color: #909399;
+  font-weight: 600;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.method-guide-value {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.method-guide-usecases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.usecase-tag {
+  font-size: 11px;
+}
+
+.method-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.method-help-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f0f7ff;
+  color: #165DFF;
+  cursor: help;
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+
+.method-help-icon:hover {
+  background: #165DFF;
+  color: white;
+  transform: scale(1.1);
+}
+
+.method-help-icon .el-icon {
+  font-size: 16px;
+}
+
+.method-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.method-option-label {
+  font-weight: 600;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.method-tooltip {
+  padding: 4px 0;
+}
+
+.method-tooltip-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.method-tooltip-subtitle {
+  font-size: 13px;
+  color: #dcdfe6;
+}
+
+.method-tooltip-desc {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: #e4e7ed;
+  line-height: 1.5;
+}
+
+.method-tooltip-impact {
+  font-size: 12px;
+  color: #c0c4cc;
+  line-height: 1.5;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.method-tooltip-impact strong {
+  color: #fff;
+}
 
 .error-message {
   margin-top: 16px;
