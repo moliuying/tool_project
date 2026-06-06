@@ -47,8 +47,9 @@ async function bootstrap() {
       { name: '文件哈希计算', path: '/file-hash', icon: 'Key', parentId: null, sort: 30, component: 'views/FileHashCalculator.vue' },
       { name: '条形码生成器', path: '/barcode-generator', icon: 'Grid', parentId: null, sort: 31, component: 'views/BarcodeGenerator.vue' },
       { name: '邮政编码查询', path: '/postal-code-query', icon: 'Location', parentId: null, sort: 32, component: 'views/PostalCodeQuery.vue' },
+      { name: '字符串十六进制互转', path: '/string-hex-converter', icon: 'Switch', parentId: null, sort: 33, component: 'views/StringHexConverter.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 33, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 34, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

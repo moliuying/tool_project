@@ -200,6 +200,11 @@ const routes: RouteRecordRaw[] = [
         path: '/code-highlighter',
         name: 'CodeHighlighter',
         component: () => import('@/views/CodeHighlighter.vue')
+      },
+      {
+        path: '/string-hex-converter',
+        name: 'StringHexConverter',
+        component: () => import('@/views/StringHexConverter.vue')
       }
     ]
   }
