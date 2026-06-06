@@ -10,9 +10,9 @@
         </div>
       </template>
       <el-steps :active="sourceImage ? 3 : 0" finish-status="success" simple class="guide-steps">
-        <el-step title="上传图片" description="选择需要切割的图片（建议使用正方形）" />
-        <el-step title="预览效果" description="实时预览九宫格切割效果" />
-        <el-step title="下载图片" description="逐张下载或批量下载全部图片" />
+        <el-step title="上传图片" description="选择需要切割的图片" />
+        <el-step title="设置宫格" description="选择或自定义宫格行列数" />
+        <el-step title="预览下载" description="实时预览切割效果并下载" />
       </el-steps>
     </el-card>
 
@@ -24,7 +24,7 @@
               <el-icon :size="20" color="#165DFF">
                 <View />
               </el-icon>
-              <span>九宫格预览</span>
+              <span>预览效果（{{ gridRows }} × {{ gridCols }} = {{ totalCells }} 张）</span>
               <el-tag size="small" type="success" class="header-tag">
                 本地处理 · 安全可靠
               </el-tag>
@@ -34,7 +34,7 @@
           <div class="preview-wrapper">
             <div v-if="sourceImage" class="grid-preview" :style="gridStyle">
               <div
-                v-for="(cell, index) in 9"
+                v-for="(cell, index) in totalCells"
                 :key="index"
                 class="grid-cell"
                 :style="getCellStyle(index)"
@@ -45,14 +45,15 @@
             <div v-else class="preview-placeholder">
               <el-icon><Grid /></el-icon>
               <span>请先上传图片</span>
-              <p class="placeholder-hint">图片将自动居中裁剪为正方形后切割</p>
+              <p class="placeholder-hint">图片将按设置的行列比例自动裁剪切割</p>
             </div>
           </div>
 
           <div class="preview-info" v-if="sourceImage">
-            <el-tag size="small">原图尺寸: {{ imageWidth }} x {{ imageHeight }}</el-tag>
-            <el-tag size="small" type="info">输出尺寸: {{ outputSize }} x {{ outputSize }}</el-tag>
-            <el-tag size="small" type="success">每张小图: {{ cellSize }} x {{ cellSize }}</el-tag>
+            <el-tag size="small">原图尺寸: {{ imageWidth }} × {{ imageHeight }}</el-tag>
+            <el-tag size="small" type="info">输出总图: {{ totalWidth }} × {{ totalHeight }}</el-tag>
+            <el-tag size="small" type="success">单张小图: {{ cellWidth }} × {{ cellHeight }}</el-tag>
+            <el-tag size="small" type="warning">宫格: {{ gridRows }} × {{ gridCols }}</el-tag>
           </div>
         </el-card>
 
@@ -62,12 +63,12 @@
               <el-icon :size="20" color="#165DFF">
                 <Picture />
               </el-icon>
-              <span>切割结果（点击图片可单独下载）</span>
+              <span>切割结果（共 {{ totalCells }} 张，点击图片可单独下载）</span>
             </div>
           </template>
-          <div v-if="sourceImage" class="result-grid">
+          <div v-if="sourceImage" class="result-grid" :style="resultGridStyle">
             <div
-              v-for="(cell, index) in 9"
+              v-for="(cell, index) in totalCells"
               :key="index"
               class="result-item"
               @click="downloadSingle(index)"
@@ -120,6 +121,35 @@
 
           <el-divider />
 
+          <div class="preset-section">
+            <div class="preset-title">
+              <el-icon :size="16" color="#165DFF"><Grid /></el-icon>
+              <span>常用宫格预设</span>
+            </div>
+            <div class="preset-grid">
+              <div
+                v-for="preset in presets"
+                :key="preset.label"
+                class="preset-card"
+                :class="{ active: preset.rows === 3 && preset.cols === 3 }"
+              >
+                <div class="preset-preview" :style="getPresetStyle(preset)">
+                  <div
+                    v-for="i in preset.rows * preset.cols"
+                    :key="i"
+                    class="preset-cell"
+                  ></div>
+                </div>
+                <div class="preset-info">
+                  <div class="preset-label">{{ preset.label }}</div>
+                  <div class="preset-desc">{{ preset.rows }} × {{ preset.cols }} · {{ preset.rows * preset.cols }} 张</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <el-divider />
+
           <div class="scene-section">
             <div class="scene-title">
               <el-icon :size="16" color="#165DFF"><MagicStick /></el-icon>
@@ -148,13 +178,6 @@
               <div class="spec-item">
                 <el-icon color="#67c23a"><SuccessFilled /></el-icon>
                 <div class="spec-content">
-                  <span class="spec-label">推荐尺寸</span>
-                  <span class="spec-value">900 x 900 像素（正方形）</span>
-                </div>
-              </div>
-              <div class="spec-item">
-                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-                <div class="spec-content">
                   <span class="spec-label">支持格式</span>
                   <span class="spec-value">JPG、PNG、WEBP</span>
                 </div>
@@ -162,21 +185,28 @@
               <div class="spec-item">
                 <el-icon color="#67c23a"><SuccessFilled /></el-icon>
                 <div class="spec-content">
-                  <span class="spec-label">每张小图</span>
-                  <span class="spec-value">300 x 300 像素（可调整）</span>
+                  <span class="spec-label">宫格模式</span>
+                  <span class="spec-value">支持自定义行数 1-6、列数 1-6</span>
+                </div>
+              </div>
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">输出尺寸</span>
+                  <span class="spec-value">300 / 600 / 900 / 自定义</span>
                 </div>
               </div>
               <div class="spec-item">
                 <el-icon color="#67c23a"><SuccessFilled /></el-icon>
                 <div class="spec-content">
                   <span class="spec-label">切割方式</span>
-                  <span class="spec-value">居中裁剪为正方形后均分 3x3</span>
+                  <span class="spec-value">按行列比例居中裁剪后均分</span>
                 </div>
               </div>
             </div>
             <div class="spec-tips">
               <el-icon :size="12" color="#e6a23c"><Warning /></el-icon>
-              <span>提示：非正方形图片会自动居中裁剪为正方形，建议提前将主体内容放在图片中央区域</span>
+              <span>提示：图片将按行列比例自动居中裁剪，建议主体内容放在图片中央区域。非标准比例可手动调整行列数。</span>
             </div>
           </el-card>
 
@@ -205,13 +235,49 @@
 
             <div class="settings-form">
               <el-form label-position="top">
-                <el-form-item label="输出图片格式">
-                  <el-radio-group v-model="outputFormat" size="small">
-                    <el-radio-button value="png">PNG（无损）</el-radio-button>
-                    <el-radio-button value="jpeg">JPEG（体积小）</el-radio-button>
-                    <el-radio-button value="webp">WEBP（推荐）</el-radio-button>
-                  </el-radio-group>
+                <el-form-item label="宫格预设">
+                  <div class="preset-select">
+                    <div
+                      v-for="preset in presets"
+                      :key="preset.label"
+                      class="preset-select-item"
+                      :class="{ active: gridRows === preset.rows && gridCols === preset.cols }"
+                      @click="applyPreset(preset)"
+                    >
+                      <div class="preset-select-preview" :style="getPresetMiniStyle(preset)"></div>
+                      <span>{{ preset.label }}</span>
+                    </div>
+                  </div>
                 </el-form-item>
+
+                <el-row :gutter="16">
+                  <el-col :span="12">
+                    <el-form-item label="行数">
+                      <el-input-number
+                        v-model="gridRows"
+                        :min="1"
+                        :max="6"
+                        size="small"
+                        controls-position="right"
+                        style="width: 100%"
+                      />
+                      <div class="size-hint">范围：1 - 6 行</div>
+                    </el-form-item>
+                  </el-col>
+                  <el-col :span="12">
+                    <el-form-item label="列数">
+                      <el-input-number
+                        v-model="gridCols"
+                        :min="1"
+                        :max="6"
+                        size="small"
+                        controls-position="right"
+                        style="width: 100%"
+                      />
+                      <div class="size-hint">范围：1 - 6 列</div>
+                    </el-form-item>
+                  </el-col>
+                </el-row>
 
                 <el-form-item label="输出单张尺寸">
                   <el-radio-group v-model="presetSize" size="small" @change="handlePresetChange">
@@ -224,7 +290,15 @@
 
                 <el-form-item label="自定义单张尺寸" v-if="presetSize === 0">
                   <el-slider v-model="customSize" :min="100" :max="2000" :step="50" show-input :marks="sizeMarks" />
-                  <div class="size-hint">单张小图尺寸，总图尺寸为 {{ customSize * 3 }} x {{ customSize * 3 }}</div>
+                  <div class="size-hint">单张小图短边尺寸，总尺寸将按 {{ gridRows }} × {{ gridCols }} 比例计算</div>
+                </el-form-item>
+
+                <el-form-item label="输出图片格式">
+                  <el-radio-group v-model="outputFormat" size="small">
+                    <el-radio-button value="png">PNG（无损）</el-radio-button>
+                    <el-radio-button value="jpeg">JPEG（体积小）</el-radio-button>
+                    <el-radio-button value="webp">WEBP（推荐）</el-radio-button>
+                  </el-radio-group>
                 </el-form-item>
 
                 <el-form-item v-if="outputFormat === 'jpeg' || outputFormat === 'webp'" label="图片质量">
@@ -238,14 +312,18 @@
             <div class="action-buttons">
               <el-button type="primary" size="large" @click="downloadAll" :loading="downloading">
                 <el-icon><Download /></el-icon>
-                下载全部 9 张图片
+                下载全部 {{ totalCells }} 张图片
               </el-button>
             </div>
             <el-alert type="info" :closable="false" class="download-tip">
               <template #title>
                 <div class="download-tip-content">
                   <p><strong>发布顺序提示：</strong></p>
-                  <p>微信朋友圈/微博九宫格发布时，请按 <strong>1→2→3→4→5→6→7→8→9</strong> 的顺序依次上传，即可组成完整画面。</p>
+                  <p>社交平台发布宫格图时，请按 <strong>1 → 2 → 3 → ... → {{ totalCells }}</strong> 的顺序（从左到右、从上到下）依次上传，即可组成完整画面。</p>
+                  <p v-if="gridRows === 3 && gridCols === 3" style="margin-top: 8px">💡 典型场景：微信朋友圈 3×3 九宫格、微博多图发布等。</p>
+                  <p v-else-if="gridRows === 2 && gridCols === 2" style="margin-top: 8px">💡 典型场景：小红书 2×2 四宫格、简洁排版等。</p>
+                  <p v-else-if="gridRows === 2 && gridCols === 3" style="margin-top: 8px">💡 典型场景：长图横版展示 2×3 六宫格。</p>
+                  <p v-else style="margin-top: 8px">💡 当前：{{ gridRows }} × {{ gridCols }} 共 {{ totalCells }} 张，请根据平台支持的图片数量合理设置。</p>
                 </div>
               </template>
             </el-alert>
@@ -275,6 +353,13 @@ import {
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 
+interface Preset {
+  label: string
+  rows: number
+  cols: number
+  desc?: string
+}
+
 const uploadRef = ref()
 
 const sourceImage = ref<string>('')
@@ -282,12 +367,23 @@ const imageWidth = ref(0)
 const imageHeight = ref(0)
 const downloading = ref(false)
 
+const gridRows = ref(3)
+const gridCols = ref(3)
 const outputFormat = ref<'png' | 'jpeg' | 'webp'>('png')
 const presetSize = ref(600)
 const customSize = ref(600)
 const imageQuality = ref(92)
 
 const gridImages = ref<string[]>([])
+
+const presets: Preset[] = [
+  { label: '四宫格', rows: 2, cols: 2, desc: '小红书常用' },
+  { label: '六宫格', rows: 2, cols: 3, desc: '横版排版' },
+  { label: '九宫格', rows: 3, cols: 3, desc: '朋友圈经典' },
+  { label: '十二宫格', rows: 3, cols: 4, desc: '长图展示' },
+  { label: '十六宫格', rows: 4, cols: 4, desc: '高密度' },
+  { label: '自定义', rows: 3, cols: 3, desc: '自由设置' }
+]
 
 const sizeMarks = {
   100: '100',
@@ -304,22 +400,40 @@ const scenes = [
   { name: '摄影作品', icon: 'Camera', color: '#409eff' }
 ]
 
-const cellSize = computed(() => {
+const totalCells = computed(() => gridRows.value * gridCols.value)
+
+const baseSize = computed(() => {
   return presetSize.value === 0 ? customSize.value : presetSize.value
 })
 
-const outputSize = computed(() => cellSize.value * 3)
+const cellWidth = computed(() => baseSize.value)
+const cellHeight = computed(() => baseSize.value)
+
+const totalWidth = computed(() => cellWidth.value * gridCols.value)
+const totalHeight = computed(() => cellHeight.value * gridRows.value)
 
 const gridStyle = computed(() => {
-  const size = Math.min(500, outputSize.value)
+  const maxDim = 500
+  const ratio = totalWidth.value / totalHeight.value
+  let w: number, h: number
+  if (ratio >= 1) {
+    w = Math.min(maxDim, totalWidth.value)
+    h = w / ratio
+  } else {
+    h = Math.min(maxDim, totalHeight.value)
+    w = h * ratio
+  }
   return {
-    width: `${size}px`,
-    height: `${size}px`,
-    backgroundImage: sourceImage.value ? `url(${sourceImage.value})` : 'none',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center'
+    width: `${w}px`,
+    height: `${h}px`,
+    gridTemplateColumns: `repeat(${gridCols.value}, 1fr)`,
+    gridTemplateRows: `repeat(${gridRows.value}, 1fr)`
   }
 })
+
+const resultGridStyle = computed(() => ({
+  gridTemplateColumns: `repeat(${Math.min(gridCols.value, 4)}, 1fr)`
+}))
 
 const getCellStyle = (index: number) => {
   return {
@@ -327,6 +441,23 @@ const getCellStyle = (index: number) => {
     backgroundSize: 'cover',
     backgroundPosition: 'center'
   }
+}
+
+const getPresetStyle = (preset: Preset) => ({
+  gridTemplateColumns: `repeat(${preset.cols}, 1fr)`,
+  gridTemplateRows: `repeat(${preset.rows}, 1fr)`
+})
+
+const getPresetMiniStyle = (preset: Preset) => ({
+  width: `${preset.cols * 8}px`,
+  height: `${preset.rows * 8}px`,
+  backgroundImage: `linear-gradient(#165DFF 1px, transparent 1px), linear-gradient(90deg, #165DFF 1px, transparent 1px)`,
+  backgroundSize: `${8}px ${8}px`
+})
+
+const applyPreset = (preset: Preset) => {
+  gridRows.value = preset.rows
+  gridCols.value = preset.cols
 }
 
 const handlePresetChange = () => {
@@ -381,34 +512,51 @@ const generateGrid = () => {
 
   const img = new Image()
   img.onload = () => {
-    const size = Math.min(img.width, img.height)
-    const sx = (img.width - size) / 2
-    const sy = (img.height - size) / 2
+    const rows = gridRows.value
+    const cols = gridCols.value
+    const total = rows * cols
 
-    const cell = cellSize.value
-    const srcCell = size / 3
+    const ratio = cols / rows
+    let cropW: number, cropH: number
+    const imgRatio = img.width / img.height
+
+    if (imgRatio >= ratio) {
+      cropH = img.height
+      cropW = cropH * ratio
+    } else {
+      cropW = img.width
+      cropH = cropW / ratio
+    }
+
+    const sx = (img.width - cropW) / 2
+    const sy = (img.height - cropH) / 2
+
+    const cw = cellWidth.value
+    const ch = cellHeight.value
+    const srcCellW = cropW / cols
+    const srcCellH = cropH / rows
 
     const images: string[] = []
     let count = 0
 
-    for (let row = 0; row < 3; row++) {
-      for (let col = 0; col < 3; col++) {
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
         const canvas = document.createElement('canvas')
-        canvas.width = cell
-        canvas.height = cell
+        canvas.width = cw
+        canvas.height = ch
         const ctx = canvas.getContext('2d')
         if (!ctx) continue
 
         ctx.drawImage(
           img,
-          sx + col * srcCell,
-          sy + row * srcCell,
-          srcCell,
-          srcCell,
+          sx + col * srcCellW,
+          sy + row * srcCellH,
+          srcCellW,
+          srcCellH,
           0,
           0,
-          cell,
-          cell
+          cw,
+          ch
         )
 
         const mimeType = outputFormat.value === 'png'
@@ -420,10 +568,10 @@ const generateGrid = () => {
           ? imageQuality.value / 100
           : undefined
 
-        images[row * 3 + col] = canvas.toDataURL(mimeType, quality)
+        images[row * cols + col] = canvas.toDataURL(mimeType, quality)
         count++
 
-        if (count === 9) {
+        if (count === total) {
           gridImages.value = images
         }
       }
@@ -444,13 +592,14 @@ const downloadSingle = (index: number) => {
   }
 
   const link = document.createElement('a')
-  link.download = `九宫格_${index + 1}.${getExtension()}`
+  link.download = `宫格图_${index + 1}.${getExtension()}`
   link.href = gridImages.value[index]
   link.click()
 }
 
 const downloadAll = async () => {
-  if (gridImages.value.length < 9) {
+  const total = totalCells.value
+  if (gridImages.value.length < total) {
     ElMessage.warning('图片尚未生成完成，请稍候')
     return
   }
@@ -459,16 +608,16 @@ const downloadAll = async () => {
   const ext = getExtension()
 
   try {
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < total; i++) {
       const link = document.createElement('a')
-      link.download = `九宫格_${i + 1}.${ext}`
+      link.download = `宫格图_${i + 1}.${ext}`
       link.href = gridImages.value[i]
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      await new Promise(resolve => setTimeout(resolve, 300))
+      await new Promise(resolve => setTimeout(resolve, 250))
     }
-    ElMessage.success('全部图片下载成功！请按 1-9 顺序上传到社交平台')
+    ElMessage.success(`共 ${total} 张图片下载成功！请按 1-${total} 顺序上传到社交平台`)
   } catch (e) {
     console.error('Download failed:', e)
     ElMessage.error('下载失败，请重试')
@@ -478,7 +627,7 @@ const downloadAll = async () => {
 }
 
 watch(
-  [sourceImage, outputFormat, presetSize, customSize, imageQuality],
+  [sourceImage, outputFormat, presetSize, customSize, imageQuality, gridRows, gridCols],
   () => {
     if (sourceImage.value) {
       generateGrid()
@@ -534,7 +683,6 @@ watch(
 
 .grid-preview {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 0;
   border-radius: 8px;
   overflow: hidden;
@@ -548,6 +696,8 @@ watch(
   box-sizing: border-box;
   cursor: pointer;
   transition: all 0.2s;
+  background-size: cover;
+  background-position: center;
 }
 
 .grid-cell:hover {
@@ -590,6 +740,7 @@ watch(
 
 .preview-info {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 16px;
   padding-top: 16px;
@@ -602,7 +753,6 @@ watch(
 
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   padding: 8px 0;
 }
@@ -688,6 +838,83 @@ watch(
 
 .image-uploader :deep(.el-upload) {
   width: 100%;
+}
+
+.preset-section {
+  padding: 0 8px;
+}
+
+.preset-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.preset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.preset-card {
+  padding: 12px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border: 2px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.25s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.preset-card:hover {
+  border-color: #409eff;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+  transform: translateY(-2px);
+}
+
+.preset-card.active {
+  border-color: #165DFF;
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
+}
+
+.preset-preview {
+  display: grid;
+  gap: 2px;
+  width: 60px;
+  height: 60px;
+  padding: 4px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+}
+
+.preset-cell {
+  background: linear-gradient(135deg, #409eff 0%, #165DFF 100%);
+  border-radius: 2px;
+}
+
+.preset-info {
+  text-align: center;
+}
+
+.preset-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.preset-desc {
+  font-size: 11px;
+  color: #909399;
+  margin-top: 2px;
 }
 
 .scene-section {
@@ -814,6 +1041,42 @@ watch(
 
 .settings-form {
   padding: 8px 0;
+}
+
+.preset-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.preset-select-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #f5f7fa;
+  border: 1px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  color: #606266;
+}
+
+.preset-select-item:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.preset-select-item.active {
+  border-color: #165DFF;
+  background: linear-gradient(135deg, #409eff 0%, #165DFF 100%);
+  color: #fff;
+}
+
+.preset-select-preview {
+  border-radius: 2px;
+  flex-shrink: 0;
 }
 
 .size-hint {
