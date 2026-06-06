@@ -41,7 +41,7 @@
         <div class="search-input-wrapper">
           <el-input
             v-model="searchKeyword"
-            placeholder="省份 / 城市 / 区县 / 邮政编码，如：北京、海淀区、100080、广东..."
+            placeholder="请输入：区县名（如朝阳区）、省市名（如深圳）、完整地址（如北京市海淀区）或邮政编码数字（如100080）"
             size="large"
             clearable
             @input="handleSearch"
@@ -50,6 +50,44 @@
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
+
+          <div class="input-format-guide">
+            <div class="guide-title">
+              <el-icon :size="14"><InfoFilled /></el-icon>
+              <span>支持的输入格式：</span>
+            </div>
+            <div class="guide-examples">
+              <div class="example-item" @click="quickSearch('朝阳区')">
+                <el-tag size="small" type="primary" effect="dark">区县名称</el-tag>
+                <span class="example-text">朝阳区</span>
+                <el-icon class="example-arrow" :size="12"><Right /></el-icon>
+              </div>
+              <div class="example-item" @click="quickSearch('深圳市')">
+                <el-tag size="small" type="warning" effect="dark">城市名称</el-tag>
+                <span class="example-text">深圳市</span>
+                <el-icon class="example-arrow" :size="12"><Right /></el-icon>
+              </div>
+              <div class="example-item" @click="quickSearch('北京市海淀区')">
+                <el-tag size="small" type="success" effect="dark">完整地址</el-tag>
+                <span class="example-text">北京市海淀区</span>
+                <el-icon class="example-arrow" :size="12"><Right /></el-icon>
+              </div>
+              <div class="example-item" @click="quickSearch('100080')">
+                <el-tag size="small" type="danger" effect="dark">邮政编码</el-tag>
+                <span class="example-text">100080</span>
+                <el-icon class="example-arrow" :size="12"><Right /></el-icon>
+              </div>
+              <div class="example-item" @click="quickSearch('广东')">
+                <el-tag size="small" type="info" effect="dark">省份名称</el-tag>
+                <span class="example-text">广东省</span>
+                <el-icon class="example-arrow" :size="12"><Right /></el-icon>
+              </div>
+            </div>
+            <div class="guide-hint">
+              💡 点击上方示例可直接搜索，也可手动输入关键词
+            </div>
+          </div>
+
           <div class="search-tips">
             <el-tag
               v-for="tip in searchTips"
@@ -256,11 +294,12 @@ const activeCity = ref('')
 const totalCodes = computed(() => postalCodes.length)
 
 const searchTips = [
-  { label: '全部地区', icon: Grid, keyword: '' },
-  { label: '按省份', icon: OfficeBuilding, keyword: '北京' },
-  { label: '按城市', icon: Location, keyword: '深圳' },
-  { label: '按区县', icon: MapLocation, keyword: '海淀区' },
-  { label: '按邮编', icon: Document, keyword: '100080' }
+  { label: '示例：朝阳区', icon: MapLocation, keyword: '朝阳区' },
+  { label: '示例：深圳市', icon: Location, keyword: '深圳市' },
+  { label: '示例：北京市海淀区', icon: LocationFilled, keyword: '北京市海淀区' },
+  { label: '示例：100080', icon: Document, keyword: '100080' },
+  { label: '示例：广东省', icon: OfficeBuilding, keyword: '广东省' },
+  { label: '清空搜索', icon: Grid, keyword: '' }
 ]
 
 const hotCities = [
@@ -688,6 +727,71 @@ const copyToClipboard = (text: string, label: string) => {
   color: #165DFF;
 }
 
+.input-format-guide {
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #ecf5ff 100%);
+  border: 1px solid #d9ecff;
+  border-radius: 8px;
+}
+
+.guide-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #165DFF;
+  margin-bottom: 10px;
+}
+
+.guide-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.example-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.example-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.2);
+  border-color: #165DFF;
+  background: #f5faff;
+}
+
+.example-text {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.example-arrow {
+  color: #c0c4cc;
+}
+
+.example-item:hover .example-arrow {
+  color: #165DFF;
+}
+
+.guide-hint {
+  font-size: 12px;
+  color: #909399;
+  padding-top: 8px;
+  border-top: 1px dashed #d9ecff;
+}
+
 @media (max-width: 768px) {
   .code-grid {
     grid-template-columns: 1fr;
@@ -695,6 +799,18 @@ const copyToClipboard = (text: string, label: string) => {
 
   .postal-code {
     font-size: 22px;
+  }
+
+  .guide-examples {
+    gap: 8px;
+  }
+
+  .example-item {
+    padding: 5px 8px;
+  }
+
+  .example-text {
+    font-size: 12px;
   }
 }
 </style>
