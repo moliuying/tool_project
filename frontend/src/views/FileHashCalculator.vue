@@ -114,9 +114,9 @@
         />
       </div>
 
-      <el-divider v-if="hashes.md5 || hashes.sha1 || hashes.sha256" />
+      <el-divider v-if="selectedFile" />
 
-      <div v-if="hashes.md5 || hashes.sha1 || hashes.sha256" class="verify-section">
+      <div v-if="selectedFile" class="verify-section">
         <h4 class="verify-title">
           <el-icon :size="16" color="#67C23A"><CircleCheck /></el-icon>
           <span>哈希值校验</span>
@@ -127,6 +127,7 @@
             placeholder="粘贴官方提供的哈希值进行比对验证"
             size="large"
             clearable
+            :disabled="!hasAllResults"
           >
             <template #prefix>
               <el-icon><Key /></el-icon>
@@ -136,7 +137,7 @@
             size="large"
             type="primary"
             @click="verifyHashValue"
-            :disabled="!verifyHash.trim()"
+            :disabled="!verifyHash.trim() || !hasAllResults"
           >
             比对验证
           </el-button>
@@ -149,20 +150,52 @@
           show-icon
           class="verify-alert"
         />
+        <el-alert
+          v-if="isCalculating"
+          title="⏳ 正在计算哈希值，请稍候..."
+          type="info"
+          :closable="false"
+          show-icon
+          class="verify-alert"
+        />
       </div>
     </el-card>
 
-    <el-card v-if="hashes.md5 || hashes.sha1 || hashes.sha256" class="result-card">
+    <el-card v-if="selectedFile" class="result-card">
       <template #header>
         <div class="card-header">
           <el-icon :size="20" color="#165DFF">
             <DataLine />
           </el-icon>
           <span>计算结果</span>
-          <el-tag size="small" type="success">计算完成</el-tag>
+          <el-tag
+            v-if="hasAllResults"
+            size="small"
+            type="success"
+            :icon="CircleCheck"
+          >
+            全部计算完成
+          </el-tag>
+          <el-tag
+            v-else-if="isCalculating"
+            size="small"
+            type="warning"
+            effect="dark"
+            :icon="Loading"
+          >
+            正在计算中 {{ progress }}%
+          </el-tag>
+          <el-tag v-else size="small" type="info">等待计算</el-tag>
         </div>
         <div class="header-actions">
-          <el-button size="small" :icon="CopyDocument" @click="copyAllHashes">复制全部</el-button>
+          <el-button
+            size="small"
+            :icon="CopyDocument"
+            @click="copyAllHashes"
+            :disabled="!hasAllResults || isCalculating"
+          >
+            复制全部
+          </el-button>
         </div>
       </template>
 
@@ -171,13 +204,50 @@
           v-for="(item, key) in hashResultList"
           :key="key"
           class="hash-item"
+          :class="{ 'is-calculating': item.status === 'calculating', 'is-done': item.status === 'done' }"
         >
           <div class="hash-header">
             <div class="hash-algo">
               <el-tag :type="item.tagType" size="large">{{ item.name }}</el-tag>
               <span class="hash-desc">{{ item.desc }}</span>
+              <el-tag
+                v-if="item.status === 'done'"
+                size="small"
+                type="success"
+                effect="plain"
+              >
+                <el-icon><CircleCheck /></el-icon>
+                已完成
+              </el-tag>
+              <el-tag
+                v-else-if="item.status === 'calculating'"
+                size="small"
+                type="warning"
+                effect="dark"
+              >
+                <el-icon class="is-loading"><Loading /></el-icon>
+                计算中
+              </el-tag>
+              <el-tag v-else size="small" type="info" effect="plain">等待中</el-tag>
             </div>
+            <el-tooltip
+              v-if="!item.value"
+              content="计算完成后可复制"
+              placement="top"
+            >
+              <el-button
+                type="primary"
+                link
+                :icon="CopyDocument"
+                @click="copyHash(item.value, item.name)"
+                size="small"
+                disabled
+              >
+                复制
+              </el-button>
+            </el-tooltip>
             <el-button
+              v-else
               type="primary"
               link
               :icon="CopyDocument"
@@ -187,12 +257,26 @@
               复制
             </el-button>
           </div>
-          <div class="hash-value-wrapper" @click="copyHash(item.value, item.name)">
-            <code class="hash-value">{{ item.value || '-' }}</code>
-            <div class="hash-copy-hint">
-              <el-icon :size="12"><CopyDocument /></el-icon>
-              <span>点击复制</span>
+          <div
+            class="hash-value-wrapper"
+            :class="{ 'can-copy': item.value, 'is-loading': item.status === 'calculating' }"
+            @click="item.value && copyHash(item.value, item.name)"
+          >
+            <div v-if="item.status === 'calculating'" class="hash-loading">
+              <el-icon class="is-loading" :size="18"><Loading /></el-icon>
+              <span>正在计算 {{ item.name }}，请稍候...</span>
             </div>
+            <div v-else-if="item.status === 'pending'" class="hash-pending">
+              <el-icon :size="18"><Clock /></el-icon>
+              <span>等待计算...</span>
+            </div>
+            <template v-else>
+              <code class="hash-value">{{ item.value }}</code>
+              <div class="hash-copy-hint">
+                <el-icon :size="12"><CopyDocument /></el-icon>
+                <span>点击复制</span>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -213,9 +297,21 @@ import {
   Key,
   CircleCheck,
   DataLine,
-  CopyDocument
+  CopyDocument,
+  Loading,
+  Clock
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+
+type HashStatus = 'pending' | 'calculating' | 'done'
+
+interface HashResultItem {
+  name: string
+  desc: string
+  tagType: 'warning' | 'info' | 'success'
+  value: string
+  status: HashStatus
+}
 
 const algorithms = [
   { name: 'MD5', desc: '广泛用于文件校验和数字签名', length: '128位 (32字符)' },
@@ -231,17 +327,25 @@ const progress = ref(0)
 const verifyHash = ref('')
 const verifyResult = ref<boolean | null>(null)
 
+const hashStatus = reactive<Record<string, HashStatus>>({
+  md5: 'pending',
+  sha1: 'pending',
+  sha256: 'pending'
+})
+
 const hashes = reactive({
   md5: '',
   sha1: '',
   sha256: ''
 })
 
-const hashResultList = computed(() => [
-  { name: 'MD5', desc: '信息摘要算法第五版', tagType: 'warning' as const, value: hashes.md5 },
-  { name: 'SHA-1', desc: '安全哈希算法 1', tagType: 'info' as const, value: hashes.sha1 },
-  { name: 'SHA-256', desc: '安全哈希算法 256位', tagType: 'success' as const, value: hashes.sha256 }
+const hashResultList = computed<HashResultItem[]>(() => [
+  { name: 'MD5', desc: '信息摘要算法第五版', tagType: 'warning', value: hashes.md5, status: hashStatus.md5 },
+  { name: 'SHA-1', desc: '安全哈希算法 1', tagType: 'info', value: hashes.sha1, status: hashStatus.sha1 },
+  { name: 'SHA-256', desc: '安全哈希算法 256位', tagType: 'success', value: hashes.sha256, status: hashStatus.sha256 }
 ])
+
+const hasAllResults = computed(() => hashes.md5 && hashes.sha1 && hashes.sha256)
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
@@ -267,14 +371,21 @@ const triggerFileInput = () => {
   }
 }
 
+const resetHashState = () => {
+  hashes.md5 = ''
+  hashes.sha1 = ''
+  hashes.sha256 = ''
+  hashStatus.md5 = 'pending'
+  hashStatus.sha1 = 'pending'
+  hashStatus.sha256 = 'pending'
+  verifyResult.value = null
+}
+
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
     selectedFile.value = target.files[0]
-    hashes.md5 = ''
-    hashes.sha1 = ''
-    hashes.sha256 = ''
-    verifyResult.value = null
+    resetHashState()
     calculateHashes()
   }
 }
@@ -293,21 +404,15 @@ const handleDrop = (event: DragEvent) => {
   isDragover.value = false
   if (event.dataTransfer && event.dataTransfer.files.length > 0 && !isCalculating.value) {
     selectedFile.value = event.dataTransfer.files[0]
-    hashes.md5 = ''
-    hashes.sha1 = ''
-    hashes.sha256 = ''
-    verifyResult.value = null
+    resetHashState()
     calculateHashes()
   }
 }
 
 const clearFile = () => {
   selectedFile.value = null
-  hashes.md5 = ''
-  hashes.sha1 = ''
-  hashes.sha256 = ''
+  resetHashState()
   verifyHash.value = ''
-  verifyResult.value = null
   progress.value = 0
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
@@ -494,15 +599,16 @@ const calculateHashes = async () => {
   const file = selectedFile.value
   isCalculating.value = true
   progress.value = 0
-  hashes.md5 = ''
-  hashes.sha1 = ''
-  hashes.sha256 = ''
-  verifyResult.value = null
+  resetHashState()
 
   try {
     const chunkSize = 2 * 1024 * 1024
     const totalChunks = Math.ceil(file.size / chunkSize)
     const allChunks: Uint8Array[] = []
+
+    hashStatus.md5 = 'calculating'
+    hashStatus.sha1 = 'calculating'
+    hashStatus.sha256 = 'calculating'
 
     for (let i = 0; i < totalChunks; i++) {
       const start = i * chunkSize
@@ -527,18 +633,24 @@ const calculateHashes = async () => {
       binary += String.fromCharCode(combined[i])
     }
     hashes.md5 = md5FromString(binary)
+    hashStatus.md5 = 'done'
 
     if (crypto && crypto.subtle) {
       const sha1Buffer = await crypto.subtle.digest('SHA-1', combined)
       hashes.sha1 = bufferToHex(sha1Buffer)
+      hashStatus.sha1 = 'done'
 
       const sha256Buffer = await crypto.subtle.digest('SHA-256', combined)
       hashes.sha256 = bufferToHex(sha256Buffer)
+      hashStatus.sha256 = 'done'
     }
 
     ElMessage.success('哈希值计算完成')
   } catch (error) {
     console.error('计算哈希值失败:', error)
+    hashStatus.md5 = 'pending'
+    hashStatus.sha1 = 'pending'
+    hashStatus.sha256 = 'pending'
     ElMessage.error('计算哈希值失败')
   } finally {
     isCalculating.value = false
@@ -546,7 +658,10 @@ const calculateHashes = async () => {
 }
 
 const copyHash = async (value: string, name: string) => {
-  if (!value) return
+  if (!value) {
+    ElMessage.warning('请等待计算完成后再复制')
+    return
+  }
   try {
     await navigator.clipboard.writeText(value)
     ElMessage.success(`${name} 已复制到剪贴板`)
@@ -562,6 +677,10 @@ const copyHash = async (value: string, name: string) => {
 }
 
 const copyAllHashes = async () => {
+  if (!hasAllResults.value || isCalculating.value) {
+    ElMessage.warning('请等待所有哈希值计算完成后再复制')
+    return
+  }
   const lines: string[] = []
   if (hashes.md5) lines.push(`MD5: ${hashes.md5}`)
   if (hashes.sha1) lines.push(`SHA-1: ${hashes.sha1}`)
@@ -582,6 +701,10 @@ const copyAllHashes = async () => {
 }
 
 const verifyHashValue = () => {
+  if (!hasAllResults.value) {
+    ElMessage.warning('请等待计算完成后再进行校验')
+    return
+  }
   const target = verifyHash.value.trim().toLowerCase()
   if (!target) {
     ElMessage.warning('请输入要比对的哈希值')
@@ -809,6 +932,17 @@ const verifyHashValue = () => {
   background: #fafafa;
   border-radius: 8px;
   border: 1px solid #ebeef5;
+  transition: all 0.3s;
+}
+
+.hash-item.is-calculating {
+  border-color: #E6A23C;
+  background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
+}
+
+.hash-item.is-done {
+  border-color: #67C23A;
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
 }
 
 .hash-header {
@@ -822,6 +956,7 @@ const verifyHashValue = () => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hash-desc {
@@ -831,18 +966,47 @@ const verifyHashValue = () => {
 
 .hash-value-wrapper {
   position: relative;
-  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.hash-value-wrapper:hover .hash-value {
+.hash-value-wrapper.can-copy {
+  cursor: pointer;
+}
+
+.hash-value-wrapper.can-copy:hover .hash-value {
   border-color: #165DFF;
   background: #f0f7ff;
 }
 
-.hash-value-wrapper:hover .hash-copy-hint {
+.hash-value-wrapper.can-copy:hover .hash-copy-hint {
   opacity: 1;
   visibility: visible;
+}
+
+.hash-value-wrapper.is-loading {
+  cursor: progress;
+}
+
+.hash-loading,
+.hash-pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
+  font-size: 14px;
+  color: #909399;
+  font-style: italic;
+}
+
+.hash-loading :deep(.el-icon) {
+  color: #E6A23C;
+}
+
+.hash-pending :deep(.el-icon) {
+  color: #909399;
 }
 
 .hash-value {
