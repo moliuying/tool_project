@@ -10,9 +10,9 @@
         </div>
       </template>
       <el-steps :active="sourceImage ? 3 : 0" finish-status="success" simple class="guide-steps">
+        <el-step title="选择模式" description="按平台或张数选择宫格" />
         <el-step title="上传图片" description="选择需要切割的图片" />
-        <el-step title="设置宫格" description="选择或自定义宫格行列数" />
-        <el-step title="预览下载" description="实时预览切割效果并下载" />
+        <el-step title="下载使用" description="按顺序上传到社交平台" />
       </el-steps>
     </el-card>
 
@@ -45,15 +45,15 @@
             <div v-else class="preview-placeholder">
               <el-icon><Grid /></el-icon>
               <span>请先上传图片</span>
-              <p class="placeholder-hint">图片将按设置的行列比例自动裁剪切割</p>
+              <p class="placeholder-hint">已选择 {{ currentModeLabel }}：{{ gridRows }} × {{ gridCols }} 共 {{ totalCells }} 张</p>
             </div>
           </div>
 
           <div class="preview-info" v-if="sourceImage">
-            <el-tag size="small">原图尺寸: {{ imageWidth }} × {{ imageHeight }}</el-tag>
-            <el-tag size="small" type="info">输出总图: {{ totalWidth }} × {{ totalHeight }}</el-tag>
-            <el-tag size="small" type="success">单张小图: {{ cellWidth }} × {{ cellHeight }}</el-tag>
-            <el-tag size="small" type="warning">宫格: {{ gridRows }} × {{ gridCols }}</el-tag>
+            <el-tag size="small">原图: {{ imageWidth }} × {{ imageHeight }}</el-tag>
+            <el-tag size="small" type="info">总图: {{ totalWidth }} × {{ totalHeight }}</el-tag>
+            <el-tag size="small" type="success">单张: {{ cellWidth }} × {{ cellHeight }}</el-tag>
+            <el-tag size="small" type="warning">{{ currentModeLabel }} · {{ totalCells }} 张</el-tag>
           </div>
         </el-card>
 
@@ -86,6 +86,111 @@
       </el-col>
 
       <el-col :span="10">
+        <el-card class="mode-card">
+          <template #header>
+            <div class="card-header">
+              <el-icon :size="18" color="#165DFF">
+                <MagicStick />
+              </el-icon>
+              <span>选择切割模式</span>
+              <el-tag size="small" type="warning" class="header-tag">先选模式再传图，效果最佳</el-tag>
+            </div>
+          </template>
+
+          <div class="mode-section">
+            <div class="mode-subtitle">
+              <el-icon :size="14" color="#165DFF"><Platform /></el-icon>
+              <span>按社交平台快速选择</span>
+            </div>
+            <div class="platform-grid">
+              <div
+                v-for="p in platforms"
+                :key="p.name"
+                class="platform-card"
+                :class="{ active: currentPlatform === p.name }"
+                @click="selectPlatform(p)"
+              >
+                <div class="platform-icon-wrap" :style="{ background: p.bgColor }">
+                  <el-icon :size="22" :color="p.iconColor">{{ p.icon }}</el-icon>
+                </div>
+                <div class="platform-info">
+                  <div class="platform-name">{{ p.name }}</div>
+                  <div class="platform-desc">{{ p.rows }}×{{ p.cols }} · {{ p.rows*p.cols }} 张</div>
+                </div>
+                <el-icon v-if="currentPlatform === p.name" :size="16" color="#165DFF"><CircleCheckFilled /></el-icon>
+              </div>
+            </div>
+          </div>
+
+          <el-divider />
+
+          <div class="mode-section">
+            <div class="mode-subtitle">
+              <el-icon :size="14" color="#165DFF"><Grid /></el-icon>
+              <span>按图片张数选择</span>
+            </div>
+            <div class="count-grid">
+              <div
+                v-for="c in countOptions"
+                :key="c.count"
+                class="count-card"
+                :class="{ active: totalCells === c.count && currentPlatform === '' }"
+                @click="selectByCount(c)"
+              >
+                <div class="count-preview" :style="getCountPreviewStyle(c)">
+                  <div v-for="i in c.count" :key="i" class="count-cell"></div>
+                </div>
+                <div class="count-info">
+                  <div class="count-num">{{ c.count }} 张</div>
+                  <div class="count-size">{{ c.rows }}×{{ c.cols }}</div>
+                </div>
+                <el-tag size="small" type="success" v-if="c.hot" effect="light">热门</el-tag>
+              </div>
+            </div>
+          </div>
+
+          <el-divider />
+
+          <div class="mode-section">
+            <div class="mode-subtitle">
+              <el-icon :size="14" color="#165DFF"><Setting /></el-icon>
+              <span>自定义行列数</span>
+            </div>
+            <el-row :gutter="12">
+              <el-col :span="12">
+                <el-form-item label="行数" class="custom-form-item">
+                  <el-input-number
+                    v-model="gridRows"
+                    :min="1"
+                    :max="6"
+                    size="small"
+                    controls-position="right"
+                    style="width: 100%"
+                    @change="clearPlatformSelection"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="12">
+                <el-form-item label="列数" class="custom-form-item">
+                  <el-input-number
+                    v-model="gridCols"
+                    :min="1"
+                    :max="6"
+                    size="small"
+                    controls-position="right"
+                    style="width: 100%"
+                    @change="clearPlatformSelection"
+                  />
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <div class="custom-tip">
+              当前：<strong>{{ gridRows }} × {{ gridCols }} = {{ totalCells }} 张</strong>
+              <span v-if="totalCells > 9">（部分平台最多支持 9 张图）</span>
+            </div>
+          </div>
+        </el-card>
+
         <el-card class="upload-card" v-if="!sourceImage">
           <template #header>
             <div class="card-header">
@@ -119,100 +224,9 @@
             </el-upload>
           </div>
 
-          <el-divider />
-
-          <div class="preset-section">
-            <div class="preset-title">
-              <el-icon :size="16" color="#165DFF"><Grid /></el-icon>
-              <span>常用宫格预设</span>
-            </div>
-            <div class="preset-grid">
-              <div
-                v-for="preset in presets"
-                :key="preset.label"
-                class="preset-card"
-                :class="{ active: preset.rows === 3 && preset.cols === 3 }"
-              >
-                <div class="preset-preview" :style="getPresetStyle(preset)">
-                  <div
-                    v-for="i in preset.rows * preset.cols"
-                    :key="i"
-                    class="preset-cell"
-                  ></div>
-                </div>
-                <div class="preset-info">
-                  <div class="preset-label">{{ preset.label }}</div>
-                  <div class="preset-desc">{{ preset.rows }} × {{ preset.cols }} · {{ preset.rows * preset.cols }} 张</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <el-divider />
-
-          <div class="scene-section">
-            <div class="scene-title">
-              <el-icon :size="16" color="#165DFF"><MagicStick /></el-icon>
-              <span>适用场景</span>
-            </div>
-            <el-row :gutter="12">
-              <el-col :span="12" v-for="scene in scenes" :key="scene.name">
-                <div class="scene-card">
-                  <el-icon :size="24" :color="scene.color">{{ scene.icon }}</el-icon>
-                  <span>{{ scene.name }}</span>
-                </div>
-              </el-col>
-            </el-row>
-          </div>
-
-          <el-divider />
-
-          <el-card class="tips-card" shadow="never">
-            <template #header>
-              <div class="spec-header">
-                <el-icon :size="14" color="#165DFF"><InfoFilled /></el-icon>
-                <span>图片规格要求</span>
-              </div>
-            </template>
-            <div class="spec-list">
-              <div class="spec-item">
-                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-                <div class="spec-content">
-                  <span class="spec-label">支持格式</span>
-                  <span class="spec-value">JPG、PNG、WEBP</span>
-                </div>
-              </div>
-              <div class="spec-item">
-                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-                <div class="spec-content">
-                  <span class="spec-label">宫格模式</span>
-                  <span class="spec-value">支持自定义行数 1-6、列数 1-6</span>
-                </div>
-              </div>
-              <div class="spec-item">
-                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-                <div class="spec-content">
-                  <span class="spec-label">输出尺寸</span>
-                  <span class="spec-value">300 / 600 / 900 / 自定义</span>
-                </div>
-              </div>
-              <div class="spec-item">
-                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
-                <div class="spec-content">
-                  <span class="spec-label">切割方式</span>
-                  <span class="spec-value">按行列比例居中裁剪后均分</span>
-                </div>
-              </div>
-            </div>
-            <div class="spec-tips">
-              <el-icon :size="12" color="#e6a23c"><Warning /></el-icon>
-              <span>提示：图片将按行列比例自动居中裁剪，建议主体内容放在图片中央区域。非标准比例可手动调整行列数。</span>
-            </div>
-          </el-card>
-
           <div class="privacy-note">
             <el-icon><Lock /></el-icon>
-            <span>所有操作均在浏览器本地完成，图片不会上传到服务器，保障您的隐私安全</span>
+            <span>所有操作均在浏览器本地完成，图片不会上传到服务器</span>
           </div>
         </el-card>
 
@@ -223,7 +237,7 @@
                 <el-icon :size="20" color="#165DFF">
                   <Setting />
                 </el-icon>
-                <span>切割设置</span>
+                <span>输出设置</span>
                 <div class="header-actions">
                   <el-button size="small" @click="handleReupload">
                     <el-icon><Upload /></el-icon>
@@ -235,50 +249,6 @@
 
             <div class="settings-form">
               <el-form label-position="top">
-                <el-form-item label="宫格预设">
-                  <div class="preset-select">
-                    <div
-                      v-for="preset in presets"
-                      :key="preset.label"
-                      class="preset-select-item"
-                      :class="{ active: gridRows === preset.rows && gridCols === preset.cols }"
-                      @click="applyPreset(preset)"
-                    >
-                      <div class="preset-select-preview" :style="getPresetMiniStyle(preset)"></div>
-                      <span>{{ preset.label }}</span>
-                    </div>
-                  </div>
-                </el-form-item>
-
-                <el-row :gutter="16">
-                  <el-col :span="12">
-                    <el-form-item label="行数">
-                      <el-input-number
-                        v-model="gridRows"
-                        :min="1"
-                        :max="6"
-                        size="small"
-                        controls-position="right"
-                        style="width: 100%"
-                      />
-                      <div class="size-hint">范围：1 - 6 行</div>
-                    </el-form-item>
-                  </el-col>
-                  <el-col :span="12">
-                    <el-form-item label="列数">
-                      <el-input-number
-                        v-model="gridCols"
-                        :min="1"
-                        :max="6"
-                        size="small"
-                        controls-position="right"
-                        style="width: 100%"
-                      />
-                      <div class="size-hint">范围：1 - 6 列</div>
-                    </el-form-item>
-                  </el-col>
-                </el-row>
-
                 <el-form-item label="输出单张尺寸">
                   <el-radio-group v-model="presetSize" size="small" @change="handlePresetChange">
                     <el-radio-button :value="300">300px</el-radio-button>
@@ -290,7 +260,6 @@
 
                 <el-form-item label="自定义单张尺寸" v-if="presetSize === 0">
                   <el-slider v-model="customSize" :min="100" :max="2000" :step="50" show-input :marks="sizeMarks" />
-                  <div class="size-hint">单张小图短边尺寸，总尺寸将按 {{ gridRows }} × {{ gridCols }} 比例计算</div>
                 </el-form-item>
 
                 <el-form-item label="输出图片格式">
@@ -315,15 +284,25 @@
                 下载全部 {{ totalCells }} 张图片
               </el-button>
             </div>
-            <el-alert type="info" :closable="false" class="download-tip">
+            <el-alert :type="totalCells > 9 ? 'warning' : 'info'" :closable="false" class="download-tip">
               <template #title>
                 <div class="download-tip-content">
-                  <p><strong>发布顺序提示：</strong></p>
-                  <p>社交平台发布宫格图时，请按 <strong>1 → 2 → 3 → ... → {{ totalCells }}</strong> 的顺序（从左到右、从上到下）依次上传，即可组成完整画面。</p>
-                  <p v-if="gridRows === 3 && gridCols === 3" style="margin-top: 8px">💡 典型场景：微信朋友圈 3×3 九宫格、微博多图发布等。</p>
-                  <p v-else-if="gridRows === 2 && gridCols === 2" style="margin-top: 8px">💡 典型场景：小红书 2×2 四宫格、简洁排版等。</p>
-                  <p v-else-if="gridRows === 2 && gridCols === 3" style="margin-top: 8px">💡 典型场景：长图横版展示 2×3 六宫格。</p>
-                  <p v-else style="margin-top: 8px">💡 当前：{{ gridRows }} × {{ gridCols }} 共 {{ totalCells }} 张，请根据平台支持的图片数量合理设置。</p>
+                  <p><strong>📌 发布顺序：</strong>请按 <strong>1 → 2 → 3 → ... → {{ totalCells }}</strong> 的顺序（从左到右、从上到下）依次上传。</p>
+                  <p v-if="currentPlatform" style="margin-top: 6px">
+                    ✅ 已匹配 <strong>{{ currentPlatform }}</strong> {{ gridRows }}×{{ gridCols }} 模式，共 {{ totalCells }} 张，正好符合该平台推荐。
+                  </p>
+                  <p v-else-if="totalCells === 6" style="margin-top: 6px">
+                    ✅ 6 张图模式适合微博、朋友圈横版发布，无需再删除多余图片。
+                  </p>
+                  <p v-else-if="totalCells === 4" style="margin-top: 6px">
+                    ✅ 4 张图模式适合小红书、朋友圈简洁四宫格发布。
+                  </p>
+                  <p v-else-if="totalCells === 9" style="margin-top: 6px">
+                    ✅ 经典九宫格模式，适合朋友圈、微博满格发布。
+                  </p>
+                  <p v-else-if="totalCells > 9" style="margin-top: 6px">
+                    ⚠️ 当前 {{ totalCells }} 张超过了大部分平台的 9 张上限，请分批上传或减少行列数。
+                  </p>
                 </div>
               </template>
             </el-alert>
@@ -348,16 +327,27 @@ import {
   Picture,
   Grid,
   SuccessFilled,
-  Warning
+  Warning,
+  Platform,
+  CircleCheckFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
 
-interface Preset {
-  label: string
+interface Platform {
+  name: string
+  icon: string
+  bgColor: string
+  iconColor: string
   rows: number
   cols: number
-  desc?: string
+}
+
+interface CountOption {
+  count: number
+  rows: number
+  cols: number
+  hot?: boolean
 }
 
 const uploadRef = ref()
@@ -367,8 +357,10 @@ const imageWidth = ref(0)
 const imageHeight = ref(0)
 const downloading = ref(false)
 
-const gridRows = ref(3)
+const gridRows = ref(2)
 const gridCols = ref(3)
+const currentPlatform = ref('')
+
 const outputFormat = ref<'png' | 'jpeg' | 'webp'>('png')
 const presetSize = ref(600)
 const customSize = ref(600)
@@ -376,13 +368,20 @@ const imageQuality = ref(92)
 
 const gridImages = ref<string[]>([])
 
-const presets: Preset[] = [
-  { label: '四宫格', rows: 2, cols: 2, desc: '小红书常用' },
-  { label: '六宫格', rows: 2, cols: 3, desc: '横版排版' },
-  { label: '九宫格', rows: 3, cols: 3, desc: '朋友圈经典' },
-  { label: '十二宫格', rows: 3, cols: 4, desc: '长图展示' },
-  { label: '十六宫格', rows: 4, cols: 4, desc: '高密度' },
-  { label: '自定义', rows: 3, cols: 3, desc: '自由设置' }
+const platforms: Platform[] = [
+  { name: '微博 6 图', icon: 'Share', bgColor: '#ffe8e8', iconColor: '#e6162d', rows: 2, cols: 3 },
+  { name: '朋友圈 9 图', icon: 'ChatDotRound', bgColor: '#e8f8ee', iconColor: '#07c160', rows: 3, cols: 3 },
+  { name: '小红书 4 图', icon: 'Collection', bgColor: '#ffebee', iconColor: '#ff2442', rows: 2, cols: 2 },
+  { name: '朋友圈 4 图', icon: 'ChatLineSquare', bgColor: '#ecf5ff', iconColor: '#165DFF', rows: 2, cols: 2 }
+]
+
+const countOptions: CountOption[] = [
+  { count: 4, rows: 2, cols: 2 },
+  { count: 6, rows: 2, cols: 3, hot: true },
+  { count: 8, rows: 2, cols: 4 },
+  { count: 9, rows: 3, cols: 3, hot: true },
+  { count: 12, rows: 3, cols: 4 },
+  { count: 16, rows: 4, cols: 4 }
 ]
 
 const sizeMarks = {
@@ -393,14 +392,12 @@ const sizeMarks = {
   2000: '2000'
 }
 
-const scenes = [
-  { name: '微信朋友圈', icon: 'ChatDotRound', color: '#07c160' },
-  { name: '微博', icon: 'Share', color: '#e6162d' },
-  { name: '小红书', icon: 'Collection', color: '#ff2442' },
-  { name: '摄影作品', icon: 'Camera', color: '#409eff' }
-]
-
 const totalCells = computed(() => gridRows.value * gridCols.value)
+
+const currentModeLabel = computed(() => {
+  if (currentPlatform.value) return currentPlatform.value
+  return '自定义模式'
+})
 
 const baseSize = computed(() => {
   return presetSize.value === 0 ? customSize.value : presetSize.value
@@ -443,21 +440,25 @@ const getCellStyle = (index: number) => {
   }
 }
 
-const getPresetStyle = (preset: Preset) => ({
-  gridTemplateColumns: `repeat(${preset.cols}, 1fr)`,
-  gridTemplateRows: `repeat(${preset.rows}, 1fr)`
+const getCountPreviewStyle = (c: CountOption) => ({
+  gridTemplateColumns: `repeat(${c.cols}, 1fr)`,
+  gridTemplateRows: `repeat(${c.rows}, 1fr)`
 })
 
-const getPresetMiniStyle = (preset: Preset) => ({
-  width: `${preset.cols * 8}px`,
-  height: `${preset.rows * 8}px`,
-  backgroundImage: `linear-gradient(#165DFF 1px, transparent 1px), linear-gradient(90deg, #165DFF 1px, transparent 1px)`,
-  backgroundSize: `${8}px ${8}px`
-})
+const selectPlatform = (p: Platform) => {
+  currentPlatform.value = p.name
+  gridRows.value = p.rows
+  gridCols.value = p.cols
+}
 
-const applyPreset = (preset: Preset) => {
-  gridRows.value = preset.rows
-  gridCols.value = preset.cols
+const selectByCount = (c: CountOption) => {
+  currentPlatform.value = ''
+  gridRows.value = c.rows
+  gridCols.value = c.cols
+}
+
+const clearPlatformSelection = () => {
+  currentPlatform.value = ''
 }
 
 const handlePresetChange = () => {
@@ -659,7 +660,7 @@ watch(
 }
 
 .header-tag {
-  margin-left: 12px;
+  margin-left: auto;
   font-weight: normal;
 }
 
@@ -726,6 +727,7 @@ watch(
   align-items: center;
   gap: 12px;
   color: #909399;
+  text-align: center;
 }
 
 .preview-placeholder .el-icon {
@@ -735,7 +737,11 @@ watch(
 .placeholder-hint {
   margin: 0;
   font-size: 13px;
-  color: #c0c4cc;
+  color: #165DFF;
+  background: #ecf5ff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 500;
 }
 
 .preview-info {
@@ -821,49 +827,95 @@ watch(
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
-.upload-card {
+.mode-card {
   margin-bottom: 24px;
 }
 
-.upload-area {
-  display: flex;
-  justify-content: center;
-  padding: 20px 0;
+.mode-section {
+  padding: 4px 0;
 }
 
-.image-uploader :deep(.el-upload-dragger) {
-  width: 100%;
-  padding: 40px 20px;
-}
-
-.image-uploader :deep(.el-upload) {
-  width: 100%;
-}
-
-.preset-section {
-  padding: 0 8px;
-}
-
-.preset-title {
+.mode-subtitle {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 12px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: #303133;
 }
 
-.preset-grid {
+.platform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.platform-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fafafa;
+  border: 2px solid #ebeef5;
+  cursor: pointer;
+  transition: all 0.25s;
+  position: relative;
+}
+
+.platform-card:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+  transform: translateY(-2px);
+}
+
+.platform-card.active {
+  border-color: #165DFF;
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
+}
+
+.platform-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.platform-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.platform-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.platform-desc {
+  font-size: 11px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+.count-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 
-.preset-card {
+.count-card {
   padding: 12px 8px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  background: #fafafa;
   border: 2px solid #ebeef5;
   cursor: pointer;
   transition: all 0.25s;
@@ -871,152 +923,103 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
-.preset-card:hover {
+.count-card:hover {
   border-color: #409eff;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
+  background: #ecf5ff;
   transform: translateY(-2px);
 }
 
-.preset-card.active {
+.count-card.active {
   border-color: #165DFF;
   background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
   box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.1);
 }
 
-.preset-preview {
+.count-card :deep(.el-tag) {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}
+
+.count-preview {
   display: grid;
   gap: 2px;
-  width: 60px;
-  height: 60px;
+  width: 52px;
+  height: 52px;
   padding: 4px;
   background: #fff;
   border-radius: 6px;
   border: 1px solid #ebeef5;
 }
 
-.preset-cell {
+.count-cell {
   background: linear-gradient(135deg, #409eff 0%, #165DFF 100%);
   border-radius: 2px;
 }
 
-.preset-info {
+.count-info {
   text-align: center;
 }
 
-.preset-label {
+.count-num {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
   color: #303133;
 }
 
-.preset-desc {
+.count-size {
   font-size: 11px;
   color: #909399;
   margin-top: 2px;
 }
 
-.scene-section {
-  padding: 0 8px;
+.custom-form-item {
+  margin-bottom: 0;
 }
 
-.scene-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.scene-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  padding: 16px 8px;
-  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
-  border-radius: 8px;
-  border: 1px solid #ebeef5;
-  margin-bottom: 12px;
-  font-size: 13px;
+.custom-form-item :deep(.el-form-item__label) {
+  font-size: 12px;
   color: #606266;
-  transition: all 0.2s;
+  padding-bottom: 6px;
 }
 
-.scene-card:hover {
-  border-color: #165DFF;
-  background: linear-gradient(135deg, #f0f5ff 0%, #e6f0ff 100%);
-  transform: translateY(-2px);
-}
-
-.tips-card {
-  margin-bottom: 16px;
-  border: 1px solid #ebeef5;
-}
-
-.tips-card :deep(.el-card__header) {
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
-  border-bottom: none;
-}
-
-.tips-card :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.spec-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.spec-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.spec-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.spec-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.spec-label {
-  font-size: 12px;
-  color: #909399;
-}
-
-.spec-value {
-  font-size: 13px;
-  color: #303133;
-  font-weight: 500;
-}
-
-.spec-tips {
-  margin-top: 16px;
+.custom-tip {
+  margin-top: 10px;
   padding: 10px 12px;
-  background: #fdf6ec;
+  background: #f0f9ff;
   border-radius: 6px;
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-size: 12px;
-  color: #b88230;
+  font-size: 13px;
+  color: #165DFF;
   line-height: 1.5;
+}
+
+.custom-tip span {
+  color: #e6a23c;
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+}
+
+.upload-card {
+  margin-bottom: 24px;
+}
+
+.upload-area {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 20px;
+}
+
+.image-uploader :deep(.el-upload-dragger) {
+  width: 100%;
+  padding: 30px 20px;
+}
+
+.image-uploader :deep(.el-upload) {
+  width: 100%;
 }
 
 .privacy-note {
@@ -1024,10 +1027,10 @@ watch(
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12px;
   color: #166534;
 }
 
@@ -1041,48 +1044,6 @@ watch(
 
 .settings-form {
   padding: 8px 0;
-}
-
-.preset-select {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.preset-select-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 8px;
-  background: #f5f7fa;
-  border: 1px solid #ebeef5;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 13px;
-  color: #606266;
-}
-
-.preset-select-item:hover {
-  border-color: #409eff;
-  background: #ecf5ff;
-}
-
-.preset-select-item.active {
-  border-color: #165DFF;
-  background: linear-gradient(135deg, #409eff 0%, #165DFF 100%);
-  color: #fff;
-}
-
-.preset-select-preview {
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.size-hint {
-  margin-top: 8px;
-  font-size: 12px;
-  color: #909399;
 }
 
 .action-card {
@@ -1100,11 +1061,11 @@ watch(
 }
 
 .download-tip-content {
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
 .download-tip-content p {
-  margin: 4px 0;
+  margin: 2px 0;
 }
 
 @media (max-width: 992px) {
