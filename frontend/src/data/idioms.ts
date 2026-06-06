@@ -1553,5 +1553,869 @@ export const idioms: Idiom[] = [
     category: '成语典故',
     structure: '连动式',
     emotion: '贬义'
+  },
+  {
+    name: '阿鼻地狱',
+    pinyin: 'ā bí dì yù',
+    pinyinInitials: 'abdy',
+    explanation: '阿鼻：梵语的译音，意译为「无间」，即痛苦无有间断之意。佛教指最苦的地狱，为八大地狱之一。常用以比喻黑暗的社会和残酷的刑罚。',
+    source: '《法华经·法师功德品》：「下至阿鼻地狱。」《俱舍论》卷十一：「阿鼻，译言无间。」',
+    examples: [
+      { sentence: '在黑暗的旧社会，劳动人民生活在阿鼻地狱之中。' },
+      { sentence: '人们常说作恶多端的人死后会堕入阿鼻地狱。' }
+    ],
+    synonyms: ['十八层地狱', '无间地狱', '水深火热'],
+    antonyms: ['极乐世界', '天堂福地', '世外桃源'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '贬义'
+  },
+  {
+    name: '爱莫能助',
+    pinyin: 'ài mò néng zhù',
+    pinyinInitials: 'amnz',
+    explanation: '虽然心中关切同情，却没有力量帮助。爱：爱惜；莫：不。',
+    source: '《诗经·大雅·烝民》：「维仲山甫举之，爱莫助之。」',
+    examples: [
+      { sentence: '这件事情我实在爱莫能助，请你另想办法。' },
+      { sentence: '他需要的资金数额太大，我也爱莫能助。' }
+    ],
+    synonyms: ['无能为力', '力不从心', '束手无策'],
+    antonyms: ['鼎力相助', '有求必应', '拔刀相助'],
+    category: '成语典故',
+    structure: '紧缩式',
+    emotion: '中性'
+  },
+  {
+    name: '安居乐业',
+    pinyin: 'ān jū lè yè',
+    pinyinInitials: 'ajly',
+    explanation: '安：安定；乐：喜爱，愉快；业：职业。指安定愉快地生活和劳动。',
+    source: '《后汉书·仲长统传》：「安居乐业，长养子孙，天下晏然。」',
+    examples: [
+      { sentence: '改革开放后，人民安居乐业，生活蒸蒸日上。' },
+      { sentence: '只有国家稳定，百姓才能安居乐业。' }
+    ],
+    synonyms: ['国泰民安', '丰衣足食', '安身立命'],
+    antonyms: ['民不聊生', '流离失所', '兵荒马乱'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '安然无恙',
+    pinyin: 'ān rán wú yàng',
+    pinyinInitials: 'arwy',
+    explanation: '恙：病。原指人平安没有疾病。现泛指事物平安未遭损害。',
+    source: '明·冯梦龙《醒世恒言》第29卷：「按院照旧供职，陆公安然无恙。」',
+    examples: [
+      { sentence: '经过那场暴风雨，房屋依然安然无恙。' },
+      { sentence: '他从地震中安然无恙地逃了出来。' }
+    ],
+    synonyms: ['平安无事', '安然无事', '完好无损'],
+    antonyms: ['危在旦夕', '九死一生', '遍体鳞伤'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '褒义'
+  },
+  {
+    name: '跋山涉水',
+    pinyin: 'bá shān shè shuǐ',
+    pinyinInitials: 'bsss',
+    explanation: '跋山：翻过山岭；涉水：用脚趟着水渡过大河。翻山越岭，趟水过河。形容走远路的艰苦。',
+    source: '《诗经·墉风·载驰》：「大夫跋涉，我心则忧。」',
+    examples: [
+      { sentence: '地质队员跋山涉水，为祖国寻找矿藏。' },
+      { sentence: '他跋山涉水，终于找到了失散多年的亲人。' }
+    ],
+    synonyms: ['翻山越岭', '风尘仆仆', '长途跋涉'],
+    antonyms: ['朝发夕至', '一路顺风', '近在咫尺'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '百发百中',
+    pinyin: 'bǎi fā bǎi zhòng',
+    pinyinInitials: 'bfbz',
+    explanation: '形容射箭或打枪准确，每次都命中目标。也比喻做事有充分把握。',
+    source: '《战国策·西周策》：「楚有养由基者，善射，去柳叶百步而射之，百发百中。」',
+    examples: [
+      { sentence: '他是一位神枪手，射击百发百中。' },
+      { sentence: '他的罚球技术很高，几乎百发百中。' }
+    ],
+    synonyms: ['弹无虚发', '百步穿杨', '百无一失'],
+    antonyms: ['无的放矢', '百不一存', '射不穿札'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '百废待兴',
+    pinyin: 'bǎi fèi dài xīng',
+    pinyinInitials: 'bfdx',
+    explanation: '废：被废置的事情；待：等待；兴：兴办。许多被搁置的事情等着要兴办。',
+    source: '王颖《海外赤子》：「百废待兴，一下子怎么能抓得过来？」',
+    examples: [
+      { sentence: '新中国成立初期，百废待兴，困难重重。' },
+      { sentence: '地震过后，灾区百废待兴，需要大家共同努力。' }
+    ],
+    synonyms: ['百端待举', '千头万绪', '百废待举'],
+    antonyms: ['百废俱兴', '蒸蒸日上', '欣欣向荣'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '中性'
+  },
+  {
+    name: '百年大计',
+    pinyin: 'bǎi nián dà jì',
+    pinyinInitials: 'bndj',
+    explanation: '大计：长远的重要的计划。指关系到长远利益的计划或措施。',
+    source: '清·梁启超《论民族竞争之大势》：「数月之间，而其权力已巩固，而百年大计于是乎定。」',
+    examples: [
+      { sentence: '教育是百年大计，必须高度重视。' },
+      { sentence: '兴修水利是造福子孙后代的百年大计。' }
+    ],
+    synonyms: ['长计远虑', '从长计议', '千秋大业'],
+    antonyms: ['权宜之计', '缓兵之计', '临时抱佛脚'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '褒义'
+  },
+  {
+    name: '百战百胜',
+    pinyin: 'bǎi zhàn bǎi shèng',
+    pinyinInitials: 'bzbs',
+    explanation: '每战必胜。形容所向无敌。',
+    source: '《孙子·谋攻》：「百战百胜，非善之善者也；不战而屈人之兵，善之善者也。」',
+    examples: [
+      { sentence: '他在商场上百战百胜，被誉为「常胜将军」。' },
+      { sentence: '人民军队百战百胜，所向披靡。' }
+    ],
+    synonyms: ['战无不胜', '所向无敌', '无往不利'],
+    antonyms: ['屡战屡败', '一败涂地', '溃不成军'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '半途而废',
+    pinyin: 'bàn tú ér fèi',
+    pinyinInitials: 'btep',
+    explanation: '废：停止。指做事不能坚持到底，中途停顿，有始无终。',
+    source: '《礼记·中庸》：「君子遵道而行，半途而废，吾弗能已矣。」',
+    examples: [
+      { sentence: '做任何事情都要坚持到底，不能半途而废。' },
+      { sentence: '这项试验一定要搞到底，不能半途而废。' }
+    ],
+    synonyms: ['功亏一篑', '有始无终', '浅尝辄止'],
+    antonyms: ['坚持不懈', '持之以恒', '锲而不舍'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '贬义'
+  },
+  {
+    name: '包罗万象',
+    pinyin: 'bāo luó wàn xiàng',
+    pinyinInitials: 'blwx',
+    explanation: '包罗：包括；万象：宇宙间的一切景象，指各种事物。形容内容丰富，应有尽有。',
+    source: '《黄帝宅经》卷上：「所以包罗万象，举一千从。」',
+    examples: [
+      { sentence: '百科全书的内容包罗万象，应有尽有。' },
+      { sentence: '这个博物馆的展品包罗万象，令人目不暇接。' }
+    ],
+    synonyms: ['应有尽有', '无所不包', '一应俱全'],
+    antonyms: ['空空如也', '一无所有', '挂一漏万'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '中性'
+  },
+  {
+    name: '饱经风霜',
+    pinyin: 'bǎo jīng fēng shuāng',
+    pinyinInitials: 'bjfs',
+    explanation: '饱：充分；经：经历；风霜：比喻艰难困苦。形容经历过长期的艰难困苦的生活和斗争。',
+    source: '清·孔尚任《桃花扇》第二十一出：「鸡皮瘦损，看饱经雪霜，丝鬓如银。」',
+    examples: [
+      { sentence: '他那张饱经风霜的脸上刻满了岁月的痕迹。' },
+      { sentence: '老爷爷饱经风霜的脸上露出了笑容。' }
+    ],
+    synonyms: ['饱经沧桑', '历尽艰辛', '千锤百炼'],
+    antonyms: ['养尊处优', '不谙世事', '一帆风顺'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '中性'
+  },
+  {
+    name: '杯水车薪',
+    pinyin: 'bēi shuǐ chē xīn',
+    pinyinInitials: 'bscx',
+    explanation: '用一杯水去救一车着了火的柴草。比喻力量太小，解决不了问题。',
+    source: '《孟子·告子上》：「今之为人者，犹以一杯水救一车薪之火也。」',
+    examples: [
+      { sentence: '这点钱对这个大工程来说，简直是杯水车薪。' },
+      { sentence: '他的帮助虽然杯水车薪，但心意可嘉。' }
+    ],
+    synonyms: ['无济于事', '于事无补', '人浮于事'],
+    antonyms: ['绰绰有余', '立竿见影', '行之有效'],
+    category: '成语典故',
+    structure: '复句式',
+    emotion: '贬义'
+  },
+  {
+    name: '悲欢离合',
+    pinyin: 'bēi huān lí hé',
+    pinyinInitials: 'bhlh',
+    explanation: '悲伤、欢乐、离散、聚会。泛指生活中经历的各种境遇和由此产生的各种心情。',
+    source: '宋·苏轼《水调歌头》词：「人有悲欢离合，月有阴睛阳缺，此事古难全。」',
+    examples: [
+      { sentence: '人生难免有悲欢离合，我们要学会坦然面对。' },
+      { sentence: '这部小说讲述了一家人几十年的悲欢离合。' }
+    ],
+    synonyms: ['酸甜苦辣', '喜怒哀乐', '离合悲欢'],
+    antonyms: ['平淡无奇', '风平浪静', '一帆风顺'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '背道而驰',
+    pinyin: 'bèi dào ér chí',
+    pinyinInitials: 'bdec',
+    explanation: '背：背向；道：道路；驰：奔跑。朝相反的方向跑去。比喻彼此的方向和目的完全相反。',
+    source: '唐·柳宗元《〈杨评事文集〉后序》：「其余各探一隅，相与背驰于道者，其去弥远。」',
+    examples: [
+      { sentence: '他的所作所为与当初的誓言背道而驰。' },
+      { sentence: '这种做法与教育的初衷背道而驰。' }
+    ],
+    synonyms: ['南辕北辙', '适得其反', '分道扬镳'],
+    antonyms: ['殊途同归', '如出一辙', '志同道合'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '贬义'
+  },
+  {
+    name: '本末倒置',
+    pinyin: 'běn mò dào zhì',
+    pinyinInitials: 'bmdz',
+    explanation: '本：树根；末：树梢；置：放。比喻把主次、轻重的位置弄颠倒了。',
+    source: '金·无名氏《绥德州新学记》：「然非知治之审，则未尝不本末倒置。」',
+    examples: [
+      { sentence: '我们做任何事情都不能本末倒置，分清主次。' },
+      { sentence: '只追求形式而忽略内容，是本末倒置的做法。' }
+    ],
+    synonyms: ['轻重倒置', '舍本逐末', '喧宾夺主'],
+    antonyms: ['本末相顺', '顺理成章', '提纲挈领'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '贬义'
+  },
+  {
+    name: '闭关锁国',
+    pinyin: 'bì guān suǒ guó',
+    pinyinInitials: 'bgsg',
+    explanation: '闭关：封闭关口；锁：封锁。闭关自守，不与外国往来。',
+    source: '《周易·复》：「先王以至日闭关，商旅不行，后不省方。」',
+    examples: [
+      { sentence: '闭关锁国只会导致国家落后，对外开放才能发展。' },
+      { sentence: '清政府的闭关锁国政策，使中国落后于世界。' }
+    ],
+    synonyms: ['闭关自守', '故步自封', '闭门不纳'],
+    antonyms: ['对外开放', '门户开放', '互通有无'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '贬义'
+  },
+  {
+    name: '闭门思过',
+    pinyin: 'bì mén sī guò',
+    pinyinInitials: 'bmsg',
+    explanation: '过：过失。关起门来反省自己的过错。',
+    source: '《汉书·韩延寿传》：「因入卧传舍，闭阁思过。」',
+    examples: [
+      { sentence: '他知道自己错了，正在家中闭门思过。' },
+      { sentence: '与其怨天尤人，不如闭门思过。' }
+    ],
+    synonyms: ['反躬自省', '闭门思愆', '清夜扪心'],
+    antonyms: ['不思悔改', '文过饰非', '执迷不悟'],
+    category: '成语典故',
+    structure: '连动式',
+    emotion: '中性'
+  },
+  {
+    name: '变化多端',
+    pinyin: 'biàn huà duō duān',
+    pinyinInitials: 'bhdd',
+    explanation: '端：头绪。形容变化极多。也指变化很大。',
+    source: '明·冯梦龙《古今小说·陈从善梅岭失浑家》：「这齐天大圣神通广大，变化多端。」',
+    examples: [
+      { sentence: '天上的云变化多端，形态各异。' },
+      { sentence: '市场行情变化多端，要谨慎投资。' }
+    ],
+    synonyms: ['变化莫测', '变化无常', '瞬息万变'],
+    antonyms: ['一成不变', '千篇一律', '原封不动'],
+    category: '成语典故',
+    structure: '补充式',
+    emotion: '中性'
+  },
+  {
+    name: '标新立异',
+    pinyin: 'biāo xīn lì yì',
+    pinyinInitials: 'bxly',
+    explanation: '标：提出，写明；异：不同的，特别的。提出新奇的主张，表示与众不同。',
+    source: '南朝宋·刘义庆《世说新语·文学》：「支道林在白马寺中，将冯太常共语，因及《逍遥》，支卓然标新理于二家之表，立异义于众贤之外。」',
+    examples: [
+      { sentence: '他在设计中大胆标新立异，获得了好评。' },
+      { sentence: '做学问不要一味标新立异，要实事求是。' }
+    ],
+    synonyms: ['独树一帜', '另起炉灶', '别出心裁'],
+    antonyms: ['因循守旧', '墨守成规', '人云亦云'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '别出心裁',
+    pinyin: 'bié chū xīn cái',
+    pinyinInitials: 'bcxc',
+    explanation: '别：另外；心裁：心中的设计、筹划。另有一种构思或设计。指想出的办法与众不同。',
+    source: '明·李贽《水浒全书发凡》：「今别出心裁，不依旧样，或特标于目外，或叠采于回中。」',
+    examples: [
+      { sentence: '这个方案别出心裁，令人眼前一亮。' },
+      { sentence: '他的设计别出心裁，获得了大奖。' }
+    ],
+    synonyms: ['别具一格', '独出心裁', '与众不同'],
+    antonyms: ['千篇一律', '鹦鹉学舌', '步人后尘'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '褒义'
+  },
+  {
+    name: '冰天雪地',
+    pinyin: 'bīng tiān xuě dì',
+    pinyinInitials: 'btxd',
+    explanation: '形容冰雪漫天盖地。',
+    source: '清·蒋士铨《鸡毛房》：「冰天雪地风如虎，裸而泣者无栖所。」',
+    examples: [
+      { sentence: '冬天，北方到处是冰天雪地。' },
+      { sentence: '战士们在冰天雪地里坚持训练。' }
+    ],
+    synonyms: ['天寒地冻', '千里冰封', '滴水成冰'],
+    antonyms: ['骄阳似火', '烈日炎炎', '春暖花开'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '兵荒马乱',
+    pinyin: 'bīng huāng mǎ luàn',
+    pinyinInitials: 'bhml',
+    explanation: '荒、乱：指社会秩序不安定。形容战争期间社会混乱不安的景象。',
+    source: '元·无名氏《梧桐叶》第四折：「那兵荒马乱，定然遭驱被掳。」',
+    examples: [
+      { sentence: '在那兵荒马乱的年代，百姓过着流离失所的生活。' },
+      { sentence: '兵荒马乱中，一家人失散了。' }
+    ],
+    synonyms: ['颠沛流离', '内忧外患', '鸡犬不宁'],
+    antonyms: ['国泰民安', '安居乐业', '太平盛世'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '贬义'
+  },
+  {
+    name: '波澜壮阔',
+    pinyin: 'bō lán zhuàng kuò',
+    pinyinInitials: 'blzk',
+    explanation: '原形容水面辽阔。现比喻声势雄壮或规模巨大。',
+    source: '南朝宋·鲍照《登大雷岸与妹书》：「旅客贫辛，波路壮阔。」',
+    examples: [
+      { sentence: '我被大海波澜壮阔的景象深深吸引了。' },
+      { sentence: '改革开放以来，中国发生了波澜壮阔的变化。' }
+    ],
+    synonyms: ['浩浩荡荡', '气势磅礴', '汹涌澎湃'],
+    antonyms: ['风平浪静', '一潭死水', '水波不兴'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '褒义'
+  },
+  {
+    name: '博大精深',
+    pinyin: 'bó dà jīng shēn',
+    pinyinInitials: 'bdjs',
+    explanation: '博：广，多。形容思想和学识广博高深。',
+    source: '明·姜世昌《逸周书》：「迄今读之，若揭日月而行千载，其博大精深之旨，非晚世学者所及。」',
+    examples: [
+      { sentence: '中华文化博大精深，源远流长。' },
+      { sentence: '他的学问博大精深，令人钦佩。' }
+    ],
+    synonyms: ['博学多才', '经天纬地', '学富五车'],
+    antonyms: ['才疏学浅', '孤陋寡闻', '井底之蛙'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '不耻下问',
+    pinyin: 'bù chǐ xià wèn',
+    pinyinInitials: 'bcxw',
+    explanation: '乐于向学问或地位比自己低的人学习，而不觉得不好意思。',
+    source: '《论语·公冶长》：「敏而好学，不耻下问。」',
+    examples: [
+      { sentence: '学习要有不耻下问的精神。' },
+      { sentence: '他虽然是位大学问家，但仍然不耻下问。' }
+    ],
+    synonyms: ['谦虚谨慎', '虚怀若谷', '功成不居'],
+    antonyms: ['好为人师', '骄傲自满', '夜郎自大'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '褒义'
+  },
+  {
+    name: '不拘一格',
+    pinyin: 'bù jū yī gé',
+    pinyinInitials: 'bjyg',
+    explanation: '拘：限制；格：规格，方式。不局限于一种规格或一个格局。',
+    source: '清·龚自珍《己亥杂诗》：「我劝天公重抖擞，不拘一格降人才。」',
+    examples: [
+      { sentence: '他的设计风格不拘一格，大胆创新。' },
+      { sentence: '选拔人才要不拘一格，任人唯贤。' }
+    ],
+    synonyms: ['形形色色', '五花八门', '丰富多彩'],
+    antonyms: ['如出一辙', '千篇一律', '循规蹈矩'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '褒义'
+  },
+  {
+    name: '不可思议',
+    pinyin: 'bù kě sī yì',
+    pinyinInitials: 'bksy',
+    explanation: '原有神秘奥妙的意思。现多指无法想象，难以理解。',
+    source: '《维摩诘所说经·不思议品》：「诸佛菩萨有解脱名不可思议。」',
+    examples: [
+      { sentence: '他竟然能完成这个不可能的任务，真是不可思议。' },
+      { sentence: '宇宙的浩瀚令人感到不可思议。' }
+    ],
+    synonyms: ['不可捉摸', '神乎其神', '匪夷所思'],
+    antonyms: ['可想而知', '一目了然', '通俗易懂'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '中性'
+  },
+  {
+    name: '不劳而获',
+    pinyin: 'bù láo ér huò',
+    pinyinInitials: 'bleh',
+    explanation: '自己不劳动却占有别人的劳动成果。获：获取，得到。',
+    source: '《孔子家语·入官》：「所求于迩，故不劳而得也。」',
+    examples: [
+      { sentence: '他想不劳而获，结果一事无成。' },
+      { sentence: '天下没有不劳而获的好事。' }
+    ],
+    synonyms: ['坐享其成', '不劳而得', '好吃懒做'],
+    antonyms: ['自食其力', '自力更生', '勤劳致富'],
+    category: '成语典故',
+    structure: '紧缩式',
+    emotion: '贬义'
+  },
+  {
+    name: '不谋而合',
+    pinyin: 'bù móu ér hé',
+    pinyinInitials: 'bmeh',
+    explanation: '谋：商量；合：相符。事先没有商量过，意见或行动却完全一致。',
+    source: '晋·干宝《搜神记》卷二：「二人之言，不谋而合。」',
+    examples: [
+      { sentence: '我们的想法不谋而合，真是英雄所见略同。' },
+      { sentence: '两人不谋而合，都选择了同样的路线。' }
+    ],
+    synonyms: ['不约而同', '异口同声', '殊途同归'],
+    antonyms: ['众说纷纭', '言人人殊', '见仁见智'],
+    category: '成语典故',
+    structure: '紧缩式',
+    emotion: '中性'
+  },
+  {
+    name: '不求甚解',
+    pinyin: 'bù qiú shèn jiě',
+    pinyinInitials: 'bqsj',
+    explanation: '甚：很，极。只求知道个大概，不求彻底了解。常指学习或研究不认真、不深入。',
+    source: '晋·陶潜《五柳先生传》：「好读书，不求甚解。每有会意，便欣然忘食。」',
+    examples: [
+      { sentence: '学习知识不能不求甚解，要深入钻研。' },
+      { sentence: '他读书总是不求甚解，所以成绩不好。' }
+    ],
+    synonyms: ['生吞活剥', '一知半解', '囫囵吞枣'],
+    antonyms: ['寻根究底', '融会贯通', '精益求精'],
+    category: '成语典故',
+    structure: '动宾式',
+    emotion: '贬义'
+  },
+  {
+    name: '不屈不挠',
+    pinyin: 'bù qū bù náo',
+    pinyinInitials: 'bqbn',
+    explanation: '屈：屈服；挠：弯曲。比喻在压力和困难面前不屈服，表现十分顽强。',
+    source: '《汉书·叙传下》：「乐昌笃实，不桡不诎。」',
+    examples: [
+      { sentence: '他不屈不挠的精神令人钦佩。' },
+      { sentence: '面对困难，我们要不屈不挠，勇往直前。' }
+    ],
+    synonyms: ['百折不挠', '坚韧不拔', '锲而不舍'],
+    antonyms: ['卑躬屈膝', '奴颜婢膝', '半途而废'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '不速之客',
+    pinyin: 'bù sù zhī kè',
+    pinyinInitials: 'bszk',
+    explanation: '速：邀请。指没有邀请突然而来的客人。',
+    source: '《周易·需》：「有不速之客三人来，敬之终吉。」',
+    examples: [
+      { sentence: '我们正在吃饭，来了位不速之客。' },
+      { sentence: '暴风雨是麦田的不速之客。' }
+    ],
+    synonyms: ['不请自来', '招之不来'],
+    antonyms: ['特约嘉宾', '不辞而别'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '中性'
+  },
+  {
+    name: '不相上下',
+    pinyin: 'bù xiāng shàng xià',
+    pinyinInitials: 'bxss',
+    explanation: '分不出高低好坏。形容水平相当。',
+    source: '唐·陆龟蒙《蠹化》：「翳叶仰啮，如饥蚕之速，不相上下。」',
+    examples: [
+      { sentence: '这两名选手的实力不相上下。' },
+      { sentence: '他们俩的成绩不相上下，都很优秀。' }
+    ],
+    synonyms: ['势均力敌', '平起平坐', '旗鼓相当'],
+    antonyms: ['天差地别', '悬殊很大', '判若云泥'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '中性'
+  },
+  {
+    name: '不言而喻',
+    pinyin: 'bù yán ér yù',
+    pinyinInitials: 'byey',
+    explanation: '喻：了解，明白。不用说话就能明白。形容道理很明显。',
+    source: '《孟子·尽心上》：「仁义礼智根于心，其生色也，睟然见于面，盎于背，施于四体，四体不言而喻。」',
+    examples: [
+      { sentence: '他的用意不言而喻，大家都心照不宣。' },
+      { sentence: '这个道理不言而喻，无需多加解释。' }
+    ],
+    synonyms: ['显而易见', '一目了然', '无庸赘述'],
+    antonyms: ['扑朔迷离', '模棱两可', '不可思议'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '中性'
+  },
+  {
+    name: '不约而同',
+    pinyin: 'bù yuē ér tóng',
+    pinyinInitials: 'byet',
+    explanation: '约：相约。事先没有约定而相互一致。',
+    source: '《史记·平津侯主父列传》：「应对而皆动，不谋而俱起，不约而同会。」',
+    examples: [
+      { sentence: '他们不约而同地站了起来。' },
+      { sentence: '大家不约而同地选择了这个方案。' }
+    ],
+    synonyms: ['不谋而合', '殊途同归', '异口同声'],
+    antonyms: ['众说纷纭', '言人人殊', '见仁见智'],
+    category: '成语典故',
+    structure: '紧缩式',
+    emotion: '中性'
+  },
+  {
+    name: '不折不扣',
+    pinyin: 'bù zhé bù kòu',
+    pinyinInitials: 'bzbk',
+    explanation: '折、扣：出售商品时，按定价减去的成数。没有折扣，表示完全、十足的意思。',
+    source: '《文明小史》第四十回：「人人都要做官，人人都说差使，自然而然的把钱糟蹋了，这不折不扣的是官魔作祟。」',
+    examples: [
+      { sentence: '他是个不折不扣的好人。' },
+      { sentence: '这项工作要不折不扣地完成。' }
+    ],
+    synonyms: ['彻头彻尾', '实实在在', '原原本本'],
+    antonyms: ['七折八扣', '添枝加叶', '画蛇添足'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '才高八斗',
+    pinyin: 'cái gāo bā dǒu',
+    pinyinInitials: 'cgbd',
+    explanation: '才：文才，才华。比喻人极有才华。',
+    source: '《南史·谢灵运传》：「天下才共一石，曹子建独得八斗，我得一斗，自古及今共分一斗。」',
+    examples: [
+      { sentence: '他才高八斗，学富五车。' },
+      { sentence: '李白才高八斗，写下了许多脍炙人口的诗篇。' }
+    ],
+    synonyms: ['八斗之才', '才华横溢', '满腹经纶'],
+    antonyms: ['才疏学浅', '胸无点墨', '碌碌无能'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '褒义'
+  },
+  {
+    name: '沧海桑田',
+    pinyin: 'cāng hǎi sāng tián',
+    pinyinInitials: 'chst',
+    explanation: '桑田：农田。大海变成桑田，桑田变成大海。比喻世事变化很大。',
+    source: '晋·葛洪《神仙传·麻姑》：「麻姑自说云，接待以来，已见东海三为桑田。」',
+    examples: [
+      { sentence: '改革开放以来，家乡发生了沧海桑田的变化。' },
+      { sentence: '历经沧海桑田，他终于回到了故乡。' }
+    ],
+    synonyms: ['日新月异', '翻天覆地', '白云苍狗'],
+    antonyms: ['一成不变', '原封不动', '亘古不变'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '操之过急',
+    pinyin: 'cāo zhī guò jí',
+    pinyinInitials: 'czgj',
+    explanation: '操：做，从事。处理事情，解决问题过于急躁。',
+    source: '《汉书·五行志中之下》：「遂要不任道，将以一朝系决之，操之过急。」',
+    examples: [
+      { sentence: '做事不能操之过急，要稳扎稳打。' },
+      { sentence: '教育孩子不能操之过急，要有耐心。' }
+    ],
+    synonyms: ['急于求成', '急功近利', '操切从事'],
+    antonyms: ['稳扎稳打', '从容不迫', '循序渐进'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '贬义'
+  },
+  {
+    name: '层峦叠嶂',
+    pinyin: 'céng luán dié zhàng',
+    pinyinInitials: 'cldz',
+    explanation: '层峦：山连着山；叠嶂：许多高险的像屏障一样的山。形容山峰多而险峻。',
+    source: '宋·陆九渊《与王谦仲书》：「方丈檐间，层峦叠嶂，奔腾飞动，近者数十里，远者数百里，争奇竞秀。」',
+    examples: [
+      { sentence: '这里层峦叠嶂，风景秀丽。' },
+      { sentence: '走进山区，只见层峦叠嶂，云雾缭绕。' }
+    ],
+    synonyms: ['崇山峻岭', '千山万壑', '悬崖峭壁'],
+    antonyms: ['一马平川', '一望无际', '坦荡如砥'],
+    category: '自然景色',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '姹紫嫣红',
+    pinyin: 'chà zǐ yān hóng',
+    pinyinInitials: 'czyh',
+    explanation: '姹、嫣：娇艳。形容各种花朵娇艳美丽。',
+    source: '明·汤显祖《牡丹亭·惊梦》：「原来姹紫嫣红开遍，似这般都付与断井颓垣。」',
+    examples: [
+      { sentence: '春天来了，公园里姹紫嫣红。' },
+      { sentence: '花园里姹紫嫣红，美不胜收。' }
+    ],
+    synonyms: ['百花齐放', '万紫千红', '花团锦簇'],
+    antonyms: ['残花败柳', '破败不堪', '萧条冷落'],
+    category: '自然景色',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '长驱直入',
+    pinyin: 'cháng qū zhí rù',
+    pinyinInitials: 'cqzr',
+    explanation: '长驱：不停顿地策马快跑；直入：一直往前。指长距离不停顿的快速行进。形容进军迅猛，不可阻挡。',
+    source: '《战国策·燕策二》：「轻卒锐兵，长驱至国。」汉·曹操《劳徐晃令》：「吾用兵三十余年，及所闻古之善用兵者，未有长驱径入敌围者也。」',
+    examples: [
+      { sentence: '我军长驱直入，势如破竹。' },
+      { sentence: '汽车在高速公路上长驱直入。' }
+    ],
+    synonyms: ['势如破竹', '直捣黄龙', '所向披靡'],
+    antonyms: ['裹足不前', '步步为营', '停滞不前'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '朝三暮四',
+    pinyin: 'zhāo sān mù sì',
+    pinyinInitials: 'zsms',
+    explanation: '原指玩弄手法欺骗人。后用来比喻常常变卦，反复无常。',
+    source: '《庄子·齐物论》：「狙公赋芧，曰：「朝三而暮四。」众狙皆怒。曰：「然则朝四而暮三。」众狙皆悦。」',
+    examples: [
+      { sentence: '他做事总是朝三暮四，没有恒心。' },
+      { sentence: '做人不能朝三暮四，要讲信用。' }
+    ],
+    synonyms: ['朝秦暮楚', '反复无常', '三心二意'],
+    antonyms: ['始终不渝', '墨守成规', '始终如一'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '贬义'
+  },
+  {
+    name: '车水马龙',
+    pinyin: 'chē shuǐ mǎ lóng',
+    pinyinInitials: 'csml',
+    explanation: '车像流水，马像游龙。形容来往车马很多，连续不断的热闹情景。',
+    source: '《后汉书·明德马皇后纪》：「前过濯龙门上，见外家问起居者，车如流水，马如游龙。」',
+    examples: [
+      { sentence: '周末的商业街上，车水马龙，非常热闹。' },
+      { sentence: '春节期间，大街小巷车水马龙。' }
+    ],
+    synonyms: ['川流不息', '络绎不绝', '门庭若市'],
+    antonyms: ['门可罗雀', '冷冷清清', '人烟稀少'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '称心如意',
+    pinyin: 'chèn xīn rú yì',
+    pinyinInitials: 'cxry',
+    explanation: '形容心满意足，事情的发展完全符合心意。',
+    source: '宋·朱敦儒《感皇恩》词：「称心如意，剩活人间几岁？」',
+    examples: [
+      { sentence: '他终于找到了一份称心如意的工作。' },
+      { sentence: '这件事处理得大家都称心如意。' }
+    ],
+    synonyms: ['心满意足', '如愿以偿', '尽如人意'],
+    antonyms: ['大失所望', '事与愿违', '不如意'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '成群结队',
+    pinyin: 'chéng qún jié duì',
+    pinyinInitials: 'cqjd',
+    explanation: '成：成为，变成。一群群人集合在一起。',
+    source: '《新编五代史平话·周史上》：「无奈那雀儿成群结队来偷吃谷粟，才赶得东边的云，又向西边来吃。」',
+    examples: [
+      { sentence: '人们成群结队地去赶集。' },
+      { sentence: '放学了，孩子们成群结队地走出校门。' }
+    ],
+    synonyms: ['三五成群', '络绎不绝', '人山人海'],
+    antonyms: ['形单影只', '孑然一身', '孤苦伶仃'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
+  },
+  {
+    name: '诚实守信',
+    pinyin: 'chéng shí shǒu xìn',
+    pinyinInitials: 'cssx',
+    explanation: '诚实：忠诚正直，不虚假；守信：保持信用，不失信。指为人真诚老实，讲信用。',
+    source: '《论语·为政》：「人而无信，不知其可也。」',
+    examples: [
+      { sentence: '诚实守信是中华民族的传统美德。' },
+      { sentence: '他是一个诚实守信的人。' }
+    ],
+    synonyms: ['一言九鼎', '一诺千金', '言而有信'],
+    antonyms: ['言而无信', '背信弃义', '出尔反尔'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '持之以恒',
+    pinyin: 'chí zhī yǐ héng',
+    pinyinInitials: 'czyh',
+    explanation: '持：坚持；恒：恒心。长久坚持下去。',
+    source: '清·曾国藩《家训喻纪泽》：「尔之短处，在言语欠钝讷，举止欠端重，看书不能深入，而作文不能峥嵘。若能从此三事上下一番苦功，进之以猛，持之以恒，不过一二年，自尔精进而不觉。」',
+    examples: [
+      { sentence: '学习要持之以恒，不能三天打鱼两天晒网。' },
+      { sentence: '他持之以恒地锻炼身体，身体越来越健康。' }
+    ],
+    synonyms: ['锲而不舍', '坚持不懈', '坚定不移'],
+    antonyms: ['半途而废', '一暴十寒', '浅尝辄止'],
+    category: '成语典故',
+    structure: '偏正式',
+    emotion: '褒义'
+  },
+  {
+    name: '出类拔萃',
+    pinyin: 'chū lèi bá cuì',
+    pinyinInitials: 'clbc',
+    explanation: '拔：超出；类：同类；萃：原为草丛生的样子，引伸为聚集。超出同类之上。多指人的品德才能。',
+    source: '《孟子·公孙丑上》：「出于其类，拔乎其萃，自生民以来，未有盛于孔子也。」',
+    examples: [
+      { sentence: '他在众多应聘者中出类拔萃，脱颖而出。' },
+      { sentence: '他是一位出类拔萃的科学家。' }
+    ],
+    synonyms: ['鹤立鸡群', '超群绝伦', '卓尔不群'],
+    antonyms: ['碌碌无为', '滥竽充数', '平淡无奇'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '出生入死',
+    pinyin: 'chū shēng rù sǐ',
+    pinyinInitials: 'csrs',
+    explanation: '原意是从出生到死去。后形容冒着生命危险，不顾个人安危。',
+    source: '《老子》第五十章：「出生入死，生之徒十有三，死之徒十有三。」',
+    examples: [
+      { sentence: '战士们出生入死，保卫祖国。' },
+      { sentence: '他为了革命事业出生入死。' }
+    ],
+    synonyms: ['赴汤蹈火', '舍生忘死', '奋不顾身'],
+    antonyms: ['贪生怕死', '苟且偷生', '畏首畏尾'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '川流不息',
+    pinyin: 'chuān liú bù xī',
+    pinyinInitials: 'clbx',
+    explanation: '川：河流。形容行人、车马等像水流一样连续不断。',
+    source: '南朝梁·周兴嗣《千字文》：「川流不息，渊澄取映。」',
+    examples: [
+      { sentence: '马路上的车辆川流不息。' },
+      { sentence: '每天来参观的人川流不息。' }
+    ],
+    synonyms: ['络绎不绝', '车水马龙', '连绵不断'],
+    antonyms: ['荒无人烟', '人迹罕至', '水泄不通'],
+    category: '成语典故',
+    structure: '主谓式',
+    emotion: '中性'
+  },
+  {
+    name: '从容不迫',
+    pinyin: 'cóng róng bù pò',
+    pinyinInitials: 'crbp',
+    explanation: '从容：不慌不忙，很镇静；不迫：不急促。不慌不忙，沉着镇定。',
+    source: '《旧唐书·刘世龙传》「而思礼以为得计，从容自若，尝与相忤者，必引令枉诛。」',
+    examples: [
+      { sentence: '面对突发情况，他从容不迫，沉着应对。' },
+      { sentence: '她在台上演讲，从容不迫，落落大方。' }
+    ],
+    synonyms: ['处之泰然', '镇定自若', '不慌不忙'],
+    antonyms: ['惊慌失措', '手足无措', '张皇失措'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '褒义'
+  },
+  {
+    name: '错综复杂',
+    pinyin: 'cuò zōng fù zá',
+    pinyinInitials: 'czfz',
+    explanation: '错：交错，交叉；综：合在一起。形容头绪多，情况复杂。',
+    source: '《周易·系辞上》：「参伍以变，错综其数。」',
+    examples: [
+      { sentence: '这个案件错综复杂，需要深入调查。' },
+      { sentence: '国际形势错综复杂，变化莫测。' }
+    ],
+    synonyms: ['扑朔迷离', '盘根错节', '千头万绪'],
+    antonyms: ['一目了然', '井然有序', '井井有条'],
+    category: '成语典故',
+    structure: '联合式',
+    emotion: '中性'
   }
 ]
