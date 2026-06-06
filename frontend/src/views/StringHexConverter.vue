@@ -10,10 +10,10 @@
         </div>
       </template>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
-        <el-step title="选择转换方向" description="字符串转十六进制 或 十六进制转字符串" />
-        <el-step title="输入内容" description="在对应输入框中输入需要转换的文本" />
-        <el-step title="点击转换" description="点击按钮即可完成转换" />
-        <el-step title="复制结果" description="一键复制转换后的结果" />
+        <el-step title="选择编辑区" description="在左侧输入字符串，或在右侧输入十六进制" />
+        <el-step title="点击转换按钮" description="Str → Hex 或 Hex → Str，结果写入对面区域" />
+        <el-step title="查看结果" description="转换结果不会覆盖原始输入区" />
+        <el-step title="可撤销操作" description="每次转换都可撤销，恢复之前的内容" />
       </el-steps>
       <el-divider />
       <div class="format-rules">
@@ -24,9 +24,9 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <div class="format-item">
-              <div class="format-label">字符串输入</div>
+              <div class="format-label">字符串 (Str)</div>
               <div class="format-examples">
-                <span class="format-desc">支持任意普通文本，包括中文、英文、数字、符号等</span>
+                <span class="format-desc">支持任意普通文本，UTF-8 编码</span>
                 <code class="format-code">Hello World</code>
                 <code class="format-code">你好世界</code>
                 <code class="format-code">Hello 你好 123</code>
@@ -35,12 +35,12 @@
           </el-col>
           <el-col :span="12">
             <div class="format-item">
-              <div class="format-label">十六进制输入</div>
+              <div class="format-label">十六进制 (Hex)</div>
               <div class="format-examples">
-                <span class="format-desc">支持多种格式，自动去除空格和分隔符</span>
+                <span class="format-desc">自动识别并去除空格、逗号、0x 等分隔符</span>
                 <code class="format-code">48656C6C6F</code>
                 <code class="format-code">48 65 6C 6C 6F</code>
-                <code class="format-code">0x48,0x65,0x6C,0x6C,0x6F</code>
+                <code class="format-code">0x48, 0x65, 0x6C, 0x6C, 0x6F</code>
               </div>
             </div>
           </el-col>
@@ -55,29 +55,15 @@
             <Switch />
           </el-icon>
           <span>字符串与十六进制互转</span>
-          <el-tag size="small" type="info" class="header-tag">支持 UTF-8 编码</el-tag>
+          <el-tag size="small" type="info" class="header-tag">支持 UTF-8 编码 · 可撤销</el-tag>
         </div>
       </template>
 
       <div class="converter-body">
-        <div class="converter-direction">
-          <el-radio-group v-model="convertDirection" size="large" @change="handleDirectionChange">
-            <el-radio-button value="string-to-hex">
-              <el-icon><Right /></el-icon>
-              字符串 → 十六进制
-            </el-radio-button>
-            <el-radio-button value="hex-to-string">
-              <el-icon><Left /></el-icon>
-              十六进制 → 字符串
-            </el-radio-button>
-          </el-radio-group>
-          <el-button :icon="Refresh" circle @click="swapDirection" title="交换方向" />
-        </div>
-
         <div class="converter-options">
           <div class="option-group">
             <span class="option-label">分隔符：</span>
-            <el-radio-group v-model="separator" size="small" :disabled="convertDirection === 'hex-to-string'">
+            <el-radio-group v-model="separator" size="small">
               <el-radio-button value="">无</el-radio-button>
               <el-radio-button value=" ">空格</el-radio-button>
               <el-radio-button value=",">逗号</el-radio-button>
@@ -86,93 +72,146 @@
           </div>
           <div class="option-group">
             <span class="option-label">大小写：</span>
-            <el-radio-group v-model="hexCase" size="small" :disabled="convertDirection === 'hex-to-string'">
+            <el-radio-group v-model="hexCase" size="small">
               <el-radio-button value="lower">小写</el-radio-button>
               <el-radio-button value="upper">大写</el-radio-button>
             </el-radio-group>
           </div>
           <div class="option-group">
-            <el-checkbox v-model="add0xPrefix" :disabled="convertDirection === 'hex-to-string'">
-              0x 前缀
-            </el-checkbox>
+            <el-checkbox v-model="add0xPrefix">0x 前缀</el-checkbox>
           </div>
         </div>
 
-        <div class="input-output-container">
-          <div class="io-section input-section">
-            <div class="io-header">
-              <span class="io-title">{{ convertDirection === 'string-to-hex' ? '字符串输入' : '十六进制输入' }}</span>
-              <div class="io-actions">
-                <el-button size="small" text @click="pasteFromClipboard">
-                  <el-icon><DocumentCopy /></el-icon>
-                  粘贴
-                </el-button>
-                <el-button size="small" text @click="clearInput">
-                  <el-icon><Delete /></el-icon>
-                  清空
-                </el-button>
+        <div class="dual-pane-container">
+          <div class="pane string-pane">
+            <div class="pane-header">
+              <div class="pane-title-wrap">
+                <el-tag type="primary" size="large" effect="dark" class="pane-tag">Str</el-tag>
+                <span class="pane-title">字符串</span>
+              </div>
+              <div class="pane-actions">
+                <el-tooltip content="撤销" placement="top">
+                  <el-button size="small" text @click="undo('string')" :disabled="!canUndo('string')">
+                    <el-icon><RefreshLeft /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="粘贴" placement="top">
+                  <el-button size="small" text @click="pasteToPane('string')">
+                    <el-icon><DocumentCopy /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="复制" placement="top">
+                  <el-button size="small" text @click="copyPane('string')" :disabled="!stringValue">
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="清空" placement="top">
+                  <el-button size="small" text @click="clearPane('string')" :disabled="!stringValue">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
               </div>
             </div>
             <el-input
-              v-model="inputValue"
+              v-model="stringValue"
               type="textarea"
-              :placeholder="convertDirection === 'string-to-hex' ? '请输入要转换的字符串，如：Hello World' : '请输入十六进制，如：48656C6C6F'"
-              :rows="8"
+              placeholder="在此输入普通字符串，如：Hello World，你好世界..."
+              :rows="10"
               resize="vertical"
-              @input="handleAutoConvert"
+              class="pane-textarea string-textarea"
             />
-            <div class="io-footer">
-              <span class="char-count">
-                {{ convertDirection === 'string-to-hex' ? `字符数: ${inputValue.length}` : `字节数: ${inputValue.trim() ? cleanHex(inputValue).length / 2 : 0}` }}
-              </span>
+            <div class="pane-footer">
+              <span class="char-count">字符数: {{ stringValue.length }}</span>
+              <el-tag v-if="stringDirty" size="small" type="warning" effect="light">已编辑</el-tag>
             </div>
           </div>
 
-          <div class="converter-arrow">
-            <el-button type="primary" size="large" circle @click="doConvert" :loading="converting">
-              <el-icon><Bottom v-if="convertDirection === 'string-to-hex'" /><Top v-else /></el-icon>
-            </el-button>
-            <span class="arrow-text">转换</span>
+          <div class="action-column">
+            <el-tooltip content="字符串 → 十六进制" placement="top">
+              <el-button
+                type="primary"
+                size="large"
+                class="convert-btn"
+                @click="convertStringToHex"
+                :loading="converting"
+              >
+                <el-icon><Right /></el-icon>
+                <span>Str → Hex</span>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="交换两个区域的内容" placement="top">
+              <el-button circle size="large" class="swap-btn" @click="swapPanes">
+                <el-icon><Refresh /></el-icon>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip content="十六进制 → 字符串" placement="top">
+              <el-button
+                type="success"
+                size="large"
+                class="convert-btn"
+                @click="convertHexToString"
+                :loading="converting"
+              >
+                <span>Hex → Str</span>
+                <el-icon><Left /></el-icon>
+              </el-button>
+            </el-tooltip>
           </div>
 
-          <div class="io-section output-section">
-            <div class="io-header">
-              <span class="io-title">{{ convertDirection === 'string-to-hex' ? '十六进制结果' : '字符串结果' }}</span>
-              <div class="io-actions">
-                <el-button size="small" text @click="copyResult" :disabled="!outputValue">
-                  <el-icon><CopyDocument /></el-icon>
-                  复制
-                </el-button>
-                <el-button size="small" text @click="clearOutput" :disabled="!outputValue">
-                  <el-icon><Delete /></el-icon>
-                  清空
-                </el-button>
+          <div class="pane hex-pane">
+            <div class="pane-header">
+              <div class="pane-title-wrap">
+                <el-tag type="success" size="large" effect="dark" class="pane-tag">Hex</el-tag>
+                <span class="pane-title">十六进制</span>
+              </div>
+              <div class="pane-actions">
+                <el-tooltip content="撤销" placement="top">
+                  <el-button size="small" text @click="undo('hex')" :disabled="!canUndo('hex')">
+                    <el-icon><RefreshLeft /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="粘贴" placement="top">
+                  <el-button size="small" text @click="pasteToPane('hex')">
+                    <el-icon><DocumentCopy /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="复制" placement="top">
+                  <el-button size="small" text @click="copyPane('hex')" :disabled="!hexValue">
+                    <el-icon><CopyDocument /></el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="清空" placement="top">
+                  <el-button size="small" text @click="clearPane('hex')" :disabled="!hexValue">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </el-tooltip>
               </div>
             </div>
             <el-input
-              v-model="outputValue"
+              v-model="hexValue"
               type="textarea"
-              :placeholder="convertDirection === 'string-to-hex' ? '转换后的十六进制将显示在这里' : '转换后的字符串将显示在这里'"
-              :rows="8"
+              placeholder="在此输入十六进制，如：48656C6C6F 或 48 65 6C 6C 6F..."
+              :rows="10"
               resize="vertical"
-              readonly
+              class="pane-textarea hex-textarea"
             />
-            <div class="io-footer">
-              <span class="char-count">
-                {{ convertDirection === 'string-to-hex' ? `字节数: ${outputValue.trim() ? cleanHex(outputValue).length / 2 : 0}` : `字符数: ${outputValue.length}` }}
-              </span>
-              <span v-if="convertError" class="error-text">
+            <div class="pane-footer">
+              <span class="char-count">字节数: {{ hexValue.trim() ? cleanHex(hexValue).length / 2 : 0 }}</span>
+              <el-tag v-if="hexDirty" size="small" type="warning" effect="light">已编辑</el-tag>
+              <span v-if="hexError" class="error-text">
                 <el-icon color="#f56c6c"><Warning /></el-icon>
-                {{ convertError }}
+                {{ hexError }}
               </span>
             </div>
           </div>
         </div>
 
         <div class="action-bar">
-          <el-button type="primary" size="large" @click="doConvert" :loading="converting">
-            <el-icon><Refresh /></el-icon>
-            转换
+          <el-button size="large" @click="undoAll" :disabled="!canUndoAll">
+            <el-icon><RefreshLeft /></el-icon>
+            全部撤销
           </el-button>
           <el-button size="large" @click="clearAll">
             <el-icon><Delete /></el-icon>
@@ -198,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   InfoFilled,
   Warning,
@@ -206,31 +245,93 @@ import {
   Right,
   Left,
   Refresh,
+  RefreshLeft,
   Delete,
   DocumentCopy,
-  CopyDocument,
-  Bottom,
-  Top
+  CopyDocument
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
-const convertDirection = ref<'string-to-hex' | 'hex-to-string'>('string-to-hex')
+type PaneType = 'string' | 'hex'
+
+const stringValue = ref('')
+const hexValue = ref('')
 const separator = ref(' ')
 const hexCase = ref<'lower' | 'upper'>('upper')
 const add0xPrefix = ref(false)
-const inputValue = ref('')
-const outputValue = ref('')
 const converting = ref(false)
-const convertError = ref('')
+const hexError = ref('')
+const stringDirty = ref(false)
+const hexDirty = ref(false)
+
+interface HistoryState {
+  string: string
+  hex: string
+}
+const historyStack = ref<HistoryState[]>([])
+const MAX_HISTORY = 50
 
 const quickExamples = [
-  { label: 'Hello', value: 'Hello', direction: 'string-to-hex' as const },
-  { label: '你好世界', value: '你好世界', direction: 'string-to-hex' as const },
-  { label: 'Hello 你好 123', value: 'Hello 你好 123', direction: 'string-to-hex' as const },
-  { label: '48656C6C6F', value: '48656C6C6F', direction: 'hex-to-string' as const },
-  { label: '48 65 6C 6C 6F', value: '48 65 6C 6C 6F', direction: 'hex-to-string' as const },
-  { label: 'E4BDA0E5A5BD', value: 'E4BDA0E5A5BD', direction: 'hex-to-string' as const }
+  { label: 'Hello → Hex', stringValue: 'Hello', hexValue: '' },
+  { label: '你好世界 → Hex', stringValue: '你好世界', hexValue: '' },
+  { label: 'Hello 你好 123 → Hex', stringValue: 'Hello 你好 123', hexValue: '' },
+  { label: '48656C6C6F → Str', stringValue: '', hexValue: '48656C6C6F' },
+  { label: '48 65 6C 6C 6F → Str', stringValue: '', hexValue: '48 65 6C 6C 6F' },
+  { label: 'E4BDA0E5A5BD → Str', stringValue: '', hexValue: 'E4BDA0E5A5BD' }
 ]
+
+const pushHistory = () => {
+  historyStack.value.push({
+    string: stringValue.value,
+    hex: hexValue.value
+  })
+  if (historyStack.value.length > MAX_HISTORY) {
+    historyStack.value.shift()
+  }
+}
+
+const canUndo = (pane: PaneType): boolean => {
+  if (historyStack.value.length === 0) return false
+  const last = historyStack.value[historyStack.value.length - 1]
+  if (pane === 'string') return last.string !== stringValue.value
+  return last.hex !== hexValue.value
+}
+
+const canUndoAll = computed(() => historyStack.value.length > 0)
+
+const undo = (pane: PaneType) => {
+  if (historyStack.value.length === 0) return
+  const last = historyStack.value.pop()!
+  if (pane === 'string') {
+    stringValue.value = last.string
+    stringDirty.value = false
+  } else {
+    hexValue.value = last.hex
+    hexDirty.value = false
+    hexError.value = ''
+  }
+  ElMessage.info('已撤销')
+}
+
+const undoAll = () => {
+  if (historyStack.value.length === 0) return
+  const last = historyStack.value.pop()!
+  stringValue.value = last.string
+  hexValue.value = last.hex
+  stringDirty.value = false
+  hexDirty.value = false
+  hexError.value = ''
+  ElMessage.info('已全部撤销')
+}
+
+watch(stringValue, () => {
+  stringDirty.value = true
+})
+
+watch(hexValue, () => {
+  hexDirty.value = true
+  hexError.value = ''
+})
 
 const cleanHex = (hex: string): string => {
   return hex.replace(/0x/gi, '').replace(/[^0-9a-fA-F]/g, '')
@@ -270,104 +371,118 @@ const hexToString = (hex: string): string => {
   return decoder.decode(bytes)
 }
 
-const doConvert = () => {
-  convertError.value = ''
-  if (!inputValue.value.trim()) {
-    outputValue.value = ''
+const convertStringToHex = () => {
+  if (!stringValue.value.trim()) {
+    ElMessage.warning('请先在左侧输入字符串')
     return
   }
+  pushHistory()
   converting.value = true
   try {
-    if (convertDirection.value === 'string-to-hex') {
-      outputValue.value = stringToHex(inputValue.value)
-    } else {
-      outputValue.value = hexToString(inputValue.value)
-    }
+    hexValue.value = stringToHex(stringValue.value)
+    hexDirty.value = false
+    hexError.value = ''
+    ElMessage.success('已转换为十六进制')
   } catch (error: any) {
-    convertError.value = error.message || '转换失败'
-    outputValue.value = ''
-    ElMessage.error(convertError.value)
+    ElMessage.error(error.message || '转换失败')
   } finally {
     converting.value = false
   }
 }
 
-const handleAutoConvert = () => {
-  if (inputValue.value.trim()) {
-    doConvert()
+const convertHexToString = () => {
+  if (!hexValue.value.trim()) {
+    ElMessage.warning('请先在右侧输入十六进制')
+    return
+  }
+  pushHistory()
+  converting.value = true
+  try {
+    stringValue.value = hexToString(hexValue.value)
+    stringDirty.value = false
+    hexError.value = ''
+    ElMessage.success('已转换为字符串')
+  } catch (error: any) {
+    hexError.value = error.message || '转换失败'
+    ElMessage.error(hexError.value)
+  } finally {
+    converting.value = false
+  }
+}
+
+const swapPanes = () => {
+  pushHistory()
+  const temp = stringValue.value
+  stringValue.value = hexValue.value
+  hexValue.value = temp
+  hexError.value = ''
+  ElMessage.info('已交换内容')
+}
+
+const clearPane = (pane: PaneType) => {
+  pushHistory()
+  if (pane === 'string') {
+    stringValue.value = ''
+    stringDirty.value = false
   } else {
-    outputValue.value = ''
-    convertError.value = ''
+    hexValue.value = ''
+    hexDirty.value = false
+    hexError.value = ''
   }
-}
-
-const handleDirectionChange = () => {
-  const temp = inputValue.value
-  inputValue.value = outputValue.value
-  outputValue.value = temp
-  convertError.value = ''
-  if (inputValue.value.trim()) {
-    doConvert()
-  }
-}
-
-const swapDirection = () => {
-  convertDirection.value = convertDirection.value === 'string-to-hex' ? 'hex-to-string' : 'string-to-hex'
-}
-
-const clearInput = () => {
-  inputValue.value = ''
-  outputValue.value = ''
-  convertError.value = ''
-}
-
-const clearOutput = () => {
-  outputValue.value = ''
-  convertError.value = ''
 }
 
 const clearAll = () => {
-  inputValue.value = ''
-  outputValue.value = ''
-  convertError.value = ''
+  pushHistory()
+  stringValue.value = ''
+  hexValue.value = ''
+  stringDirty.value = false
+  hexDirty.value = false
+  hexError.value = ''
 }
 
-const copyResult = async () => {
-  if (!outputValue.value) return
+const copyPane = async (pane: PaneType) => {
+  const text = pane === 'string' ? stringValue.value : hexValue.value
+  if (!text) return
   try {
-    await navigator.clipboard.writeText(outputValue.value)
+    await navigator.clipboard.writeText(text)
     ElMessage.success('已复制到剪贴板')
   } catch {
     ElMessage.error('复制失败')
   }
 }
 
-const pasteFromClipboard = async () => {
+const pasteToPane = async (pane: PaneType) => {
   try {
     const text = await navigator.clipboard.readText()
-    inputValue.value = text
-    doConvert()
+    if (pane === 'string') {
+      stringValue.value = text
+    } else {
+      hexValue.value = text
+    }
   } catch {
     ElMessage.error('粘贴失败')
   }
 }
 
-const applyExample = (example: { value: string; direction: 'string-to-hex' | 'hex-to-string' }) => {
-  convertDirection.value = example.direction
-  inputValue.value = example.value
-  doConvert()
+const applyExample = (example: { stringValue: string; hexValue: string; label: string }) => {
+  pushHistory()
+  stringValue.value = example.stringValue
+  hexValue.value = example.hexValue
+  stringDirty.value = false
+  hexDirty.value = false
+  hexError.value = ''
 }
 
 watch([separator, hexCase, add0xPrefix], () => {
-  if (inputValue.value.trim() && convertDirection.value === 'string-to-hex') {
-    doConvert()
+  if (stringValue.value.trim() && !stringDirty.value && hexValue.value) {
+    hexValue.value = stringToHex(stringValue.value)
   }
 })
 </script>
 
 <style scoped>
 .string-hex-converter {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -449,13 +564,6 @@ watch([separator, hexCase, add0xPrefix], () => {
   gap: 20px;
 }
 
-.converter-direction {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: center;
-}
-
 .converter-options {
   display: flex;
   align-items: center;
@@ -479,41 +587,90 @@ watch([separator, hexCase, add0xPrefix], () => {
   font-weight: 500;
 }
 
-.input-output-container {
+.dual-pane-container {
   display: grid;
-  grid-template-columns: 1fr 80px 1fr;
+  grid-template-columns: 1fr 120px 1fr;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 
-.io-section {
+.pane {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s;
 }
 
-.io-header {
+.string-pane {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border: 2px solid #c6e2ff;
+}
+
+.string-pane:focus-within {
+  border-color: #165DFF;
+  box-shadow: 0 0 0 4px rgba(22, 93, 255, 0.1);
+}
+
+.hex-pane {
+  background: linear-gradient(135deg, #f0fff4 0%, #e6ffed 100%);
+  border: 2px solid #b7eb8f;
+}
+
+.hex-pane:focus-within {
+  border-color: #52c41a;
+  box-shadow: 0 0 0 4px rgba(82, 196, 26, 0.1);
+}
+
+.pane-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.io-title {
-  font-size: 14px;
+.pane-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pane-tag {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-weight: bold;
+}
+
+.pane-title {
+  font-size: 15px;
   font-weight: 600;
   color: #303133;
 }
 
-.io-actions {
+.pane-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
-.io-footer {
+.pane-textarea :deep(.el-textarea__inner) {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  border: none;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.string-textarea :deep(.el-textarea__inner):focus {
+  background: #fff;
+}
+
+.hex-textarea :deep(.el-textarea__inner):focus {
+  background: #fff;
+}
+
+.pane-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  min-height: 20px;
+  gap: 8px;
+  min-height: 22px;
 }
 
 .char-count {
@@ -527,20 +684,32 @@ watch([separator, hexCase, add0xPrefix], () => {
   display: flex;
   align-items: center;
   gap: 4px;
+  margin-left: auto;
 }
 
-.converter-arrow {
+.action-column {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding-top: 40px;
+  gap: 16px;
 }
 
-.arrow-text {
-  font-size: 12px;
-  color: #909399;
+.convert-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.swap-btn {
+  background: #f5f7fa;
+  border-color: #dcdfe6;
+}
+
+.swap-btn:hover {
+  background: #e4e7ed;
 }
 
 .action-bar {
@@ -555,13 +724,13 @@ watch([separator, hexCase, add0xPrefix], () => {
   flex-wrap: wrap;
   gap: 8px;
   padding: 12px 16px;
-  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  background: linear-gradient(135deg, #fffbe6 0%, #fff1b8 100%);
   border-radius: 8px;
 }
 
 .examples-label {
   font-size: 13px;
-  color: #165DFF;
+  color: #d48806;
   font-weight: 500;
 }
 
@@ -574,27 +743,20 @@ watch([separator, hexCase, add0xPrefix], () => {
 
 .example-tag:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(22, 93, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(212, 136, 6, 0.3);
 }
 
-:deep(.el-textarea__inner) {
-  font-family: 'Monaco', 'Menlo', monospace;
-  font-size: 13px;
-}
-
-@media (max-width: 768px) {
-  .input-output-container {
+@media (max-width: 992px) {
+  .dual-pane-container {
     grid-template-columns: 1fr;
   }
 
-  .converter-arrow {
-    padding-top: 0;
-    transform: rotate(0deg);
+  .action-column {
+    flex-direction: row;
   }
 
-  .converter-options {
-    flex-direction: column;
-    align-items: flex-start;
+  .convert-btn {
+    flex: 1;
   }
 }
 </style>
