@@ -48,7 +48,7 @@
             <div class="input-group">
               <el-input
                 v-model="extensionInput"
-                placeholder="请输入Chrome Web Store链接或扩展ID"
+                placeholder="例如: https://chrome.google.com/webstore/detail/xxx/aapbdbdomjkkjkaonfhkkikfgjllcleb 或 aapbdbdomjkkjkaonfhkkikfgjllcleb"
                 size="large"
                 clearable
                 @keyup.enter="handleDownload"
@@ -64,8 +64,54 @@
                 </template>
               </el-input>
             </div>
+
+            <div class="format-guide">
+              <div class="format-title">
+                <el-icon :size="16" color="#165DFF"><InfoFilled /></el-icon>
+                <span>支持以下两种输入格式，点击示例可自动填入：</span>
+              </div>
+
+              <div class="format-cards">
+                <div class="format-card" @click="selectExampleByType('link')">
+                  <div class="format-card-header">
+                    <el-icon :size="20" color="#409EFF"><Link /></el-icon>
+                    <span class="format-name">格式一：Chrome Web Store 链接</span>
+                  </div>
+                  <div class="format-card-body">
+                    <div class="format-desc">从 Chrome 网上应用店复制的完整链接</div>
+                    <div class="format-example">
+                      <span class="example-prefix">https://chrome.google.com/webstore/detail/</span>
+                      <span class="example-slug">google-translate/</span>
+                      <span class="example-id">aapbdbdomjkkjkaonfhkkikfgjllcleb</span>
+                    </div>
+                    <div class="format-hint">
+                      <el-icon><Aim /></el-icon>
+                      链接末尾 32 位字母即为扩展 ID
+                    </div>
+                  </div>
+                </div>
+
+                <div class="format-card" @click="selectExampleByType('id')">
+                  <div class="format-card-header">
+                    <el-icon :size="20" color="#67C23A"><Box /></el-icon>
+                    <span class="format-name">格式二：扩展 ID（推荐）</span>
+                  </div>
+                  <div class="format-card-body">
+                    <div class="format-desc">32 位小写字母（a-p）组成的扩展唯一标识</div>
+                    <div class="format-example">
+                      <span class="example-id-only">aapbdbdomjkkjkaonfhkkikfgjllcleb</span>
+                    </div>
+                    <div class="format-hint">
+                      <el-icon><Aim /></el-icon>
+                      可在 chrome://extensions/ 开发者模式下查看
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="example-section">
-              <span class="example-label">快速示例：</span>
+              <span class="example-label">热门扩展一键下载：</span>
               <el-tag
                 v-for="example in exampleExtensions"
                 :key="example.id"
@@ -260,7 +306,8 @@ import {
   Box,
   QuestionFilled,
   Setting,
-  FolderOpened
+  FolderOpened,
+  Aim
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { crxApi, type ExtensionInfo } from '@/api/crx'
@@ -323,6 +370,18 @@ const selectExample = (example: ExampleExtension) => {
   extensionInput.value = example.input
   parsedExtensionId.value = example.id
   errorMessage.value = ''
+}
+
+const selectExampleByType = (type: 'link' | 'id') => {
+  const sampleId = 'aapbdbdomjkkjkaonfhkkikfgjllcleb'
+  if (type === 'link') {
+    extensionInput.value = `https://chrome.google.com/webstore/detail/google-translate/${sampleId}`
+  } else {
+    extensionInput.value = sampleId
+  }
+  parsedExtensionId.value = sampleId
+  errorMessage.value = ''
+  ElMessage.info('已填入示例，可点击下载按钮测试')
 }
 
 const parseExtension = async () => {
@@ -496,6 +555,115 @@ const formatSize = (bytes: number): string => {
 .example-tag:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(22, 93, 255, 0.3);
+}
+
+.format-guide {
+  margin-top: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ecf5ff 100%);
+  border-radius: 12px;
+  border: 1px solid #d9ecff;
+}
+
+.format-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.format-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.format-card {
+  padding: 16px;
+  background: #fff;
+  border: 2px solid #e4e7ed;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.format-card:hover {
+  border-color: #165DFF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(22, 93, 255, 0.15);
+}
+
+.format-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.format-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.format-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.format-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.format-example {
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+  border: 1px dashed #dcdfe6;
+}
+
+.example-prefix {
+  color: #909399;
+}
+
+.example-slug {
+  color: #909399;
+}
+
+.example-id {
+  color: #165DFF;
+  font-weight: 600;
+  background: #ecf5ff;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.example-id-only {
+  color: #165DFF;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+}
+
+.format-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
 .extension-id-display {
@@ -676,6 +844,14 @@ const formatSize = (bytes: number): string => {
 
   .install-methods {
     grid-template-columns: 1fr;
+  }
+
+  .format-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .format-example {
+    font-size: 11px;
   }
 }
 </style>
