@@ -168,7 +168,17 @@
             <img :src="isDemoMode ? demoQrCodeDataUrl : qrCodeDataUrl" alt="磁力链接二维码" />
             <div class="qrcode-main-desc">
               <el-icon size="14" color="#909399"><InfoFilled /></el-icon>
-              手机扫码直接打开，或保存图片分享给好友
+              手机扫码直接打开，或点击下方按钮下载/复制分享
+            </div>
+            <div class="qrcode-actions">
+              <el-button size="small" type="primary" @click="downloadQrCode">
+                <el-icon><Download /></el-icon>
+                下载二维码
+              </el-button>
+              <el-button size="small" @click="copyQrCodeImage">
+                <el-icon><CopyDocument /></el-icon>
+                复制图片
+              </el-button>
             </div>
           </div>
         </div>
@@ -694,6 +704,45 @@ const generateQrCode = () => {
 
   qrCodeDataUrl.value = canvas.toDataURL('image/png')
 }
+
+const downloadQrCode = () => {
+  const dataUrl = isDemoMode.value ? demoQrCodeDataUrl.value : qrCodeDataUrl.value
+  if (!dataUrl) {
+    ElMessage.warning('二维码尚未生成')
+    return
+  }
+
+  const link = document.createElement('a')
+  link.download = `磁力链接二维码_${Date.now()}.png`
+  link.href = dataUrl
+  link.click()
+  ElMessage.success('二维码下载成功！')
+}
+
+const copyQrCodeImage = async () => {
+  const dataUrl = isDemoMode.value ? demoQrCodeDataUrl.value : qrCodeDataUrl.value
+  if (!dataUrl) {
+    ElMessage.warning('二维码尚未生成')
+    return
+  }
+
+  try {
+    const blob = await (await fetch(dataUrl)).blob()
+    await navigator.clipboard.write([
+      new ClipboardItem({
+        'image/png': blob
+      })
+    ])
+    ElMessage.success('二维码图片已复制到剪贴板！')
+  } catch {
+    try {
+      await navigator.clipboard.writeText(dataUrl)
+      ElMessage.success('二维码 Base64 已复制到剪贴板！')
+    } catch {
+      ElMessage.error('复制失败，请尝试下载图片')
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -1123,6 +1172,13 @@ const generateQrCode = () => {
   gap: 4px;
   font-size: 12px;
   color: #909399;
+}
+
+.qrcode-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .quick-actions {
