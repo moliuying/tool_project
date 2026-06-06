@@ -185,6 +185,10 @@
           <el-tag v-if="activeCity" size="small" type="primary" effect="plain">
             城市：{{ activeCity }}
           </el-tag>
+          <el-tag v-if="hasAmbiguousResults" size="small" type="danger" effect="plain">
+            <el-icon><WarningFilled /></el-icon>
+            存在同名地区，请留意查看
+          </el-tag>
         </div>
 
         <el-empty
@@ -213,57 +217,119 @@
           </template>
         </el-empty>
 
-        <div v-else class="code-grid">
-          <div
-            v-for="(item, index) in filteredCodes"
-            :key="index"
-            class="code-card"
+        <template v-else>
+          <el-alert
+            v-if="hasAmbiguousResults"
+            type="warning"
+            :closable="false"
+            show-icon
+            class="ambiguity-alert"
           >
-            <div class="code-card-header">
-              <span class="postal-code">{{ item.code }}</span>
-              <el-button
-                size="small"
-                type="primary"
-                link
-                @click="copyToClipboard(item.code, '邮政编码')"
+            <template #title>
+              <div class="ambiguity-title">
+                <el-icon :size="16"><WarningFilled /></el-icon>
+                <span>检测到多个同名地区匹配关键词「{{ searchKeyword }}」，请仔细确认您需要的是：</span>
+              </div>
+            </template>
+            <div class="ambiguity-options">
+              <div
+                v-for="(loc, idx) in ambiguousLocations"
+                :key="idx"
+                class="ambiguity-option"
+                @click="selectAmbiguousLocation(loc)"
               >
-                <el-icon><CopyDocument /></el-icon>
-                复制邮编
-              </el-button>
-            </div>
-            <div class="location-info">
-              <div class="location-row">
-                <el-tag size="small" type="danger" effect="plain">
-                  <el-icon><OfficeBuilding /></el-icon>
-                  省份
+                <el-tag size="small" :type="loc.type === '城市' ? 'warning' : 'primary'" effect="dark">
+                  {{ loc.type }}
                 </el-tag>
-                <span class="location-text">{{ item.province }}</span>
-                <span v-if="item.provinceShort" class="location-short">({{ item.provinceShort }})</span>
-              </div>
-              <div class="location-row">
-                <el-tag size="small" type="warning" effect="plain">
-                  <el-icon><Location /></el-icon>
-                  城市
-                </el-tag>
-                <span class="location-text">{{ item.city }}</span>
-                <span v-if="item.cityShort && item.cityShort !== item.provinceShort" class="location-short">({{ item.cityShort }})</span>
-              </div>
-              <div class="location-row">
-                <el-tag size="small" type="primary" effect="plain">
-                  <el-icon><MapLocation /></el-icon>
-                  区县
-                </el-tag>
-                <span class="location-text district-text" v-html="highlightKeyword(item.district, searchKeyword)"></span>
+                <span class="ambiguity-location-name">
+                  {{ loc.province }}
+                  <template v-if="loc.province !== loc.city"> / {{ loc.city }}</template>
+                  <template v-if="loc.district"> / {{ loc.district }}</template>
+                </span>
+                <el-icon class="ambiguity-arrow"><Right /></el-icon>
               </div>
             </div>
-            <div v-if="getMatchReason(item, searchKeyword)" class="match-reason">
-              <el-tag size="small" type="success" effect="plain">
-                <el-icon><Right /></el-icon>
-                {{ getMatchReason(item, searchKeyword) }}
+            <div class="ambiguity-hint">
+              💡 点击上方选项可快速定位到对应地区的结果
+            </div>
+          </el-alert>
+
+          <div v-for="(group, gIdx) in groupedByProvince" :key="gIdx" class="province-group">
+            <div class="province-group-header">
+              <el-icon :size="18" color="#f56c6c"><OfficeBuilding /></el-icon>
+              <span class="province-group-name">{{ group.province }}</span>
+              <span v-if="group.provinceShort" class="province-group-short">({{ group.provinceShort }})</span>
+              <el-tag size="small" type="danger">
+                共 {{ group.cities.reduce((sum, c) => sum + c.items.length, 0) }} 条
               </el-tag>
             </div>
+
+            <div v-for="(cityGroup, cIdx) in group.cities" :key="cIdx" class="city-group">
+              <div class="city-group-header">
+                <el-icon :size="14" color="#e6a23c"><Location /></el-icon>
+                <span class="city-group-name">{{ cityGroup.city }}</span>
+                <span v-if="cityGroup.cityShort && cityGroup.cityShort !== group.provinceShort" class="city-group-short">({{ cityGroup.cityShort }})</span>
+                <el-tag size="small" type="warning" effect="plain">{{ cityGroup.items.length }} 条</el-tag>
+              </div>
+
+              <div class="code-grid">
+                <div
+                  v-for="(item, index) in cityGroup.items"
+                  :key="`${gIdx}-${cIdx}-${index}`"
+                  class="code-card"
+                >
+                  <div class="location-path">
+                    <el-icon :size="12"><Guide /></el-icon>
+                    <span class="path-text">{{ getFullLocationPath(item) }}</span>
+                  </div>
+                  <div class="code-card-header">
+                    <span class="postal-code">{{ item.code }}</span>
+                    <el-button
+                      size="small"
+                      type="primary"
+                      link
+                      @click="copyToClipboard(item.code, '邮政编码')"
+                    >
+                      <el-icon><CopyDocument /></el-icon>
+                      复制邮编
+                    </el-button>
+                  </div>
+                  <div class="location-info">
+                    <div class="location-row">
+                      <el-tag size="small" type="danger" effect="plain">
+                        <el-icon><OfficeBuilding /></el-icon>
+                        省份
+                      </el-tag>
+                      <span class="location-text">{{ item.province }}</span>
+                      <span v-if="item.provinceShort" class="location-short">({{ item.provinceShort }})</span>
+                    </div>
+                    <div class="location-row">
+                      <el-tag size="small" type="warning" effect="plain">
+                        <el-icon><Location /></el-icon>
+                        城市
+                      </el-tag>
+                      <span class="location-text">{{ item.city }}</span>
+                      <span v-if="item.cityShort && item.cityShort !== item.provinceShort" class="location-short">({{ item.cityShort }})</span>
+                    </div>
+                    <div class="location-row">
+                      <el-tag size="small" type="primary" effect="plain">
+                        <el-icon><MapLocation /></el-icon>
+                        区县
+                      </el-tag>
+                      <span class="location-text district-text" v-html="highlightKeyword(item.district, searchKeyword)"></span>
+                    </div>
+                  </div>
+                  <div v-if="getMatchReason(item, searchKeyword)" class="match-reason">
+                    <el-tag size="small" type="success" effect="plain">
+                      <el-icon><Right /></el-icon>
+                      {{ getMatchReason(item, searchKeyword) }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        </template>
       </div>
     </el-card>
   </div>
@@ -282,7 +348,9 @@ import {
   CopyDocument,
   Right,
   List,
-  Grid
+  Grid,
+  WarningFilled,
+  Guide
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { postalCodes, type PostalCode } from '@/data/postalCodes'
@@ -430,6 +498,134 @@ const filteredCodes = computed(() => {
   return result
 })
 
+const getFullLocationPath = (item: PostalCode): string => {
+  if (item.province === item.city) {
+    return `${item.province} > ${item.district}`
+  }
+  return `${item.province} > ${item.city} > ${item.district}`
+}
+
+const matchedProvinces = computed(() => {
+  if (filteredCodes.value.length === 0) return []
+  const provinces = new Set(filteredCodes.value.map(item => item.province))
+  return Array.from(provinces)
+})
+
+const matchedCities = computed(() => {
+  if (filteredCodes.value.length === 0) return []
+  const cities = new Set(filteredCodes.value.map(item => `${item.province}-${item.city}`))
+  return Array.from(cities).map(key => {
+    const [province, city] = key.split('-')
+    return { province, city }
+  })
+})
+
+const hasAmbiguousResults = computed(() => {
+  if (!searchKeyword.value.trim()) return false
+  if (filteredCodes.value.length < 2) return false
+  const kw = searchKeyword.value.trim()
+  const cleanKw = kw.replace(/区$|县$|市$|省$/, '')
+
+  const matchingRegions = new Set<string>()
+  filteredCodes.value.forEach(item => {
+    const districtMatch = item.district.includes(cleanKw) || cleanKw.includes(item.district.replace(/区$|县$|市$/, ''))
+    const cityMatch = item.city.includes(cleanKw) || cleanKw.includes(item.city.replace(/市$/, ''))
+
+    if (districtMatch) {
+      matchingRegions.add(`district:${item.province}-${item.city}-${item.district}`)
+    }
+    if (cityMatch) {
+      matchingRegions.add(`city:${item.province}-${item.city}`)
+    }
+  })
+
+  if (matchingRegions.size <= 1) return false
+
+  const regionNames = Array.from(matchingRegions).map(r => r.split(':')[1])
+  const shortNames = regionNames.map(r => {
+    const parts = r.split('-')
+    return parts[parts.length - 1].replace(/区$|县$|市$/, '')
+  })
+
+  const uniqueShortNames = new Set(shortNames)
+  return uniqueShortNames.size < shortNames.length || matchedProvinces.value.length > 1
+})
+
+const ambiguousLocations = computed(() => {
+  if (!hasAmbiguousResults.value) return []
+  const kw = searchKeyword.value.trim()
+  const cleanKw = kw.replace(/区$|县$|市$|省$/, '')
+
+  const locations = new Map<string, { province: string; city: string; district?: string; type: string }>()
+
+  filteredCodes.value.forEach(item => {
+    const districtMatch = item.district.includes(cleanKw) || cleanKw.includes(item.district.replace(/区$|县$|市$/, ''))
+    const cityMatch = item.city.includes(cleanKw) || cleanKw.includes(item.city.replace(/市$/, ''))
+
+    if (cityMatch) {
+      const key = `city-${item.province}-${item.city}`
+      if (!locations.has(key)) {
+        locations.set(key, { province: item.province, city: item.city, type: '城市' })
+      }
+    }
+    if (districtMatch) {
+      const key = `district-${item.province}-${item.city}-${item.district}`
+      if (!locations.has(key)) {
+        locations.set(key, { province: item.province, city: item.city, district: item.district, type: '区县' })
+      }
+    }
+  })
+
+  return Array.from(locations.values())
+})
+
+interface GroupedCodes {
+  province: string
+  provinceShort?: string
+  cities: {
+    city: string
+    cityShort?: string
+    items: PostalCode[]
+  }[]
+}
+
+const groupedByProvince = computed((): GroupedCodes[] => {
+  const provinceMap = new Map<string, Map<string, PostalCode[]>>()
+
+  filteredCodes.value.forEach(item => {
+    if (!provinceMap.has(item.province)) {
+      provinceMap.set(item.province, new Map())
+    }
+    const cityMap = provinceMap.get(item.province)!
+    if (!cityMap.has(item.city)) {
+      cityMap.set(item.city, [])
+    }
+    cityMap.get(item.city)!.push(item)
+  })
+
+  const result: GroupedCodes[] = []
+  provinceMap.forEach((cityMap, province) => {
+    const firstItem = filteredCodes.value.find(i => i.province === province)
+    const cities: GroupedCodes['cities'] = []
+    cityMap.forEach((items, city) => {
+      cities.push({
+        city,
+        cityShort: items[0]?.cityShort,
+        items
+      })
+    })
+    cities.sort((a, b) => a.city.localeCompare(b.city, 'zh-CN'))
+    result.push({
+      province,
+      provinceShort: firstItem?.provinceShort,
+      cities
+    })
+  })
+
+  result.sort((a, b) => a.province.localeCompare(b.province, 'zh-CN'))
+  return result
+})
+
 const handleSearch = () => {
 }
 
@@ -440,6 +636,16 @@ const selectProvince = (prov: string) => {
 
 const selectCity = (city: string) => {
   activeCity.value = city
+}
+
+const selectAmbiguousLocation = (loc: { province: string; city: string; district?: string }) => {
+  activeProvince.value = loc.province
+  activeCity.value = loc.city
+  if (loc.district) {
+    searchKeyword.value = loc.district
+  } else {
+    searchKeyword.value = ''
+  }
 }
 
 const quickSearch = (keyword: string) => {
@@ -792,6 +998,145 @@ const copyToClipboard = (text: string, label: string) => {
   border-top: 1px dashed #d9ecff;
 }
 
+.ambiguity-alert {
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.ambiguity-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #b88230;
+}
+
+.ambiguity-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ambiguity-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #f5dab1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.ambiguity-option:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(230, 162, 60, 0.25);
+  border-color: #e6a23c;
+  background: #fdf6ec;
+}
+
+.ambiguity-location-name {
+  font-size: 14px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.ambiguity-arrow {
+  color: #c0c4cc;
+}
+
+.ambiguity-option:hover .ambiguity-arrow {
+  color: #e6a23c;
+}
+
+.ambiguity-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #b88230;
+}
+
+.province-group {
+  margin-bottom: 28px;
+  background: #fff;
+  border: 1px solid #f4f4f5;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.province-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #fef0f0 0%, #fef5f5 100%);
+  border-bottom: 2px solid #fbc4c4;
+}
+
+.province-group-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f56c6c;
+}
+
+.province-group-short {
+  font-size: 13px;
+  color: #f78989;
+  background: #fef0f0;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #fbc4c4;
+}
+
+.city-group {
+  padding: 12px 18px;
+}
+
+.city-group + .city-group {
+  border-top: 1px dashed #ebeef5;
+}
+
+.city-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.city-group-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6a23c;
+}
+
+.city-group-short {
+  font-size: 12px;
+  color: #ebb563;
+  background: #fdf6ec;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid #f5dab1;
+}
+
+.location-path {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 5px 10px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  border-radius: 5px;
+  border-left: 3px solid #165DFF;
+}
+
+.path-text {
+  font-size: 12px;
+  color: #165DFF;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
 @media (max-width: 768px) {
   .code-grid {
     grid-template-columns: 1fr;
@@ -811,6 +1156,34 @@ const copyToClipboard = (text: string, label: string) => {
 
   .example-text {
     font-size: 12px;
+  }
+
+  .ambiguity-options {
+    gap: 8px;
+  }
+
+  .ambiguity-option {
+    padding: 6px 10px;
+  }
+
+  .ambiguity-location-name {
+    font-size: 13px;
+  }
+
+  .province-group-header {
+    padding: 10px 12px;
+  }
+
+  .province-group-name {
+    font-size: 15px;
+  }
+
+  .city-group {
+    padding: 10px 12px;
+  }
+
+  .city-group-name {
+    font-size: 14px;
   }
 }
 </style>
