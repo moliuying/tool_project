@@ -99,29 +99,56 @@
         </el-collapse-item>
       </el-collapse>
 
-      <div class="slot-machine" :class="{ spinning: isSpinning }">
-        <div class="slot-item emoji-slot">
-          <div class="slot-inner" ref="emojiSlotRef">
-            <div v-for="(meal, idx) in slotDisplay" :key="'e' + idx" class="slot-cell">
-              <span class="meal-emoji">{{ meal.emoji }}</span>
+      <div class="slot-machine" :class="{ spinning: isSpinning, idle: !isSpinning && !recommendedMeal }">
+        <template v-if="isSpinning || recommendedMeal">
+          <div class="slot-item emoji-slot">
+            <div class="slot-inner" ref="emojiSlotRef">
+              <div v-for="(meal, idx) in slotDisplay" :key="'e' + idx" class="slot-cell">
+                <span class="meal-emoji">{{ meal.emoji }}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="slot-item name-slot">
-          <div class="slot-inner" ref="nameSlotRef">
-            <div v-for="(meal, idx) in slotDisplay" :key="'n' + idx" class="slot-cell">
-              <span class="meal-name">{{ meal.name }}</span>
+          <div class="slot-item name-slot">
+            <div class="slot-inner" ref="nameSlotRef">
+              <div v-for="(meal, idx) in slotDisplay" :key="'n' + idx" class="slot-cell">
+                <span class="meal-name">{{ meal.name }}</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="slot-item cuisine-slot">
-          <div class="slot-inner" ref="cuisineSlotRef">
-            <div v-for="(meal, idx) in slotDisplay" :key="'c' + idx" class="slot-cell">
-              <el-tag size="small" :type="getCuisineTagType(meal.cuisine)">{{ meal.cuisine }}</el-tag>
+          <div class="slot-item cuisine-slot">
+            <div class="slot-inner" ref="cuisineSlotRef">
+              <div v-for="(meal, idx) in slotDisplay" :key="'c' + idx" class="slot-cell">
+                <el-tag size="small" :type="getCuisineTagType(meal.cuisine)">{{ meal.cuisine }}</el-tag>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="slot-pointer"></div>
+          <div class="slot-pointer"></div>
+        </template>
+        <template v-else>
+          <div class="slot-idle">
+            <div class="slot-idle-icon">
+              <el-icon :size="48" color="#e6a23c"><QuestionFilled /></el-icon>
+            </div>
+            <div class="slot-idle-columns">
+              <div class="slot-idle-col">
+                <span class="slot-col-label">菜品</span>
+                <span class="slot-col-placeholder">🍽️</span>
+              </div>
+              <div class="slot-idle-col">
+                <span class="slot-col-label">菜名</span>
+                <span class="slot-col-placeholder">？？？</span>
+              </div>
+              <div class="slot-idle-col">
+                <span class="slot-col-label">菜系</span>
+                <el-tag size="small" type="info">待揭晓</el-tag>
+              </div>
+            </div>
+            <div class="slot-idle-hint">
+              <el-icon :size="14"><InfoFilled /></el-icon>
+              <span>点击下方「开始推荐」按钮，老虎机将随机滚动并在此处揭晓今日美食</span>
+            </div>
+          </div>
+        </template>
       </div>
 
       <div class="result-container" v-if="recommendedMeal && !isSpinning">
@@ -164,6 +191,47 @@
                 </el-tag>
               </div>
             </div>
+          </div>
+        </el-card>
+      </div>
+
+      <div class="result-preview-container" v-if="!recommendedMeal && !isSpinning">
+        <div class="result-preview-label">
+          <el-icon :size="14" color="#909399"><View /></el-icon>
+          <span>推荐结果预览 · 实际结果将以内联卡片形式展示在此区域</span>
+        </div>
+        <el-card class="result-card result-preview-card" shadow="never">
+          <div class="result-badge result-badge-preview">
+            <el-icon :size="14"><Star /></el-icon>
+            <span>示例样式</span>
+          </div>
+          <div class="result-body">
+            <div class="result-emoji result-emoji-preview">🍜</div>
+            <div class="result-info">
+              <h3 class="result-name result-name-preview">示例菜品名称</h3>
+              <div class="result-meta">
+                <el-tag type="info" size="small">菜系标签</el-tag>
+                <el-tag type="success" size="small">辣度</el-tag>
+                <el-tag type="warning" size="small">约 ¥XX</el-tag>
+              </div>
+              <p class="result-desc result-desc-preview">
+                菜品描述文案将显示在此处，介绍这道菜的特色与风味。实际推荐后，你可以看到详细的菜品介绍、特色标签和推荐用餐方式。
+              </p>
+              <div class="result-tags">
+                <el-tag size="small" effect="plain">特色标签 1</el-tag>
+                <el-tag size="small" effect="plain">特色标签 2</el-tag>
+                <el-tag size="small" effect="plain">特色标签 3</el-tag>
+              </div>
+              <div class="result-ways">
+                <span class="ways-label">推荐方式：</span>
+                <el-tag size="small" type="info" effect="dark">堂食</el-tag>
+                <el-tag size="small" type="info" effect="dark">外卖</el-tag>
+              </div>
+            </div>
+          </div>
+          <div class="preview-overlay">
+            <el-icon :size="24" color="#c0c4cc"><QuestionFilled /></el-icon>
+            <span>等待你的选择</span>
           </div>
         </el-card>
       </div>
@@ -297,7 +365,9 @@ import {
   Sunny,
   Moon,
   Calendar,
-  Food
+  Food,
+  QuestionFilled,
+  View
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -887,6 +957,139 @@ const formatTime = (dateStr: string) => {
   transition: none;
 }
 
+.slot-machine.idle::before,
+.slot-machine.idle::after {
+  display: none;
+}
+
+.slot-idle {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.slot-idle-icon {
+  margin-bottom: 16px;
+  animation: idle-bounce 2s ease-in-out infinite;
+}
+
+@keyframes idle-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.slot-idle-columns {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  width: 100%;
+  justify-content: center;
+}
+
+.slot-idle-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  min-width: 100px;
+}
+
+.slot-idle-col:nth-child(1) { min-width: 80px; }
+.slot-idle-col:nth-child(3) { min-width: 100px; }
+
+.slot-col-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+}
+
+.slot-col-placeholder {
+  font-size: 28px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: 2px;
+}
+
+.slot-idle-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 8px 16px;
+  background: rgba(230, 162, 60, 0.15);
+  border-radius: 20px;
+  border: 1px solid rgba(230, 162, 60, 0.3);
+}
+
+.result-preview-container {
+  margin-bottom: 24px;
+}
+
+.result-preview-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 10px;
+  padding-left: 4px;
+}
+
+.result-preview-card {
+  position: relative;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+  border: 2px dashed #dcdfe6;
+  opacity: 0.85;
+}
+
+.result-badge-preview {
+  background: #c0c4cc;
+}
+
+.result-emoji-preview {
+  opacity: 0.5;
+  filter: grayscale(0.5);
+}
+
+.result-name-preview {
+  color: #909399;
+}
+
+.result-desc-preview {
+  color: #a8abb2;
+  font-style: italic;
+}
+
+.preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.preview-overlay span {
+  font-size: 14px;
+  color: #909399;
+  font-weight: 500;
+}
+
 .result-container {
   margin-bottom: 24px;
 }
@@ -1082,6 +1285,24 @@ const formatTime = (dateStr: string) => {
   .slot-item.cuisine-slot {
     flex: none;
     width: 100%;
+  }
+
+  .slot-idle-columns {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .slot-idle-col,
+  .slot-idle-col:nth-child(1),
+  .slot-idle-col:nth-child(3) {
+    min-width: 180px;
+    width: 100%;
+    max-width: 260px;
+  }
+
+  .slot-idle-hint {
+    text-align: center;
+    line-height: 1.5;
   }
 
   .result-body {
