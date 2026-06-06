@@ -18,12 +18,12 @@
         <template #title>
           <div class="paste-tip-content">
             <el-icon :size="18" color="#165DFF"><Promotion /></el-icon>
-            <span><strong>快捷操作：</strong>可直接粘贴完整CIDR字符串（如 <code class="inline-code">192.168.1.0/24</code>）到任意输入框，系统将自动解析并填充各段</span>
+            <span><strong>快捷操作：</strong>可直接粘贴完整CIDR字符串（如 <code class="inline-code">192.168.1.0/24</code>）到任意输入框，系统将自动解析并填充</span>
           </div>
         </template>
       </el-alert>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
-        <el-step title="分段输入地址" description="逐段输入IP字节和前缀长度，或直接粘贴完整CIDR" />
+        <el-step title="输入CIDR地址" description="快捷模式一键输入，或分段精确输入" />
         <el-step title="自动计算" description="系统自动解析并计算网段信息" />
         <el-step title="查看结果" description="获取子网掩码、可用IP范围等信息" />
         <el-step title="复制使用" description="一键复制任意结果值" />
@@ -49,19 +49,59 @@
 
     <el-card class="calculator-card">
       <template #header>
-        <div class="card-header">
-          <el-icon :size="20" color="#165DFF">
-            <Connection />
-          </el-icon>
-          <span>CIDR 网段计算器</span>
-          <el-tag size="small" type="success">网络规划必备工具</el-tag>
+        <div class="card-header card-header-flex">
+          <div class="header-left">
+            <el-icon :size="20" color="#165DFF">
+              <Connection />
+            </el-icon>
+            <span>CIDR 网段计算器</span>
+            <el-tag size="small" type="success">网络规划必备工具</el-tag>
+          </div>
+          <div class="mode-switcher">
+            <el-radio-group v-model="inputMode" size="small" @change="handleModeChange">
+              <el-radio-button value="quick">
+                <el-icon><Lightning /></el-icon>
+                <span>快捷</span>
+              </el-radio-button>
+              <el-radio-button value="segmented">
+                <el-icon><Grid /></el-icon>
+                <span>分段</span>
+              </el-radio-button>
+            </el-radio-group>
+          </div>
         </div>
       </template>
 
       <div class="input-section">
         <el-form label-width="100px">
           <el-form-item label="IP / 前缀">
-            <div class="segmented-input-wrapper">
+            <div v-if="inputMode === 'quick'" class="quick-input-wrapper">
+              <el-tooltip content="直接输入或粘贴完整CIDR地址" placement="top">
+                <el-icon class="help-icon"><QuestionFilled /></el-icon>
+              </el-tooltip>
+              <el-input
+                ref="quickInputRef"
+                v-model="quickCidrInput"
+                class="quick-input"
+                placeholder="请输入或粘贴完整CIDR，如 192.168.1.0/24"
+                size="large"
+                clearable
+                @input="handleQuickInput"
+                @keyup.enter="calculateCidr"
+              >
+                <template #prefix>
+                  <el-icon><Connection /></el-icon>
+                </template>
+                <template #append>
+                  <el-button @click="calculateCidr">
+                    <el-icon><Refresh /></el-icon>
+                    计算
+                  </el-button>
+                </template>
+              </el-input>
+            </div>
+
+            <div v-else class="segmented-input-wrapper">
               <div
                 v-for="(segment, idx) in octetInputs"
                 :key="'octet-' + idx"
@@ -310,7 +350,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import {
   Connection,
   DataLine,
@@ -326,7 +366,9 @@ import {
   Cloudy,
   Lock,
   Tools,
-  Promotion
+  Promotion,
+  Lightning,
+  Grid
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -352,6 +394,13 @@ interface CidrResult {
   addressRange: string
 }
 
+type InputMode = 'quick' | 'segmented'
+
+const inputMode = ref<InputMode>('quick')
+
+const isMobile = ref(false)
+
+const quickCidrInput = ref('192.168.1.0/24')
 const octetInputs = ref<string[]>(['192', '168', '1', '0'])
 const prefixStr = ref<string>('24')
 const prefixLength = ref<number>(24)
@@ -360,14 +409,15 @@ const result = ref<CidrResult | null>(null)
 
 const octetRefs = ref<any[]>([])
 const prefixInputRef = ref<any>(null)
+const quickInputRef = ref<any>(null)
 
 const setOctetRef = (el: any, idx: number) => {
   octetRefs.value[idx] = el
 }
 
 const inputFormats = [
-  { name: '分段输入', examples: ['192 . 168 . 1 . 0 / 24', '10 . 0 . 0 . 1 / 8'] },
-  { name: '粘贴完整CIDR', examples: ['192.168.1.100/24', '172.16.5.20/12'] },
+  { name: '快捷模式输入', examples: ['192.168.1.0/24', '10.0.0.1/8'] },
+  { name: '分段精确输入', examples: ['192 . 168 . 1 . 0 / 24'] },
   { name: '特殊网段', examples: ['0.0.0.0/0', '255.255.255.255/32'] }
 ]
 
@@ -385,9 +435,6 @@ const hasResult = computed(() => !!result.value)
 const compositeCidr = computed(() => {
   const octets = octetInputs.value.map(v => v || '0')
   const prefix = prefixStr.value || '0'
-  if (octets.every(o => o === '0') && prefix === '0') {
-    return `${octets.join('.')}/${prefix}`
-  }
   return `${octets.join('.')}/${prefix}`
 })
 
@@ -618,11 +665,27 @@ const calculateCidrResult = (ip: string, prefix: number): CidrResult => {
   }
 }
 
+const syncFromOctetsToQuick = () => {
+  const ip = octetInputs.value.join('.')
+  quickCidrInput.value = `${ip}/${prefixStr.value}`
+}
+
+const syncFromQuickToOctets = () => {
+  const parsed = parseCidr(quickCidrInput.value)
+  if (parsed) {
+    const octets = parsed.ip.split('.')
+    octetInputs.value = octets
+    prefixStr.value = String(parsed.prefix)
+    prefixLength.value = parsed.prefix
+  }
+}
+
 const fillFromCidr = (ip: string, prefix: number) => {
   const octets = ip.split('.')
   octetInputs.value = octets
   prefixStr.value = String(prefix)
   prefixLength.value = prefix
+  quickCidrInput.value = `${ip}/${prefix}`
 }
 
 const getCurrentIp = (): string | null => {
@@ -652,6 +715,26 @@ const calculateCidr = () => {
   parseError.value = ''
   prefixLength.value = prefix
   result.value = calculateCidrResult(ip, prefix)
+  syncFromOctetsToQuick()
+}
+
+const handleQuickInput = (value: string) => {
+  const parsed = parseCidr(value)
+  if (parsed) {
+    syncFromQuickToOctets()
+    parseError.value = ''
+    calculateCidr()
+  }
+}
+
+const handleModeChange = () => {
+  nextTick(() => {
+    if (inputMode.value === 'quick') {
+      quickInputRef.value?.focus?.()
+    } else {
+      octetRefs.value[0]?.focus?.()
+    }
+  })
 }
 
 const handleOctetInput = (idx: number, value: string) => {
@@ -664,6 +747,7 @@ const handleOctetInput = (idx: number, value: string) => {
       octetRefs.value[idx + 1]?.focus?.()
     })
   }
+  syncFromOctetsToQuick()
   calculateCidr()
 }
 
@@ -704,6 +788,7 @@ const handlePrefixInput = (value: string) => {
   if (!isNaN(num) && num >= 0 && num <= 32) {
     prefixLength.value = num
   }
+  syncFromOctetsToQuick()
   calculateCidr()
 }
 
@@ -732,6 +817,7 @@ const handlePaste = (e: ClipboardEvent, segmentIdx: number) => {
     if (validParts.length === 4) {
       e.preventDefault()
       octetInputs.value = validParts
+      syncFromOctetsToQuick()
       ElMessage.success(`已填入IP: ${validParts.join('.')}`)
       calculateCidr()
       return
@@ -743,11 +829,13 @@ const handlePaste = (e: ClipboardEvent, segmentIdx: number) => {
     if (segmentIdx < 4 && num >= 0 && num <= 255) {
       e.preventDefault()
       octetInputs.value[segmentIdx] = trimmed
+      syncFromOctetsToQuick()
       calculateCidr()
     } else if (segmentIdx === 4 && num >= 0 && num <= 32) {
       e.preventDefault()
       prefixStr.value = trimmed
       prefixLength.value = num
+      syncFromOctetsToQuick()
       calculateCidr()
     }
   }
@@ -755,6 +843,7 @@ const handlePaste = (e: ClipboardEvent, segmentIdx: number) => {
 
 const handleSliderChange = () => {
   prefixStr.value = String(prefixLength.value)
+  syncFromOctetsToQuick()
   calculateCidr()
 }
 
@@ -782,14 +871,32 @@ const copyComposite = () => {
   })
 }
 
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768
+}
+
 watch(prefixLength, (val) => {
   if (String(val) !== prefixStr.value) {
     prefixStr.value = String(val)
+    syncFromOctetsToQuick()
     calculateCidr()
   }
 })
 
-calculateCidr()
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  if (isMobile.value) {
+    inputMode.value = 'quick'
+  } else {
+    inputMode.value = 'segmented'
+  }
+  calculateCidr()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 </script>
 
 <style scoped>
@@ -811,6 +918,30 @@ calculateCidr()
   gap: 8px;
   font-size: 18px;
   font-weight: bold;
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.mode-switcher {
+  :deep(.el-radio-button__inner) {
+    padding: 5px 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
 }
 
 .paste-tip {
@@ -882,6 +1013,26 @@ calculateCidr()
 
 .input-section {
   padding: 16px 0;
+}
+
+.quick-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-icon {
+  color: #909399;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.quick-input {
+  flex: 1;
+}
+
+.quick-input :deep(.el-input__wrapper) {
+  font-family: 'Monaco', 'Menlo', monospace;
 }
 
 .segmented-input-wrapper {
@@ -1311,6 +1462,16 @@ calculateCidr()
 }
 
 @media (max-width: 768px) {
+  .card-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .mode-switcher {
+    width: 100%;
+  }
+
   .segmented-input-wrapper {
     gap: 4px;
   }
@@ -1337,7 +1498,7 @@ calculateCidr()
   }
 
   .result-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr));
   }
 
   .binary-grid {
