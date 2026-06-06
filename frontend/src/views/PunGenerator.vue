@@ -41,6 +41,13 @@
             </div>
           </div>
           <div class="expectation-item">
+            <el-icon :size="24" color="#e6a23c"><ChatLineRound /></el-icon>
+            <div class="exp-text">
+              <div class="exp-num">每条 8~12 句</div>
+              <div class="exp-label">完整流行句式，直接复制即可使用</div>
+            </div>
+          </div>
+          <div class="expectation-item">
             <el-icon :size="24" color="#f56c6c"><Histogram /></el-icon>
             <div class="exp-text">
               <div class="exp-num">6 种类型</div>
@@ -270,7 +277,7 @@
                         <el-tag size="small">完整句子</el-tag>
                         <el-tag size="small">歇后语</el-tag>
                       </li>
-                      <li><strong>每条梗包含</strong>：内容 + 释义 + 用法例句</li>
+                      <li><strong>每条梗包含</strong>：谐音词 + 释义 + 用法例句 + <strong>8~12 条完整流行句式（一键复制即用）</strong></li>
                     </ul>
                   </div>
                 </template>
@@ -315,6 +322,20 @@
                 <span>用法例句</span>
               </div>
               <div class="pun-example">{{ pun.example }}</div>
+            </div>
+            <div class="pun-section sentences-section">
+              <div class="section-label sentences-label">
+                <el-icon :size="12" color="#e6a23c"><ChatLineRound /></el-icon>
+                <span>💬 直接使用的完整流行句式（可直接复制）</span>
+                <el-tag size="small" type="warning" effect="plain">共 {{ generateFullSentences(pun).length }} 条</el-tag>
+              </div>
+              <div class="sentences-grid">
+                <div
+                  v-for="(sentence, sIdx) in generateFullSentences(pun)" :key="sIdx" class="sentence-item" @click="copyToClipboard(sentence, '完整句式')">
+                  <span class="sentence-text">{{ sentence }}</span>
+                  <el-icon class="copy-icon" :size="14"><CopyDocument /></el-icon>
+                </div>
+              </div>
             </div>
             <div class="pun-card-footer">
               <el-button size="small" type="primary" link @click="copyToClipboard(pun.content, '谐音梗内容')">
@@ -382,7 +403,8 @@ import {
   Collection,
   Goods,
   DocumentCopy,
-  Histogram
+  Histogram,
+  ChatLineRound
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -391,6 +413,8 @@ import {
   punTypes,
   punForms,
   detectPunForm,
+  generateFullSentences,
+  popularTemplates,
   type PunCharacter,
   type PunItem,
   type PunType,
@@ -1008,6 +1032,59 @@ const copyToClipboard = async (text: string, label: string) => {
   border-radius: 4px;
   border-left: 3px solid #f56c6c;
   font-style: italic;
+}
+
+.sentences-section {
+  margin-top: 4px;
+}
+
+.sentences-label {
+  margin-bottom: 8px !important;
+  flex-wrap: wrap;
+  gap: 6px !important;
+}
+
+.sentences-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sentence-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
+  border: 1px solid #f5dab1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.sentence-item:hover {
+  background: linear-gradient(135deg, #faecd8 0%, #f5dab1 100%);
+  border-color: #e6a23c;
+  transform: translateX(3px);
+  box-shadow: 0 2px 8px rgba(230, 162, 60, 0.2);
+}
+
+.sentence-item:hover .copy-icon {
+  color: #e6a23c;
+}
+
+.sentence-text {
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.copy-icon {
+  color: #c0c4cc;
+  transition: color 0.2s;
+  flex-shrink: 0;
 }
 
 .pun-card-footer {

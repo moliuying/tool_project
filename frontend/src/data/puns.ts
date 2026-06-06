@@ -8,6 +8,7 @@ export interface PunItem {
   example?: string
   type: PunType
   hot?: boolean
+  sentences?: string[]
 }
 
 export const punForms: PunForm[] = ['两字词', '三字词', '四字成语', '多字短语', '完整句子', '歇后语']
@@ -20,6 +21,63 @@ export const detectPunForm = (pun: PunItem): PunForm => {
   if (cleanContent.length === 4) return '四字成语'
   if (/[，。！？!?]/.test(pun.content) || pun.content.length >= 8) return '完整句子'
   return '多字短语'
+}
+
+const getCoreWord = (content: string): string => {
+  return content.replace(/[（(][^）)]*[）)]/g, '').replace(/[，。！？!?、]/g, '').trim()
+}
+
+export const popularTemplates = [
+  { template: '{word}，启动！', scene: '开启做某事前的呐喊' },
+  { template: '这也太{word}了吧！', scene: '表示感叹、震惊' },
+  { template: '{word}人的命也是命！', scene: '调侃某类人的处境' },
+  { template: '今天也是{word}的一天呢~', scene: '日常感慨、发朋友圈' },
+  { template: '{word}，永远的神！', scene: '表达极度推崇' },
+  { template: '我的{word}DNA动了！', scene: '看到相关内容时的激动' },
+  { template: '已进入{word}模式，请勿打扰', scene: '表示专注于某事' },
+  { template: '别拦我，我要{word}！', scene: '表达强烈意愿' },
+  { template: '没有人能阻止我{word}！', scene: '坚定的决心' },
+  { template: '在{word}这件事上，我是专业的', scene: '自夸或自嘲' },
+  { template: '关于{word}，我有话要说', scene: '话题引入' },
+  { template: '{word}的痛，你们不懂', scene: '吐槽、抱怨' },
+  { template: '主打一个{word}', scene: '网络流行的总结句' },
+  { template: '是谁在{word}？哦，是我自己', scene: '自嘲' },
+  { template: '我单方面宣布：今日份{word}已达成', scene: '打卡、完成目标' },
+  { template: '{word}？拿来吧你！', scene: '表达渴望' },
+  { template: '人生建议：一定要{word}', scene: '建议类文案' },
+  { template: '一旦接受了{word}的设定...', scene: '调侃式的描述' },
+  { template: '不是吧阿sir，这也能{word}？', scene: '惊讶、质疑' },
+  { template: '你永远可以相信{word}', scene: '表达信赖' }
+]
+
+export const generateFullSentences = (pun: PunItem): string[] => {
+  if (pun.sentences && pun.sentences.length > 0) {
+    return pun.sentences
+  }
+
+  const coreWord = getCoreWord(pun.content)
+  if (!coreWord) return []
+
+  const results: string[] = []
+
+  popularTemplates.forEach(({ template }) => {
+    const sentence = template.replace('{word}', coreWord)
+    results.push(sentence)
+  })
+
+  if (pun.type === '成语谐音') {
+    results.unshift(`新的一年，祝你${coreWord}！`)
+    results.unshift(`愿我们都能${coreWord}✨`)
+  }
+  if (pun.type === '网络流行梗') {
+    results.unshift(`救命！我真的要${coreWord}了`)
+    results.unshift(`${coreWord}？这是可以说的吗？`)
+  }
+  if (pun.type === '双关语') {
+    results.unshift(`说得好！这波${coreWord}我给满分`)
+  }
+
+  return results.slice(0, 10)
 }
 
 export interface PunCharacter {
