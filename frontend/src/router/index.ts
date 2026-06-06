@@ -140,6 +140,11 @@ const routes: RouteRecordRaw[] = [
         path: '/nine-grid-cutter',
         name: 'NineGridCutter',
         component: () => import('@/views/NineGridCutter.vue')
+      },
+      {
+        path: '/number-to-chinese',
+        name: 'NumberToChinese',
+        component: () => import('@/views/NumberToChinese.vue')
       }
     ]
   }

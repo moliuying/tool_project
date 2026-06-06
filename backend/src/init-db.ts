@@ -33,8 +33,9 @@ async function bootstrap() {
       { name: 'Linux命令查询', path: '/linux-command', icon: 'Terminal', parentId: null, sort: 16, component: 'views/LinuxCommandHelper.vue' },
       { name: '成语查询', path: '/idiom-query', icon: 'Reading', parentId: null, sort: 17, component: 'views/IdiomQuery.vue' },
       { name: '九宫格切图', path: '/nine-grid-cutter', icon: 'Grid', parentId: null, sort: 18, component: 'views/NineGridCutter.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 19, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 18, sort: 1, component: 'views/Menu.vue' },
+      { name: '数字转中文大写', path: '/number-to-chinese', icon: 'Money', parentId: null, sort: 19, component: 'views/NumberToChinese.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 20, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 20, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
