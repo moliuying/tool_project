@@ -9,8 +9,21 @@
           <span>使用说明</span>
         </div>
       </template>
+      <el-alert
+        type="info"
+        :closable="false"
+        show-icon
+        class="paste-tip"
+      >
+        <template #title>
+          <div class="paste-tip-content">
+            <el-icon :size="18" color="#165DFF"><Promotion /></el-icon>
+            <span><strong>快捷操作：</strong>可直接粘贴完整CIDR字符串（如 <code class="inline-code">192.168.1.0/24</code>）到任意输入框，系统将自动解析并填充各段</span>
+          </div>
+        </template>
+      </el-alert>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
-        <el-step title="输入CIDR地址" description="输入标准CIDR格式，如 192.168.1.0/24" />
+        <el-step title="分段输入地址" description="逐段输入IP字节和前缀长度，或直接粘贴完整CIDR" />
         <el-step title="自动计算" description="系统自动解析并计算网段信息" />
         <el-step title="查看结果" description="获取子网掩码、可用IP范围等信息" />
         <el-step title="复制使用" description="一键复制任意结果值" />
@@ -47,54 +60,108 @@
 
       <div class="input-section">
         <el-form label-width="100px">
-          <el-form-item label="CIDR 地址">
-            <div class="form-item-with-help">
-              <el-tooltip content="输入IP地址和前缀长度，例如 192.168.1.0/24" placement="top">
-                <el-icon class="help-icon"><QuestionFilled /></el-icon>
-              </el-tooltip>
-              <el-input
-                v-model="cidrInput"
-                placeholder="请输入CIDR，如 192.168.1.0/24、10.0.0.1/8、172.16.0.0/12"
+          <el-form-item label="IP / 前缀">
+            <div class="segmented-input-wrapper">
+              <div
+                v-for="(segment, idx) in octetInputs"
+                :key="'octet-' + idx"
+                class="segment-wrap"
+              >
+                <div
+                  class="segment-input octet-segment"
+                  :class="'octet-' + (idx + 1)"
+                >
+                  <el-input
+                    :ref="(el: any) => setOctetRef(el, idx)"
+                    v-model="octetInputs[idx]"
+                    class="segment-el-input"
+                    placeholder="0"
+                    size="large"
+                    maxlength="3"
+                    :input-style="{ textAlign: 'center' }"
+                    @input="(v: string) => handleOctetInput(idx, v)"
+                    @paste="(e: ClipboardEvent) => handlePaste(e, idx)"
+                    @keydown="(e: KeyboardEvent) => handleOctetKeydown(e, idx)"
+                  />
+                  <span class="segment-label">第{{ idx + 1 }}字节</span>
+                </div>
+                <span v-if="idx < 3" class="segment-dot">.</span>
+              </div>
+
+              <span class="segment-slash">/</span>
+
+              <div class="segment-wrap">
+                <div class="segment-input prefix-segment">
+                  <el-input
+                    ref="prefixInputRef"
+                    v-model="prefixStr"
+                    class="segment-el-input"
+                    placeholder="24"
+                    size="large"
+                    maxlength="2"
+                    :input-style="{ textAlign: 'center' }"
+                    @input="handlePrefixInput"
+                    @paste="(e: ClipboardEvent) => handlePaste(e, 4)"
+                    @keydown="(e: KeyboardEvent) => handlePrefixKeydown(e)"
+                  />
+                  <span class="segment-label">前缀</span>
+                </div>
+              </div>
+
+              <el-button
+                type="primary"
                 size="large"
-                clearable
-                @input="handleInput"
-                @keyup.enter="calculateCidr"
+                class="calc-btn"
+                @click="calculateCidr"
               >
-                <template #append>
-                  <el-button @click="calculateCidr">
-                    <el-icon><Refresh /></el-icon>
-                    计算
-                  </el-button>
-                </template>
-              </el-input>
+                <el-icon><Refresh /></el-icon>
+                计算
+              </el-button>
             </div>
-            <div class="prefix-slider">
-              <span class="slider-label">前缀长度：</span>
-              <el-slider
-                v-model="prefixLength"
-                :min="0"
-                :max="32"
-                :step="1"
-                :show-tooltip="true"
-                class="control-slider"
-                @change="handleSliderChange"
-              />
-              <span class="slider-value">/ {{ prefixLength }}</span>
-            </div>
-            <div class="quick-examples">
-              <span class="quick-label">常用网段：</span>
-              <el-tag
-                v-for="ex in quickExamples"
-                :key="ex.value"
+
+            <div class="composite-display">
+              <span class="composite-label">完整CIDR：</span>
+              <code class="composite-value monospace">{{ compositeCidr }}</code>
+              <el-button
+                v-if="compositeCidr !== '/'"
+                link
+                type="primary"
                 size="small"
-                class="example-tag"
-                @click="applyExample(ex.value)"
+                @click="copyComposite"
               >
-                {{ ex.label }}
-              </el-tag>
+                <el-icon><CopyDocument /></el-icon>
+                复制
+              </el-button>
             </div>
           </el-form-item>
         </el-form>
+
+        <div class="prefix-slider">
+          <span class="slider-label">前缀长度：</span>
+          <el-slider
+            v-model="prefixLength"
+            :min="0"
+            :max="32"
+            :step="1"
+            :show-tooltip="true"
+            class="control-slider"
+            @change="handleSliderChange"
+          />
+          <span class="slider-value">/ {{ prefixLength }}</span>
+        </div>
+
+        <div class="quick-examples">
+          <span class="quick-label">常用网段：</span>
+          <el-tag
+            v-for="ex in quickExamples"
+            :key="ex.value"
+            size="small"
+            class="example-tag"
+            @click="applyExample(ex.value)"
+          >
+            {{ ex.label }}
+          </el-tag>
+        </div>
       </div>
 
       <div v-if="parseError" class="error-message">
@@ -243,7 +310,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import {
   Connection,
   DataLine,
@@ -258,7 +325,8 @@ import {
   OfficeBuilding,
   Cloudy,
   Lock,
-  Tools
+  Tools,
+  Promotion
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -284,14 +352,22 @@ interface CidrResult {
   addressRange: string
 }
 
-const cidrInput = ref('192.168.1.0/24')
-const prefixLength = ref(24)
-const parseError = ref('')
+const octetInputs = ref<string[]>(['192', '168', '1', '0'])
+const prefixStr = ref<string>('24')
+const prefixLength = ref<number>(24)
+const parseError = ref<string>('')
 const result = ref<CidrResult | null>(null)
 
+const octetRefs = ref<any[]>([])
+const prefixInputRef = ref<any>(null)
+
+const setOctetRef = (el: any, idx: number) => {
+  octetRefs.value[idx] = el
+}
+
 const inputFormats = [
-  { name: '标准CIDR', examples: ['192.168.1.0/24', '10.0.0.0/8'] },
-  { name: '带主机位CIDR', examples: ['192.168.1.100/24', '172.16.5.20/12'] },
+  { name: '分段输入', examples: ['192 . 168 . 1 . 0 / 24', '10 . 0 . 0 . 1 / 8'] },
+  { name: '粘贴完整CIDR', examples: ['192.168.1.100/24', '172.16.5.20/12'] },
   { name: '特殊网段', examples: ['0.0.0.0/0', '255.255.255.255/32'] }
 ]
 
@@ -305,6 +381,15 @@ const quickExamples = [
 ]
 
 const hasResult = computed(() => !!result.value)
+
+const compositeCidr = computed(() => {
+  const octets = octetInputs.value.map(v => v || '0')
+  const prefix = prefixStr.value || '0'
+  if (octets.every(o => o === '0') && prefix === '0') {
+    return `${octets.join('.')}/${prefix}`
+  }
+  return `${octets.join('.')}/${prefix}`
+})
 
 const rangeGradient = computed(() => {
   return 'linear-gradient(90deg, #e6f4ff 0%, #165DFF 20%, #165DFF 80%, #e6f4ff 100%)'
@@ -533,44 +618,152 @@ const calculateCidrResult = (ip: string, prefix: number): CidrResult => {
   }
 }
 
+const fillFromCidr = (ip: string, prefix: number) => {
+  const octets = ip.split('.')
+  octetInputs.value = octets
+  prefixStr.value = String(prefix)
+  prefixLength.value = prefix
+}
+
+const getCurrentIp = (): string | null => {
+  const octets = octetInputs.value.map(v => parseInt(v))
+  if (octets.some(v => isNaN(v) || v < 0 || v > 255)) {
+    return null
+  }
+  return octets.join('.')
+}
+
 const calculateCidr = () => {
-  if (!cidrInput.value.trim()) {
-    parseError.value = '请输入CIDR地址'
+  const ip = getCurrentIp()
+  const prefix = parseInt(prefixStr.value)
+
+  if (!ip) {
+    parseError.value = 'IP地址格式错误，请确保每段为 0-255 的数字'
     result.value = null
     return
   }
 
-  const parsed = parseCidr(cidrInput.value)
-  if (!parsed) {
-    parseError.value = 'CIDR格式错误，请检查输入，例如：192.168.1.0/24'
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) {
+    parseError.value = '前缀长度必须为 0-32 之间的数字'
     result.value = null
     return
   }
 
   parseError.value = ''
-  prefixLength.value = parsed.prefix
-  result.value = calculateCidrResult(parsed.ip, parsed.prefix)
+  prefixLength.value = prefix
+  result.value = calculateCidrResult(ip, prefix)
 }
 
-const handleInput = () => {
-  const parsed = parseCidr(cidrInput.value)
-  if (parsed) {
-    prefixLength.value = parsed.prefix
+const handleOctetInput = (idx: number, value: string) => {
+  const cleaned = value.replace(/[^0-9]/g, '')
+  octetInputs.value[idx] = cleaned
+
+  const num = parseInt(cleaned)
+  if (cleaned.length === 3 && !isNaN(num) && num <= 255 && idx < 3) {
+    nextTick(() => {
+      octetRefs.value[idx + 1]?.focus?.()
+    })
+  }
+  calculateCidr()
+}
+
+const handleOctetKeydown = (e: KeyboardEvent, idx: number) => {
+  if (e.key === '.' || e.key === ' ') {
+    e.preventDefault()
+    if (idx < 3) {
+      nextTick(() => {
+        octetRefs.value[idx + 1]?.focus?.()
+      })
+    } else {
+      nextTick(() => {
+        prefixInputRef.value?.focus?.()
+      })
+    }
+  } else if (e.key === 'Backspace' && !octetInputs.value[idx] && idx > 0) {
+    e.preventDefault()
+    nextTick(() => {
+      octetRefs.value[idx - 1]?.focus?.()
+    })
+  } else if (e.key === 'ArrowRight' && idx < 3) {
+    nextTick(() => {
+      octetRefs.value[idx + 1]?.focus?.()
+    })
+  } else if (e.key === 'ArrowLeft' && idx > 0) {
+    nextTick(() => {
+      octetRefs.value[idx - 1]?.focus?.()
+    })
+  } else if (e.key === 'Enter') {
     calculateCidr()
+  }
+}
+
+const handlePrefixInput = (value: string) => {
+  const cleaned = value.replace(/[^0-9]/g, '')
+  prefixStr.value = cleaned
+  const num = parseInt(cleaned)
+  if (!isNaN(num) && num >= 0 && num <= 32) {
+    prefixLength.value = num
+  }
+  calculateCidr()
+}
+
+const handlePrefixKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    calculateCidr()
+  }
+}
+
+const handlePaste = (e: ClipboardEvent, segmentIdx: number) => {
+  const pastedText = e.clipboardData?.getData('text') || ''
+  const trimmed = pastedText.trim()
+  
+  const parsed = parseCidr(trimmed)
+  if (parsed) {
+    e.preventDefault()
+    fillFromCidr(parsed.ip, parsed.prefix)
+    ElMessage.success(`已解析: ${parsed.ip}/${parsed.prefix}`)
+    calculateCidr()
+    return
+  }
+
+  if (trimmed.includes('.')) {
+    const parts = trimmed.split('.').map(p => p.trim())
+    const validParts = parts.filter(p => /^\d+$/.test(p) && parseInt(p) >= 0 && parseInt(p) <= 255)
+    if (validParts.length === 4) {
+      e.preventDefault()
+      octetInputs.value = validParts
+      ElMessage.success(`已填入IP: ${validParts.join('.')}`)
+      calculateCidr()
+      return
+    }
+  }
+
+  if (/^\d+$/.test(trimmed)) {
+    const num = parseInt(trimmed)
+    if (segmentIdx < 4 && num >= 0 && num <= 255) {
+      e.preventDefault()
+      octetInputs.value[segmentIdx] = trimmed
+      calculateCidr()
+    } else if (segmentIdx === 4 && num >= 0 && num <= 32) {
+      e.preventDefault()
+      prefixStr.value = trimmed
+      prefixLength.value = num
+      calculateCidr()
+    }
   }
 }
 
 const handleSliderChange = () => {
-  const parsed = parseCidr(cidrInput.value)
-  if (parsed) {
-    cidrInput.value = `${parsed.ip}/${prefixLength.value}`
-    calculateCidr()
-  }
+  prefixStr.value = String(prefixLength.value)
+  calculateCidr()
 }
 
 const applyExample = (value: string) => {
-  cidrInput.value = value
-  calculateCidr()
+  const parsed = parseCidr(value)
+  if (parsed) {
+    fillFromCidr(parsed.ip, parsed.prefix)
+    calculateCidr()
+  }
 }
 
 const copyValue = (name: string, value: string) => {
@@ -581,10 +774,17 @@ const copyValue = (name: string, value: string) => {
   })
 }
 
+const copyComposite = () => {
+  navigator.clipboard.writeText(compositeCidr.value).then(() => {
+    ElMessage.success(`已复制: ${compositeCidr.value}`)
+  }).catch(() => {
+    ElMessage.error('复制失败')
+  })
+}
+
 watch(prefixLength, (val) => {
-  const parsed = parseCidr(cidrInput.value)
-  if (parsed && parsed.prefix !== val) {
-    cidrInput.value = `${parsed.ip}/${val}`
+  if (String(val) !== prefixStr.value) {
+    prefixStr.value = String(val)
     calculateCidr()
   }
 })
@@ -611,6 +811,27 @@ calculateCidr()
   gap: 8px;
   font-size: 18px;
   font-weight: bold;
+}
+
+.paste-tip {
+  margin-bottom: 16px;
+}
+
+.paste-tip-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.inline-code {
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  background: #ecf5ff;
+  color: #165DFF;
+  padding: 1px 8px;
+  border-radius: 4px;
+  margin: 0 4px;
 }
 
 .guide-steps {
@@ -663,17 +884,148 @@ calculateCidr()
   padding: 16px 0;
 }
 
-.form-item-with-help {
+.segmented-input-wrapper {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
+  align-items: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-.help-icon {
-  color: #909399;
-  cursor: help;
-  flex-shrink: 0;
+.segment-wrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.segment-input {
+  position: relative;
+  border-radius: 10px;
+  padding: 6px 6px 22px;
+  transition: all 0.3s;
+  border: 2px solid transparent;
+}
+
+.octet-segment {
+  width: 80px;
+}
+
+.octet-1 {
+  background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  border-color: #ffa39e;
+}
+
+.octet-2 {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%);
+  border-color: #ffd591;
+}
+
+.octet-3 {
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  border-color: #b7eb8f;
+}
+
+.octet-4 {
+  background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
+  border-color: #91d5ff;
+}
+
+.prefix-segment {
+  width: 72px;
+  background: linear-gradient(135deg, #f9f0ff 0%, #efdbff 100%);
+  border-color: #d3adf7;
+}
+
+.segment-input:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.segment-input:focus-within {
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.segment-el-input {
+  width: 100%;
+}
+
+.segment-el-input :deep(.el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08) inset;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.segment-el-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px rgba(22, 93, 255, 0.5) inset;
+}
+
+.segment-el-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #165DFF inset;
+}
+
+.segment-label {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.segment-dot {
+  font-size: 28px;
+  font-weight: bold;
+  color: #606266;
+  line-height: 1;
+  padding-bottom: 20px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.segment-slash {
+  font-size: 28px;
+  font-weight: bold;
+  color: #722ed1;
+  line-height: 1;
+  padding-bottom: 20px;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+.calc-btn {
+  height: 54px;
+  padding: 0 28px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.composite-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ebeef5 100%);
+  border-radius: 8px;
+}
+
+.composite-label {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.composite-value {
+  flex: 1;
+  font-size: 16px;
+  font-weight: bold;
+  color: #165DFF;
+  background: #fff;
+  padding: 4px 12px;
+  border-radius: 6px;
+  display: inline-block;
 }
 
 .prefix-slider {
@@ -959,6 +1311,31 @@ calculateCidr()
 }
 
 @media (max-width: 768px) {
+  .segmented-input-wrapper {
+    gap: 4px;
+  }
+
+  .octet-segment {
+    width: 64px;
+  }
+
+  .prefix-segment {
+    width: 60px;
+  }
+
+  .segment-dot,
+  .segment-slash {
+    font-size: 22px;
+    padding-bottom: 18px;
+  }
+
+  .calc-btn {
+    width: 100%;
+    margin-left: 0;
+    margin-top: 12px;
+    height: 48px;
+  }
+
   .result-grid {
     grid-template-columns: repeat(2, 1fr);
   }
