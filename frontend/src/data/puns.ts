@@ -1,11 +1,25 @@
 export type PunType = '谐音梗' | '双关语' | '网络流行梗' | '成语谐音' | '品牌梗' | '歇后语'
 
+export type PunForm = '两字词' | '三字词' | '四字成语' | '多字短语' | '完整句子' | '歇后语'
+
 export interface PunItem {
   content: string
   explanation?: string
   example?: string
   type: PunType
   hot?: boolean
+}
+
+export const punForms: PunForm[] = ['两字词', '三字词', '四字成语', '多字短语', '完整句子', '歇后语']
+
+export const detectPunForm = (pun: PunItem): PunForm => {
+  if (pun.type === '歇后语') return '歇后语'
+  const cleanContent = pun.content.replace(/[（(][^）)]*[）)]/g, '').replace(/[，。！？、]/g, '')
+  if (cleanContent.length === 2) return '两字词'
+  if (cleanContent.length === 3) return '三字词'
+  if (cleanContent.length === 4) return '四字成语'
+  if (/[，。！？!?]/.test(pun.content) || pun.content.length >= 8) return '完整句子'
+  return '多字短语'
 }
 
 export interface PunCharacter {
