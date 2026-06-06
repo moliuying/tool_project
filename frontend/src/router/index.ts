@@ -190,6 +190,11 @@ const routes: RouteRecordRaw[] = [
         path: '/barcode-generator',
         name: 'BarcodeGenerator',
         component: () => import('@/views/BarcodeGenerator.vue')
+      },
+      {
+        path: '/postal-code-query',
+        name: 'PostalCodeQuery',
+        component: () => import('@/views/PostalCodeQuery.vue')
       }
     ]
   }

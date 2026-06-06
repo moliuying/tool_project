@@ -45,8 +45,10 @@ async function bootstrap() {
       { name: 'CIDR网段计算', path: '/cidr-calculator', icon: 'Connection', parentId: null, sort: 28, component: 'views/CidrCalculator.vue' },
       { name: '随机字符串生成', path: '/random-string', icon: 'Key', parentId: null, sort: 29, component: 'views/RandomStringGenerator.vue' },
       { name: '文件哈希计算', path: '/file-hash', icon: 'Key', parentId: null, sort: 30, component: 'views/FileHashCalculator.vue' },
+      { name: '条形码生成器', path: '/barcode-generator', icon: 'Grid', parentId: null, sort: 31, component: 'views/BarcodeGenerator.vue' },
+      { name: '邮政编码查询', path: '/postal-code-query', icon: 'Location', parentId: null, sort: 32, component: 'views/PostalCodeQuery.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 31, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 33, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
