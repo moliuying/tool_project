@@ -195,6 +195,11 @@ const routes: RouteRecordRaw[] = [
         path: '/postal-code-query',
         name: 'PostalCodeQuery',
         component: () => import('@/views/PostalCodeQuery.vue')
+      },
+      {
+        path: '/code-highlighter',
+        name: 'CodeHighlighter',
+        component: () => import('@/views/CodeHighlighter.vue')
       }
     ]
   }
