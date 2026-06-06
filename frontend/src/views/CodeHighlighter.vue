@@ -12,8 +12,8 @@
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
         <el-step title="选择语言" description="从下拉列表中选择代码对应的编程语言，支持自动检测" />
         <el-step title="粘贴代码" description="在左侧编辑区粘贴或输入需要高亮的代码片段" />
-        <el-step title="应用高亮" description="点击「应用高亮」按钮，一键生成语法高亮代码" />
-        <el-step title="导出使用" description="复制高亮代码、HTML 或下载渲染结果图片" />
+        <el-step title="高亮渲染" description="开启「实时高亮」将自动更新，或点击「应用高亮」按钮手动渲染" />
+        <el-step title="导出使用" description="复制高亮代码、HTML 或下载渲染结果" />
       </el-steps>
     </el-card>
 
@@ -79,10 +79,17 @@
         </div>
         <div class="toolbar-right">
           <el-switch
+            v-model="autoHighlight"
+            active-text="实时高亮"
+            inactive-text="手动高亮"
+            size="small"
+          />
+          <el-switch
             v-model="showLineNumbers"
             active-text="显示行号"
             inactive-text="隐藏行号"
             size="small"
+            style="margin-left: 12px;"
           />
           <el-switch
             v-model="showLanguageBadge"
@@ -119,6 +126,14 @@
             <span class="editor-title">
               <el-icon color="#909399"><Edit /></el-icon>
               原始代码
+              <el-tag v-if="autoHighlight" size="small" type="success" effect="plain" style="margin-left: 8px;">
+                <el-icon><Lightning /></el-icon>
+                实时高亮
+              </el-tag>
+              <el-tag v-else size="small" type="warning" effect="plain" style="margin-left: 8px;">
+                <el-icon><Cursor /></el-icon>
+                手动模式 - 点击「应用高亮」按钮
+              </el-tag>
             </span>
             <div class="editor-actions">
               <el-tag size="small" type="info">{{ lineCount }} 行</el-tag>
@@ -245,7 +260,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   InfoFilled,
   Suitcase,
@@ -259,7 +274,9 @@ import {
   CopyDocument,
   DocumentCopy,
   Download,
-  DataLine
+  DataLine,
+  Lightning,
+  Cursor
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import hljs from 'highlight.js'
@@ -404,11 +421,29 @@ const applyHighlight = () => {
   }
 }
 
+let debounceTimer: number | null = null
+const DEBOUNCE_DELAY = 300
+
 const autoHighlightIfEnabled = () => {
-  if (autoHighlight.value && sourceCode.value.trim()) {
-    applyHighlight()
+  if (!autoHighlight.value) return
+  if (!sourceCode.value.trim()) {
+    highlightedCode.value = ''
+    return
   }
+
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+  debounceTimer = window.setTimeout(() => {
+    applyHighlight()
+  }, DEBOUNCE_DELAY)
 }
+
+onUnmounted(() => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer)
+  }
+})
 
 const fullHtmlOutput = computed(() => {
   if (!highlightedCode.value) return ''
