@@ -9,9 +9,9 @@
           <span>使用说明</span>
         </div>
       </template>
-      <el-steps :active="0" finish-status="wait" simple class="guide-steps">
+      <el-steps :active="currentStep" finish-status="success" simple class="guide-steps">
         <el-step title="选择文件" description="通过拖拽或点击选择要校验的文件" />
-        <el-step title="计算哈希" description="系统自动计算 MD5、SHA1、SHA256 哈希值" />
+        <el-step title="计算哈希" :description="isCalculating ? `已用时 ${elapsedTimeText} · 预计剩余 ${remainingTimeText}` : '系统自动计算 MD5、SHA1、SHA256 哈希值'" />
         <el-step title="校验比对" description="与官方提供的哈希值进行比对确认文件完整性" />
         <el-step title="复制使用" description="一键复制哈希值用于文件校验" />
       </el-steps>
@@ -104,60 +104,6 @@
             </el-button>
           </div>
         </div>
-        <el-progress
-          v-if="isCalculating"
-          :percentage="progress"
-          :stroke-width="8"
-          :text-inside="true"
-          status="success"
-          class="progress-bar"
-        />
-      </div>
-
-      <el-divider v-if="selectedFile" />
-
-      <div v-if="selectedFile" class="verify-section">
-        <h4 class="verify-title">
-          <el-icon :size="16" color="#67C23A"><CircleCheck /></el-icon>
-          <span>哈希值校验</span>
-        </h4>
-        <div class="verify-input">
-          <el-input
-            v-model="verifyHash"
-            placeholder="粘贴官方提供的哈希值进行比对验证"
-            size="large"
-            clearable
-            :disabled="!hasAllResults"
-          >
-            <template #prefix>
-              <el-icon><Key /></el-icon>
-            </template>
-          </el-input>
-          <el-button
-            size="large"
-            type="primary"
-            @click="verifyHashValue"
-            :disabled="!verifyHash.trim() || !hasAllResults"
-          >
-            比对验证
-          </el-button>
-        </div>
-        <el-alert
-          v-if="verifyResult !== null"
-          :title="verifyResult ? '✅ 校验通过！文件未被篡改' : '❌ 校验失败！文件可能已被篡改或损坏'"
-          :type="verifyResult ? 'success' : 'error'"
-          :closable="false"
-          show-icon
-          class="verify-alert"
-        />
-        <el-alert
-          v-if="isCalculating"
-          title="⏳ 正在计算哈希值，请稍候..."
-          type="info"
-          :closable="false"
-          show-icon
-          class="verify-alert"
-        />
       </div>
     </el-card>
 
@@ -174,7 +120,7 @@
             type="success"
             :icon="CircleCheck"
           >
-            全部计算完成
+            全部计算完成 · 用时 {{ elapsedTimeText }}
           </el-tag>
           <el-tag
             v-else-if="isCalculating"
@@ -183,7 +129,7 @@
             effect="dark"
             :icon="Loading"
           >
-            正在计算中 {{ progress }}%
+            正在计算 · {{ overallProgress }}%
           </el-tag>
           <el-tag v-else size="small" type="info">等待计算</el-tag>
         </div>
@@ -198,6 +144,55 @@
           </el-button>
         </div>
       </template>
+
+      <div v-if="isCalculating" class="overall-progress-section">
+        <div class="progress-header">
+          <span class="progress-title">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            总进度
+          </span>
+          <span class="progress-time">
+            <el-icon><Timer /></el-icon>
+            已用: <strong>{{ elapsedTimeText }}</strong>
+            <span class="time-sep">|</span>
+            <el-icon><Hourglass /></el-icon>
+            剩余: <strong>{{ remainingTimeText }}</strong>
+          </span>
+        </div>
+        <el-progress
+          :percentage="overallProgress"
+          :stroke-width="14"
+          :text-inside="true"
+          status="success"
+          :striped="true"
+          :striped-flow="true"
+        />
+        <div class="progress-stages">
+          <el-tag
+            v-for="(stage, idx) in stages"
+            :key="idx"
+            size="small"
+            :type="getStageTagType(idx)"
+            :effect="getStageTagEffect(idx)"
+            class="stage-tag"
+          >
+            <el-icon v-if="stageStatus[idx] === 'done'"><CircleCheck /></el-icon>
+            <el-icon v-else-if="stageStatus[idx] === 'active'" class="is-loading"><Loading /></el-icon>
+            <el-icon v-else><Clock /></el-icon>
+            {{ stage.name }} {{ stageProgress[idx] }}%
+          </el-tag>
+        </div>
+      </div>
+
+      <div v-if="isCalculating && selectedFile.size > 50 * 1024 * 1024" class="large-file-tip">
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="检测到大文件，计算需要一定时间，请耐心等待..."
+          description="MD5 使用纯 JS 计算，速度较慢；SHA-1/SHA-256 使用浏览器原生 API，速度较快。您可以继续浏览其他页面，计算不会中断。"
+        />
+      </div>
 
       <div class="hash-results">
         <div
@@ -226,7 +221,7 @@
                 effect="dark"
               >
                 <el-icon class="is-loading"><Loading /></el-icon>
-                计算中
+                计算中 {{ stageProgress[item.stageIndex] }}%
               </el-tag>
               <el-tag v-else size="small" type="info" effect="plain">等待中</el-tag>
             </div>
@@ -257,6 +252,16 @@
               复制
             </el-button>
           </div>
+
+          <el-progress
+            v-if="item.status === 'calculating'"
+            :percentage="stageProgress[item.stageIndex]"
+            :stroke-width="6"
+            :show-text="false"
+            status="warning"
+            class="hash-progress"
+          />
+
           <div
             class="hash-value-wrapper"
             :class="{ 'can-copy': item.value, 'is-loading': item.status === 'calculating' }"
@@ -264,11 +269,11 @@
           >
             <div v-if="item.status === 'calculating'" class="hash-loading">
               <el-icon class="is-loading" :size="18"><Loading /></el-icon>
-              <span>正在计算 {{ item.name }}，请稍候...</span>
+              <span>正在计算 {{ item.name }} ({{ stageProgress[item.stageIndex] }}%)，请稍候...</span>
             </div>
             <div v-else-if="item.status === 'pending'" class="hash-pending">
               <el-icon :size="18"><Clock /></el-icon>
-              <span>等待计算...</span>
+              <span>等待计算 (排在第 {{ item.stageIndex + 1 }} 位)...</span>
             </div>
             <template v-else>
               <code class="hash-value">{{ item.value }}</code>
@@ -281,11 +286,53 @@
         </div>
       </div>
     </el-card>
+
+    <el-card v-if="selectedFile && hasAllResults" class="verify-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#165DFF">
+            <CircleCheck />
+          </el-icon>
+          <span>哈希值校验</span>
+        </div>
+      </template>
+      <div class="verify-section">
+        <h4 class="verify-title">粘贴官方提供的哈希值进行比对验证</h4>
+        <div class="verify-input">
+          <el-input
+            v-model="verifyHash"
+            placeholder="例如：d41d8cd98f00b204e9800998ecf8427e"
+            size="large"
+            clearable
+          >
+            <template #prefix>
+              <el-icon><Key /></el-icon>
+            </template>
+          </el-input>
+          <el-button
+            size="large"
+            type="primary"
+            @click="verifyHashValue"
+            :disabled="!verifyHash.trim()"
+          >
+            比对验证
+          </el-button>
+        </div>
+        <el-alert
+          v-if="verifyResult !== null"
+          :title="verifyResult ? '✅ 校验通过！文件未被篡改' : '❌ 校验失败！文件可能已被篡改或损坏'"
+          :type="verifyResult ? 'success' : 'error'"
+          :closable="false"
+          show-icon
+          class="verify-alert"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onUnmounted } from 'vue'
 import {
   InfoFilled,
   Warning,
@@ -299,11 +346,14 @@ import {
   DataLine,
   CopyDocument,
   Loading,
-  Clock
+  Clock,
+  Timer,
+  Hourglass
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 type HashStatus = 'pending' | 'calculating' | 'done'
+type StageStatus = 'pending' | 'active' | 'done'
 
 interface HashResultItem {
   name: string
@@ -311,6 +361,7 @@ interface HashResultItem {
   tagType: 'warning' | 'info' | 'success'
   value: string
   status: HashStatus
+  stageIndex: number
 }
 
 const algorithms = [
@@ -319,13 +370,27 @@ const algorithms = [
   { name: 'SHA-256', desc: 'SHA-2家族，安全性更高', length: '256位 (64字符)' }
 ]
 
+const STAGE_READ = 0
+const STAGE_MD5 = 1
+const STAGE_SHA1 = 2
+const STAGE_SHA256 = 3
+
+const stages = [
+  { name: '读取文件', weight: 15 },
+  { name: '计算 MD5', weight: 55 },
+  { name: '计算 SHA-1', weight: 15 },
+  { name: '计算 SHA-256', weight: 15 }
+]
+
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const selectedFile = ref<File | null>(null)
 const isDragover = ref(false)
 const isCalculating = ref(false)
-const progress = ref(0)
 const verifyHash = ref('')
 const verifyResult = ref<boolean | null>(null)
+
+const stageProgress = reactive<number[]>([0, 0, 0, 0])
+const stageStatus = reactive<StageStatus[]>(['pending', 'pending', 'pending', 'pending'])
 
 const hashStatus = reactive<Record<string, HashStatus>>({
   md5: 'pending',
@@ -339,13 +404,68 @@ const hashes = reactive({
   sha256: ''
 })
 
-const hashResultList = computed<HashResultItem[]>(() => [
-  { name: 'MD5', desc: '信息摘要算法第五版', tagType: 'warning', value: hashes.md5, status: hashStatus.md5 },
-  { name: 'SHA-1', desc: '安全哈希算法 1', tagType: 'info', value: hashes.sha1, status: hashStatus.sha1 },
-  { name: 'SHA-256', desc: '安全哈希算法 256位', tagType: 'success', value: hashes.sha256, status: hashStatus.sha256 }
-])
+const startTime = ref<number>(0)
+const elapsedMs = ref<number>(0)
+let timerId: number | null = null
+
+const overallProgress = computed(() => {
+  let total = 0
+  for (let i = 0; i < stages.length; i++) {
+    total += (stageProgress[i] / 100) * stages[i].weight
+  }
+  return Math.round(total)
+})
 
 const hasAllResults = computed(() => hashes.md5 && hashes.sha1 && hashes.sha256)
+
+const currentStep = computed(() => {
+  if (!selectedFile.value) return 0
+  if (!hasAllResults.value) return 1
+  if (verifyResult.value === null) return 2
+  return 3
+})
+
+const hashResultList = computed<HashResultItem[]>(() => [
+  { name: 'MD5', desc: '信息摘要算法第五版', tagType: 'warning', value: hashes.md5, status: hashStatus.md5, stageIndex: STAGE_MD5 },
+  { name: 'SHA-1', desc: '安全哈希算法 1', tagType: 'info', value: hashes.sha1, status: hashStatus.sha1, stageIndex: STAGE_SHA1 },
+  { name: 'SHA-256', desc: '安全哈希算法 256位', tagType: 'success', value: hashes.sha256, status: hashStatus.sha256, stageIndex: STAGE_SHA256 }
+])
+
+const elapsedTimeText = computed(() => formatDuration(elapsedMs.value))
+const remainingTimeText = computed(() => {
+  if (!isCalculating.value || overallProgress.value < 5 || elapsedMs.value < 1000) {
+    return '估算中...'
+  }
+  const totalEstimated = (elapsedMs.value / overallProgress.value) * 100
+  const remaining = Math.max(0, totalEstimated - elapsedMs.value)
+  return formatDuration(remaining)
+})
+
+const getStageTagType = (idx: number) => {
+  if (stageStatus[idx] === 'done') return 'success'
+  if (stageStatus[idx] === 'active') return 'warning'
+  return 'info'
+}
+
+const getStageTagEffect = (idx: number) => {
+  if (stageStatus[idx] === 'active') return 'dark'
+  return 'plain'
+}
+
+const formatDuration = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`
+  const totalSeconds = Math.floor(ms / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  if (hours > 0) {
+    return `${hours}小时${minutes}分${seconds}秒`
+  }
+  if (minutes > 0) {
+    return `${minutes}分${seconds}秒`
+  }
+  return `${seconds}秒`
+}
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
@@ -365,6 +485,27 @@ const formatFileDate = (timestamp: number): string => {
   })
 }
 
+const startTimer = () => {
+  startTime.value = Date.now()
+  elapsedMs.value = 0
+  timerId = window.setInterval(() => {
+    elapsedMs.value = Date.now() - startTime.value
+  }, 200)
+}
+
+const stopTimer = () => {
+  if (timerId !== null) {
+    clearInterval(timerId)
+    timerId = null
+  }
+  elapsedMs.value = Date.now() - startTime.value
+}
+
+const setStage = (idx: number, status: StageStatus, progress: number = 0) => {
+  stageStatus[idx] = status
+  stageProgress[idx] = progress
+}
+
 const triggerFileInput = () => {
   if (fileInputRef.value && !isCalculating.value) {
     fileInputRef.value.click()
@@ -378,7 +519,12 @@ const resetHashState = () => {
   hashStatus.md5 = 'pending'
   hashStatus.sha1 = 'pending'
   hashStatus.sha256 = 'pending'
+  for (let i = 0; i < stages.length; i++) {
+    stageStatus[i] = 'pending'
+    stageProgress[i] = 0
+  }
   verifyResult.value = null
+  elapsedMs.value = 0
 }
 
 const handleFileChange = (event: Event) => {
@@ -410,10 +556,10 @@ const handleDrop = (event: DragEvent) => {
 }
 
 const clearFile = () => {
+  stopTimer()
   selectedFile.value = null
   resetHashState()
   verifyHash.value = ''
-  progress.value = 0
   if (fileInputRef.value) {
     fileInputRef.value.value = ''
   }
@@ -454,29 +600,6 @@ const md5II = (a: number, b: number, c: number, d: number, x: number, s: number,
   return addUnsigned(rotateLeft(addUnsigned(a, addUnsigned(addUnsigned(md5I(b, c, d), x), ac)), s), b)
 }
 
-const convertToWordArray = (input: string): number[] => {
-  let lWordCount
-  const lMessageLength = input.length
-  const lNumberOfWordsTemp1 = lMessageLength + 8
-  const lNumberOfWordsTemp2 = Math.floor((lNumberOfWordsTemp1 - (lNumberOfWordsTemp1 % 64)) / 64)
-  const lNumberOfWords = (lNumberOfWordsTemp2 + 1) * 16
-  const lWordArray: number[] = new Array(lNumberOfWords - 1).fill(0)
-  let lBytePosition = 0
-  let lByteCount = 0
-  while (lByteCount < lMessageLength) {
-    lWordCount = Math.floor((lByteCount - (lByteCount % 4)) / 4)
-    lBytePosition = (lByteCount % 4) * 8
-    lWordArray[lWordCount] = lWordArray[lWordCount] | (input.charCodeAt(lByteCount) << lBytePosition)
-    lByteCount++
-  }
-  lWordCount = Math.floor((lByteCount - (lByteCount % 4)) / 4)
-  lBytePosition = (lByteCount % 4) * 8
-  lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition)
-  lWordArray[lNumberOfWords - 2] = lMessageLength << 3
-  lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29
-  return lWordArray
-}
-
 const wordToHex = (lValue: number): string => {
   let wordToHexValue = ''
   let lByte
@@ -487,98 +610,171 @@ const wordToHex = (lValue: number): string => {
   return wordToHexValue
 }
 
-const md5FromString = (string: string): string => {
-  const x = convertToWordArray(string)
-  let a = 0x67452301
-  let b = 0xEFCDAB89
-  let c = 0x98BADCFE
-  let d = 0x10325476
+class MD5Stream {
+  a: number
+  b: number
+  c: number
+  d: number
+  buffer: Uint8Array
+  bufferLen: number
+  totalLen: number
 
-  const S11 = 7, S12 = 12, S13 = 17, S14 = 22
-  const S21 = 5, S22 = 9, S23 = 14, S24 = 20
-  const S31 = 4, S32 = 11, S33 = 16, S34 = 23
-  const S41 = 6, S42 = 10, S43 = 15, S44 = 21
-
-  for (let k = 0; k < x.length; k += 16) {
-    const AA = a
-    const BB = b
-    const CC = c
-    const DD = d
-
-    a = md5FF(a, b, c, d, x[k + 0], S11, 0xD76AA478)
-    d = md5FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756)
-    c = md5FF(c, d, a, b, x[k + 2], S13, 0x242070DB)
-    b = md5FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE)
-    a = md5FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF)
-    d = md5FF(d, a, b, c, x[k + 5], S12, 0x4787C62A)
-    c = md5FF(c, d, a, b, x[k + 6], S13, 0xA8304613)
-    b = md5FF(b, c, d, a, x[k + 7], S14, 0xFD469501)
-    a = md5FF(a, b, c, d, x[k + 8], S11, 0x698098D8)
-    d = md5FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF)
-    c = md5FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1)
-    b = md5FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE)
-    a = md5FF(a, b, c, d, x[k + 12], S11, 0x6B901122)
-    d = md5FF(d, a, b, c, x[k + 13], S12, 0xFD987193)
-    c = md5FF(c, d, a, b, x[k + 14], S13, 0xA679438E)
-    b = md5FF(b, c, d, a, x[k + 15], S14, 0x49B40821)
-
-    a = md5GG(a, b, c, d, x[k + 1], S21, 0xF61E2562)
-    d = md5GG(d, a, b, c, x[k + 6], S22, 0xC040B340)
-    c = md5GG(c, d, a, b, x[k + 11], S23, 0x265E5A51)
-    b = md5GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA)
-    a = md5GG(a, b, c, d, x[k + 5], S21, 0xD62F105D)
-    d = md5GG(d, a, b, c, x[k + 10], S22, 0x2441453)
-    c = md5GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681)
-    b = md5GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8)
-    a = md5GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6)
-    d = md5GG(d, a, b, c, x[k + 14], S22, 0xC33707D6)
-    c = md5GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87)
-    b = md5GG(b, c, d, a, x[k + 8], S24, 0x455A14ED)
-    a = md5GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905)
-    d = md5GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8)
-    c = md5GG(c, d, a, b, x[k + 7], S23, 0x676F02D9)
-    b = md5GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A)
-
-    a = md5HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942)
-    d = md5HH(d, a, b, c, x[k + 8], S32, 0x8771F681)
-    c = md5HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122)
-    b = md5HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C)
-    a = md5HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44)
-    d = md5HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9)
-    c = md5HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60)
-    b = md5HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70)
-    a = md5HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6)
-    d = md5HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA)
-    c = md5HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085)
-    b = md5HH(b, c, d, a, x[k + 6], S34, 0x4881D05)
-    a = md5HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039)
-    d = md5HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5)
-    c = md5HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8)
-    b = md5HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665)
-
-    a = md5II(a, b, c, d, x[k + 0], S41, 0xF4292244)
-    d = md5II(d, a, b, c, x[k + 7], S42, 0x432AFF97)
-    c = md5II(c, d, a, b, x[k + 14], S43, 0xAB9423A7)
-    b = md5II(b, c, d, a, x[k + 5], S44, 0xFC93A039)
-    a = md5II(a, b, c, d, x[k + 12], S41, 0x655B59C3)
-    d = md5II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92)
-    c = md5II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D)
-    b = md5II(b, c, d, a, x[k + 1], S44, 0x85845DD1)
-    a = md5II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F)
-    d = md5II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0)
-    c = md5II(c, d, a, b, x[k + 6], S43, 0xA3014314)
-    b = md5II(b, c, d, a, x[k + 13], S44, 0x4E0811A1)
-    a = md5II(a, b, c, d, x[k + 4], S41, 0xF7537E82)
-    d = md5II(d, a, b, c, x[k + 11], S42, 0xBD3AF235)
-    c = md5II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB)
-    b = md5II(b, c, d, a, x[k + 9], S44, 0xEB86D391)
-
-    a = addUnsigned(a, AA)
-    b = addUnsigned(b, BB)
-    c = addUnsigned(c, CC)
-    d = addUnsigned(d, DD)
+  constructor() {
+    this.a = 0x67452301
+    this.b = 0xEFCDAB89
+    this.c = 0x98BADCFE
+    this.d = 0x10325476
+    this.buffer = new Uint8Array(64)
+    this.bufferLen = 0
+    this.totalLen = 0
   }
-  return (wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d)).toLowerCase()
+
+  private processBlock(block: Uint8Array) {
+    const S11 = 7, S12 = 12, S13 = 17, S14 = 22
+    const S21 = 5, S22 = 9, S23 = 14, S24 = 20
+    const S31 = 4, S32 = 11, S33 = 16, S34 = 23
+    const S41 = 6, S42 = 10, S43 = 15, S44 = 21
+
+    const x: number[] = new Array(16)
+    for (let i = 0; i < 16; i++) {
+      x[i] = block[i * 4] |
+             (block[i * 4 + 1] << 8) |
+             (block[i * 4 + 2] << 16) |
+             (block[i * 4 + 3] << 24)
+    }
+
+    let a = this.a, b = this.b, c = this.c, d = this.d
+
+    a = md5FF(a, b, c, d, x[0], S11, 0xD76AA478)
+    d = md5FF(d, a, b, c, x[1], S12, 0xE8C7B756)
+    c = md5FF(c, d, a, b, x[2], S13, 0x242070DB)
+    b = md5FF(b, c, d, a, x[3], S14, 0xC1BDCEEE)
+    a = md5FF(a, b, c, d, x[4], S11, 0xF57C0FAF)
+    d = md5FF(d, a, b, c, x[5], S12, 0x4787C62A)
+    c = md5FF(c, d, a, b, x[6], S13, 0xA8304613)
+    b = md5FF(b, c, d, a, x[7], S14, 0xFD469501)
+    a = md5FF(a, b, c, d, x[8], S11, 0x698098D8)
+    d = md5FF(d, a, b, c, x[9], S12, 0x8B44F7AF)
+    c = md5FF(c, d, a, b, x[10], S13, 0xFFFF5BB1)
+    b = md5FF(b, c, d, a, x[11], S14, 0x895CD7BE)
+    a = md5FF(a, b, c, d, x[12], S11, 0x6B901122)
+    d = md5FF(d, a, b, c, x[13], S12, 0xFD987193)
+    c = md5FF(c, d, a, b, x[14], S13, 0xA679438E)
+    b = md5FF(b, c, d, a, x[15], S14, 0x49B40821)
+
+    a = md5GG(a, b, c, d, x[1], S21, 0xF61E2562)
+    d = md5GG(d, a, b, c, x[6], S22, 0xC040B340)
+    c = md5GG(c, d, a, b, x[11], S23, 0x265E5A51)
+    b = md5GG(b, c, d, a, x[0], S24, 0xE9B6C7AA)
+    a = md5GG(a, b, c, d, x[5], S21, 0xD62F105D)
+    d = md5GG(d, a, b, c, x[10], S22, 0x2441453)
+    c = md5GG(c, d, a, b, x[15], S23, 0xD8A1E681)
+    b = md5GG(b, c, d, a, x[4], S24, 0xE7D3FBC8)
+    a = md5GG(a, b, c, d, x[9], S21, 0x21E1CDE6)
+    d = md5GG(d, a, b, c, x[14], S22, 0xC33707D6)
+    c = md5GG(c, d, a, b, x[3], S23, 0xF4D50D87)
+    b = md5GG(b, c, d, a, x[8], S24, 0x455A14ED)
+    a = md5GG(a, b, c, d, x[13], S21, 0xA9E3E905)
+    d = md5GG(d, a, b, c, x[2], S22, 0xFCEFA3F8)
+    c = md5GG(c, d, a, b, x[7], S23, 0x676F02D9)
+    b = md5GG(b, c, d, a, x[12], S24, 0x8D2A4C8A)
+
+    a = md5HH(a, b, c, d, x[5], S31, 0xFFFA3942)
+    d = md5HH(d, a, b, c, x[8], S32, 0x8771F681)
+    c = md5HH(c, d, a, b, x[11], S33, 0x6D9D6122)
+    b = md5HH(b, c, d, a, x[14], S34, 0xFDE5380C)
+    a = md5HH(a, b, c, d, x[1], S31, 0xA4BEEA44)
+    d = md5HH(d, a, b, c, x[4], S32, 0x4BDECFA9)
+    c = md5HH(c, d, a, b, x[7], S33, 0xF6BB4B60)
+    b = md5HH(b, c, d, a, x[10], S34, 0xBEBFBC70)
+    a = md5HH(a, b, c, d, x[13], S31, 0x289B7EC6)
+    d = md5HH(d, a, b, c, x[0], S32, 0xEAA127FA)
+    c = md5HH(c, d, a, b, x[3], S33, 0xD4EF3085)
+    b = md5HH(b, c, d, a, x[6], S34, 0x4881D05)
+    a = md5HH(a, b, c, d, x[9], S31, 0xD9D4D039)
+    d = md5HH(d, a, b, c, x[12], S32, 0xE6DB99E5)
+    c = md5HH(c, d, a, b, x[15], S33, 0x1FA27CF8)
+    b = md5HH(b, c, d, a, x[2], S34, 0xC4AC5665)
+
+    a = md5II(a, b, c, d, x[0], S41, 0xF4292244)
+    d = md5II(d, a, b, c, x[7], S42, 0x432AFF97)
+    c = md5II(c, d, a, b, x[14], S43, 0xAB9423A7)
+    b = md5II(b, c, d, a, x[5], S44, 0xFC93A039)
+    a = md5II(a, b, c, d, x[12], S41, 0x655B59C3)
+    d = md5II(d, a, b, c, x[3], S42, 0x8F0CCC92)
+    c = md5II(c, d, a, b, x[10], S43, 0xFFEFF47D)
+    b = md5II(b, c, d, a, x[1], S44, 0x85845DD1)
+    a = md5II(a, b, c, d, x[8], S41, 0x6FA87E4F)
+    d = md5II(d, a, b, c, x[15], S42, 0xFE2CE6E0)
+    c = md5II(c, d, a, b, x[6], S43, 0xA3014314)
+    b = md5II(b, c, d, a, x[13], S44, 0x4E0811A1)
+    a = md5II(a, b, c, d, x[4], S41, 0xF7537E82)
+    d = md5II(d, a, b, c, x[11], S42, 0xBD3AF235)
+    c = md5II(c, d, a, b, x[2], S43, 0x2AD7D2BB)
+    b = md5II(b, c, d, a, x[9], S44, 0xEB86D391)
+
+    this.a = addUnsigned(this.a, a)
+    this.b = addUnsigned(this.b, b)
+    this.c = addUnsigned(this.c, c)
+    this.d = addUnsigned(this.d, d)
+  }
+
+  update(data: Uint8Array) {
+    this.totalLen += data.length
+    let offset = 0
+
+    if (this.bufferLen > 0) {
+      const needed = 64 - this.bufferLen
+      if (data.length >= needed) {
+        this.buffer.set(data.subarray(0, needed), this.bufferLen)
+        this.processBlock(this.buffer)
+        this.bufferLen = 0
+        offset = needed
+      } else {
+        this.buffer.set(data, this.bufferLen)
+        this.bufferLen += data.length
+        return
+      }
+    }
+
+    while (offset + 64 <= data.length) {
+      this.processBlock(data.subarray(offset, offset + 64))
+      offset += 64
+    }
+
+    if (offset < data.length) {
+      this.buffer.set(data.subarray(offset), this.bufferLen)
+      this.bufferLen += data.length - offset
+    }
+  }
+
+  digest(): string {
+    const totalBits = this.totalLen * 8
+    const padding = new Uint8Array(64)
+    padding[0] = 0x80
+
+    if (this.bufferLen < 56) {
+      padding.set(padding.subarray(0, 56 - this.bufferLen), 0)
+      this.update(padding.subarray(0, 56 - this.bufferLen))
+    } else {
+      padding.set(padding.subarray(0, 64 - this.bufferLen), 0)
+      this.update(padding.subarray(0, 64 - this.bufferLen))
+      this.update(padding.subarray(0, 56))
+    }
+
+    const lenBytes = new Uint8Array(8)
+    lenBytes[0] = totalBits & 0xff
+    lenBytes[1] = (totalBits >>> 8) & 0xff
+    lenBytes[2] = (totalBits >>> 16) & 0xff
+    lenBytes[3] = (totalBits >>> 24) & 0xff
+    lenBytes[4] = (totalBits >>> 32) & 0xff
+    lenBytes[5] = (totalBits >>> 40) & 0xff
+    lenBytes[6] = (totalBits >>> 48) & 0xff
+    lenBytes[7] = (totalBits >>> 56) & 0xff
+    this.update(lenBytes)
+
+    return (wordToHex(this.a) + wordToHex(this.b) + wordToHex(this.c) + wordToHex(this.d)).toLowerCase()
+  }
 }
 
 const bufferToHex = (buffer: ArrayBuffer): string => {
@@ -590,6 +786,85 @@ const bufferToHex = (buffer: ArrayBuffer): string => {
   return hex
 }
 
+const readFileInChunks = async (file: File, onProgress?: (percent: number) => void): Promise<Uint8Array[]> => {
+  const chunkSize = 2 * 1024 * 1024
+  const totalChunks = Math.ceil(file.size / chunkSize)
+  const chunks: Uint8Array[] = []
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize
+    const end = Math.min(start + chunkSize, file.size)
+    const chunk = file.slice(start, end)
+    const buffer = await chunk.arrayBuffer()
+    chunks.push(new Uint8Array(buffer))
+    if (onProgress) {
+      onProgress(Math.round(((i + 1) / totalChunks) * 100))
+    }
+    await new Promise(resolve => setTimeout(resolve, 0))
+  }
+  return chunks
+}
+
+const calculateMD5Stream = async (chunks: Uint8Array[], onProgress?: (percent: number) => void): Promise<string> => {
+  const md5 = new MD5Stream()
+  const reportEvery = Math.max(1, Math.ceil(chunks.length / 100))
+
+  for (let i = 0; i < chunks.length; i++) {
+    md5.update(chunks[i])
+    if (onProgress && ((i + 1) % reportEvery === 0 || i === chunks.length - 1)) {
+      onProgress(Math.round(((i + 1) / chunks.length) * 100))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
+  return md5.digest()
+}
+
+const calculateSHA1Stream = async (chunks: Uint8Array[], onProgress?: (percent: number) => void): Promise<string> => {
+  if (!crypto || !crypto.subtle) return ''
+
+  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0)
+  const combined = new Uint8Array(totalLength)
+  let offset = 0
+  const reportEvery = Math.max(1, Math.ceil(chunks.length / 50))
+
+  for (let i = 0; i < chunks.length; i++) {
+    combined.set(chunks[i], offset)
+    offset += chunks[i].length
+    if (onProgress && ((i + 1) % reportEvery === 0 || i === chunks.length - 1)) {
+      onProgress(Math.round(((i + 1) / chunks.length) * 50))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
+
+  if (onProgress) onProgress(60)
+  const buffer = await crypto.subtle.digest('SHA-1', combined)
+  if (onProgress) onProgress(100)
+  return bufferToHex(buffer)
+}
+
+const calculateSHA256Stream = async (chunks: Uint8Array[], onProgress?: (percent: number) => void): Promise<string> => {
+  if (!crypto || !crypto.subtle) return ''
+
+  const totalLength = chunks.reduce((sum, c) => sum + c.length, 0)
+  const combined = new Uint8Array(totalLength)
+  let offset = 0
+  const reportEvery = Math.max(1, Math.ceil(chunks.length / 50))
+
+  for (let i = 0; i < chunks.length; i++) {
+    combined.set(chunks[i], offset)
+    offset += chunks[i].length
+    if (onProgress && ((i + 1) % reportEvery === 0 || i === chunks.length - 1)) {
+      onProgress(Math.round(((i + 1) / chunks.length) * 50))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    }
+  }
+
+  if (onProgress) onProgress(60)
+  const buffer = await crypto.subtle.digest('SHA-256', combined)
+  if (onProgress) onProgress(100)
+  return bufferToHex(buffer)
+}
+
 const calculateHashes = async () => {
   if (!selectedFile.value) {
     ElMessage.warning('请先选择文件')
@@ -598,61 +873,47 @@ const calculateHashes = async () => {
 
   const file = selectedFile.value
   isCalculating.value = true
-  progress.value = 0
   resetHashState()
+  startTimer()
 
   try {
-    const chunkSize = 2 * 1024 * 1024
-    const totalChunks = Math.ceil(file.size / chunkSize)
-    const allChunks: Uint8Array[] = []
+    setStage(STAGE_READ, 'active', 0)
+    const chunks = await readFileInChunks(file, (p) => {
+      stageProgress[STAGE_READ] = p
+    })
+    setStage(STAGE_READ, 'done', 100)
 
+    setStage(STAGE_MD5, 'active', 0)
     hashStatus.md5 = 'calculating'
-    hashStatus.sha1 = 'calculating'
-    hashStatus.sha256 = 'calculating'
-
-    for (let i = 0; i < totalChunks; i++) {
-      const start = i * chunkSize
-      const end = Math.min(start + chunkSize, file.size)
-      const chunk = file.slice(start, end)
-      const buffer = await chunk.arrayBuffer()
-      allChunks.push(new Uint8Array(buffer))
-      progress.value = Math.round(((i + 1) / totalChunks) * 100)
-      await new Promise(resolve => setTimeout(resolve, 0))
-    }
-
-    const totalLength = allChunks.reduce((sum, chunk) => sum + chunk.length, 0)
-    const combined = new Uint8Array(totalLength)
-    let offset = 0
-    for (const chunk of allChunks) {
-      combined.set(chunk, offset)
-      offset += chunk.length
-    }
-
-    let binary = ''
-    for (let i = 0; i < combined.byteLength; i++) {
-      binary += String.fromCharCode(combined[i])
-    }
-    hashes.md5 = md5FromString(binary)
+    hashes.md5 = await calculateMD5Stream(chunks, (p) => {
+      stageProgress[STAGE_MD5] = p
+    })
     hashStatus.md5 = 'done'
+    setStage(STAGE_MD5, 'done', 100)
 
-    if (crypto && crypto.subtle) {
-      const sha1Buffer = await crypto.subtle.digest('SHA-1', combined)
-      hashes.sha1 = bufferToHex(sha1Buffer)
-      hashStatus.sha1 = 'done'
+    setStage(STAGE_SHA1, 'active', 0)
+    hashStatus.sha1 = 'calculating'
+    hashes.sha1 = await calculateSHA1Stream(chunks, (p) => {
+      stageProgress[STAGE_SHA1] = p
+    })
+    hashStatus.sha1 = 'done'
+    setStage(STAGE_SHA1, 'done', 100)
 
-      const sha256Buffer = await crypto.subtle.digest('SHA-256', combined)
-      hashes.sha256 = bufferToHex(sha256Buffer)
-      hashStatus.sha256 = 'done'
-    }
+    setStage(STAGE_SHA256, 'active', 0)
+    hashStatus.sha256 = 'calculating'
+    hashes.sha256 = await calculateSHA256Stream(chunks, (p) => {
+      stageProgress[STAGE_SHA256] = p
+    })
+    hashStatus.sha256 = 'done'
+    setStage(STAGE_SHA256, 'done', 100)
 
-    ElMessage.success('哈希值计算完成')
+    ElMessage.success(`哈希值计算完成，用时 ${elapsedTimeText.value}`)
   } catch (error) {
     console.error('计算哈希值失败:', error)
-    hashStatus.md5 = 'pending'
-    hashStatus.sha1 = 'pending'
-    hashStatus.sha256 = 'pending'
+    resetHashState()
     ElMessage.error('计算哈希值失败')
   } finally {
+    stopTimer()
     isCalculating.value = false
   }
 }
@@ -713,6 +974,10 @@ const verifyHashValue = () => {
   const computed = [hashes.md5.toLowerCase(), hashes.sha1.toLowerCase(), hashes.sha256.toLowerCase()]
   verifyResult.value = computed.includes(target)
 }
+
+onUnmounted(() => {
+  stopTimer()
+})
 </script>
 
 <style scoped>
@@ -723,7 +988,8 @@ const verifyHashValue = () => {
 
 .guide-card,
 .upload-card,
-.result-card {
+.result-card,
+.verify-card {
   margin-bottom: 24px;
 }
 
@@ -893,32 +1159,63 @@ const verifyHashValue = () => {
   flex-shrink: 0;
 }
 
-.progress-bar {
-  margin: 20px 0 0;
+.overall-progress-section {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #b3d8ff;
 }
 
-.verify-section {
-  margin-top: 8px;
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.verify-title {
+.progress-title {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #303133;
-  margin: 0 0 12px;
+  color: #165DFF;
 }
 
-.verify-input {
+.progress-time {
   display: flex;
-  gap: 12px;
-  margin-bottom: 12px;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #606266;
 }
 
-.verify-alert {
-  margin-top: 12px;
+.progress-time strong {
+  color: #303133;
+}
+
+.time-sep {
+  color: #c0c4cc;
+}
+
+.progress-stages {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.stage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.large-file-tip {
+  margin-bottom: 20px;
 }
 
 .hash-results {
@@ -962,6 +1259,10 @@ const verifyHashValue = () => {
 .hash-desc {
   font-size: 13px;
   color: #909399;
+}
+
+.hash-progress {
+  margin-bottom: 12px;
 }
 
 .hash-value-wrapper {
@@ -1042,6 +1343,27 @@ const verifyHashValue = () => {
   pointer-events: none;
 }
 
+.verify-section {
+  padding: 0 4px;
+}
+
+.verify-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: #606266;
+  margin: 0 0 12px;
+}
+
+.verify-input {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.verify-alert {
+  margin-top: 12px;
+}
+
 @media (max-width: 768px) {
   .file-info {
     flex-direction: column;
@@ -1060,6 +1382,11 @@ const verifyHashValue = () => {
   .verify-input .el-input,
   .verify-input .el-button {
     width: 100%;
+  }
+
+  .progress-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
