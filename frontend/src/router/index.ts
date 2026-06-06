@@ -185,6 +185,11 @@ const routes: RouteRecordRaw[] = [
         path: '/file-hash',
         name: 'FileHashCalculator',
         component: () => import('@/views/FileHashCalculator.vue')
+      },
+      {
+        path: '/barcode-generator',
+        name: 'BarcodeGenerator',
+        component: () => import('@/views/BarcodeGenerator.vue')
       }
     ]
   }
