@@ -150,6 +150,11 @@ const routes: RouteRecordRaw[] = [
         path: '/text-expression-calculator',
         name: 'TextExpressionCalculator',
         component: () => import('@/views/TextExpressionCalculator.vue')
+      },
+      {
+        path: '/http-headers',
+        name: 'HttpHeadersChecker',
+        component: () => import('@/views/HttpHeadersChecker.vue')
       }
     ]
   }

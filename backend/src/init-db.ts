@@ -34,8 +34,15 @@ async function bootstrap() {
       { name: '成语查询', path: '/idiom-query', icon: 'Reading', parentId: null, sort: 17, component: 'views/IdiomQuery.vue' },
       { name: '九宫格切图', path: '/nine-grid-cutter', icon: 'Grid', parentId: null, sort: 18, component: 'views/NineGridCutter.vue' },
       { name: '数字转中文大写', path: '/number-to-chinese', icon: 'Money', parentId: null, sort: 19, component: 'views/NumberToChinese.vue' },
-      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 20, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 20, sort: 1, component: 'views/Menu.vue' },
+      { name: '文本表达式计算器', path: '/text-expression-calculator', icon: 'Calculator', parentId: null, sort: 20, component: 'views/TextExpressionCalculator.vue' },
+      { name: '分区计算器', path: '/partition-calculator', icon: 'Grid', parentId: null, sort: 21, component: 'views/PartitionCalculator.vue' },
+      { name: '汉字拆分', path: '/character-splitter', icon: 'EditPen', parentId: null, sort: 22, component: 'views/ChineseCharacterSplitter.vue' },
+      { name: '域名WHOIS查询', path: '/domain-whois', icon: 'Search', parentId: null, sort: 23, component: 'views/DomainWhois.vue' },
+      { name: 'HTTP头查询', path: '/http-headers', icon: 'Connection', parentId: null, sort: 24, component: 'views/HttpHeadersChecker.vue' },
+      { name: '徽章生成器', path: '/shield-badge', icon: 'Medal', parentId: null, sort: 25, component: 'views/ShieldBadgeGenerator.vue' },
+      { name: '文本对比', path: '/text-diff', icon: 'DocumentCopy', parentId: null, sort: 26, component: 'views/TextDiff.vue' },
+      { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 27, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
