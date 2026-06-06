@@ -129,6 +129,12 @@
             <span class="panel-title">计算结果</span>
             <el-tag v-if="hasExpressions" size="small" type="success">实时计算</el-tag>
             <el-tag v-else size="small" type="info">等待输入</el-tag>
+            <div class="result-filter">
+              <el-radio-group v-model="filterMode" size="small" @change="onFilterChange">
+                <el-radio-button value="all">全部行</el-radio-button>
+                <el-radio-button value="expr">仅结果行</el-radio-button>
+              </el-radio-group>
+            </div>
           </div>
 
           <div 
@@ -137,50 +143,56 @@
             @scroll="syncScrollFromRight"
             @mouseenter="onRightAreaEnter"
             @mouseleave="onRightAreaLeave"
-            v-if="parsedLines.length > 0"
+            v-if="displayLines.length > 0"
           >
             <div
-              v-for="(line, index) in parsedLines"
-              :key="index"
+              v-for="(item, index) in displayLines"
+              :key="item.originalIndex"
               class="result-line"
               :class="{ 
-                'has-error': line.error, 
-                'has-expression': line.hasExpression,
-                'hovered': hoveredLineIndex === index,
-                'is-empty': line.original === ''
+                'has-error': item.line.error, 
+                'has-expression': item.line.hasExpression,
+                'no-expression': !item.line.hasExpression,
+                'hovered': hoveredLineIndex === item.originalIndex,
+                'is-empty': item.line.original === ''
               }"
-              @mouseenter="setHoveredLine(index)"
+              @mouseenter="setHoveredLine(item.originalIndex)"
               @mouseleave="clearHoveredLine"
             >
               <div class="line-number" :class="{ 
-                'hovered': hoveredLineIndex === index,
-                'has-expr': line.hasExpression && !line.error,
-                'has-error': line.error
+                'hovered': hoveredLineIndex === item.originalIndex,
+                'has-expr': item.line.hasExpression && !item.line.error,
+                'has-error': item.line.error,
+                'no-expr': !item.line.hasExpression
               }">
-                {{ index + 1 }}
+                {{ item.originalIndex + 1 }}
               </div>
               <div class="line-content">
-                <div class="line-original">
-                  <template v-for="(segment, segIndex) in line.segments" :key="segIndex">
+                <div class="line-original" :class="{ 'text-muted': !item.line.hasExpression }">
+                  <template v-for="(segment, segIndex) in item.line.segments" :key="segIndex">
                     <span v-if="segment.type === 'text'" class="seg-text">{{ segment.value || ' ' }}</span>
                     <span v-else class="seg-expression" :class="{ error: segment.error }">
                       {{ segment.value }}
                     </span>
                   </template>
-                  <span v-if="line.original === ''" class="empty-line-placeholder">（空行）</span>
+                  <span v-if="item.line.original === ''" class="empty-line-placeholder">（空行）</span>
+                  <span v-if="!item.line.hasExpression && item.line.original !== ''" class="no-expr-tag">
+                    <el-icon :size="10"><InfoFilled /></el-icon>
+                    纯文本
+                  </span>
                 </div>
-                <div v-if="line.hasExpression" class="line-result">
-                  <template v-if="!line.error">
+                <div v-if="item.line.hasExpression" class="line-result">
+                  <template v-if="!item.line.error">
                     <span class="result-label">=</span>
-                    <span class="result-value">{{ line.result }}</span>
-                    <span v-if="line.resultReadable" class="result-readable">（{{ line.resultReadable }}）</span>
-                    <el-icon class="copy-inline-btn" title="复制该结果" @click.stop="copySingleResult(line)">
+                    <span class="result-value">{{ item.line.result }}</span>
+                    <span v-if="item.line.resultReadable" class="result-readable">（{{ item.line.resultReadable }}）</span>
+                    <el-icon class="copy-inline-btn" title="复制该结果" @click.stop="copySingleResult(item.line)">
                       <CopyDocument />
                     </el-icon>
                   </template>
                   <template v-else>
                     <span class="error-label">⚠️</span>
-                    <span class="error-message">{{ line.error }}</span>
+                    <span class="error-message">{{ item.line.error }}</span>
                   </template>
                 </div>
               </div>
@@ -188,7 +200,7 @@
           </div>
           <div v-else class="empty-result">
             <el-icon :size="64" color="#c0c4cc"><Document /></el-icon>
-            <p>请在左侧输入包含数学表达式的文本</p>
+            <p>{{ filterMode === 'expr' ? '当前内容中未检测到可计算的表达式' : '请在左侧输入包含数学表达式的文本' }}</p>
             <p class="empty-hint">支持 +  -  *  /  %  () 等运算</p>
           </div>
         </div>
@@ -387,6 +399,7 @@ const getExampleIcon = (iconName: string) => {
 
 const inputText = ref('')
 const hoveredLineIndex = ref(-1)
+const filterMode = ref<'all' | 'expr'>('all')
 
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const textareaContainerRef = ref<HTMLDivElement | null>(null)
@@ -819,6 +832,22 @@ const parsedLines = computed<ParsedLine[]>(() => {
   })
 })
 
+interface DisplayLine {
+  originalIndex: number
+  line: ParsedLine
+}
+
+const displayLines = computed<DisplayLine[]>(() => {
+  const all = parsedLines.value.map((line, idx) => ({ originalIndex: idx, line }))
+  if (filterMode.value === 'all') return all
+  return all.filter(item => item.line.hasExpression)
+})
+
+const onFilterChange = async (val: string) => {
+  await nextTick()
+  syncScrollFromLeft()
+}
+
 const expressionCount = computed(() => {
   return parsedLines.value.filter(l => l.hasExpression && !l.error).length
 })
@@ -1011,6 +1040,22 @@ onMounted(() => {
   flex: 1;
 }
 
+.result-filter {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.result-filter :deep(.el-radio-button__inner) {
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.result-filter :deep(.el-radio-button--small .el-radio-button__inner) {
+  height: 28px;
+  line-height: 1;
+}
+
 .editor-wrapper {
   flex: 1;
   display: flex;
@@ -1188,6 +1233,27 @@ onMounted(() => {
   background: linear-gradient(90deg, #fde2e2 0%, #fffbeb 100%);
 }
 
+.result-line.no-expression {
+  padding: 0;
+  background: #fcfcfd;
+  border-bottom: 1px dashed #f0f0f0;
+}
+
+.result-line.no-expression:hover,
+.result-line.no-expression.hovered {
+  background: #f5f7fa;
+  border-bottom-color: #dcdfe6;
+  border-top-color: transparent;
+}
+
+.result-line.no-expression.is-empty .line-original {
+  min-height: 28px;
+}
+
+.result-line.no-expression:not(.is-empty) .line-content {
+  padding: 4px 12px 4px 8px;
+}
+
 .line-number {
   width: 48px;
   flex-shrink: 0;
@@ -1228,6 +1294,13 @@ onMounted(() => {
   border-right-color: #f56c6c;
 }
 
+.line-number.no-expr {
+  color: #d3d4d6;
+  font-weight: 400;
+  border-right-color: transparent;
+  opacity: 0.7;
+}
+
 .line-content {
   flex: 1;
   min-width: 0;
@@ -1239,6 +1312,31 @@ onMounted(() => {
   line-height: 28px;
   color: #303133;
   word-break: break-all;
+}
+
+.line-original.text-muted {
+  font-size: 13px;
+  color: #a8abb2;
+  font-weight: 400;
+}
+
+.line-original.text-muted .seg-text {
+  color: #b1b3b8;
+}
+
+.no-expr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #909399;
+  background: #f4f4f5;
+  border-radius: 4px;
+  vertical-align: middle;
+  line-height: 1.4;
 }
 
 .empty-line-placeholder {
