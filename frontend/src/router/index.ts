@@ -170,6 +170,11 @@ const routes: RouteRecordRaw[] = [
         path: '/crx-downloader',
         name: 'CrxDownloader',
         component: () => import('@/views/CrxDownloader.vue')
+      },
+      {
+        path: '/pun-generator',
+        name: 'PunGenerator',
+        component: () => import('@/views/PunGenerator.vue')
       }
     ]
   }
