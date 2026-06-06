@@ -160,6 +160,11 @@ const routes: RouteRecordRaw[] = [
         path: '/cidr-calculator',
         name: 'CidrCalculator',
         component: () => import('@/views/CidrCalculator.vue')
+      },
+      {
+        path: '/random-string',
+        name: 'RandomStringGenerator',
+        component: () => import('@/views/RandomStringGenerator.vue')
       }
     ]
   }
