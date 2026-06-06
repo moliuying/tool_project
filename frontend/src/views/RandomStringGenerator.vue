@@ -160,7 +160,13 @@
         >
           <div class="result-index">{{ index + 1 }}</div>
           <div class="result-content">
-            <code class="result-code">{{ result }}</code>
+            <div class="result-code-wrapper" @click="copyResult(result)" :title="'点击复制：' + result">
+              <code class="result-code">{{ result }}</code>
+              <div class="result-code-copy-hint">
+                <el-icon :size="12"><CopyDocument /></el-icon>
+                <span>点击复制</span>
+              </div>
+            </div>
             <div class="result-meta">
               <el-tag size="small" type="info">长度: {{ result.length }}</el-tag>
               <span class="strength-badge" :class="getStrengthClass(result)">
@@ -170,9 +176,9 @@
           </div>
           <div class="result-actions">
             <el-button
-              size="small"
-              text
+              size="default"
               type="primary"
+              plain
               :icon="CopyDocument"
               @click="copyResult(result)"
             >
@@ -194,68 +200,94 @@
         <div class="format-demo">
           <div class="format-demo-title">
             <el-icon><Grid /></el-icon>
-            <span>展示格式：每行一条，独立编号</span>
+            <span>展示格式：每行一条，独立编号，支持两种复制方式</span>
           </div>
           <div class="format-demo-list">
             <div class="result-item demo-item">
               <div class="result-index">1</div>
               <div class="result-content">
-                <code class="result-code result-demo-code">xK9$mP2vQr7&Lp3N</code>
+                <div class="result-code-wrapper demo-wrapper">
+                  <code class="result-code result-demo-code">xK9$mP2vQr7&Lp3N</code>
+                  <div class="result-code-copy-hint">
+                    <el-icon :size="12"><CopyDocument /></el-icon>
+                    <span>点击复制</span>
+                  </div>
+                </div>
                 <div class="result-meta">
                   <el-tag size="small" type="info">长度: 16</el-tag>
                   <span class="strength-badge strong">强度: 强</span>
                 </div>
               </div>
               <div class="result-actions">
-                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+                <el-button size="default" type="primary" plain :icon="CopyDocument" disabled>复制</el-button>
               </div>
             </div>
             <div class="result-item demo-item">
               <div class="result-index">2</div>
               <div class="result-content">
-                <code class="result-code result-demo-code">bW5#t8YzRq@4fCj1Ks</code>
+                <div class="result-code-wrapper demo-wrapper">
+                  <code class="result-code result-demo-code">bW5#t8YzRq@4fCj1Ks</code>
+                  <div class="result-code-copy-hint">
+                    <el-icon :size="12"><CopyDocument /></el-icon>
+                    <span>点击复制</span>
+                  </div>
+                </div>
                 <div class="result-meta">
                   <el-tag size="small" type="info">长度: 18</el-tag>
                   <span class="strength-badge strong">强度: 强</span>
                 </div>
               </div>
               <div class="result-actions">
-                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+                <el-button size="default" type="primary" plain :icon="CopyDocument" disabled>复制</el-button>
               </div>
             </div>
             <div class="result-item demo-item">
               <div class="result-index">3</div>
               <div class="result-content">
-                <code class="result-code result-demo-code">Hj$2nQpX9vBm&zL7rT4k</code>
+                <div class="result-code-wrapper demo-wrapper">
+                  <code class="result-code result-demo-code">Hj$2nQpX9vBm&zL7rT4k</code>
+                  <div class="result-code-copy-hint">
+                    <el-icon :size="12"><CopyDocument /></el-icon>
+                    <span>点击复制</span>
+                  </div>
+                </div>
                 <div class="result-meta">
                   <el-tag size="small" type="info">长度: 20</el-tag>
                   <span class="strength-badge strong">强度: 强</span>
                 </div>
               </div>
               <div class="result-actions">
-                <el-button size="small" text type="primary" :icon="CopyDocument" disabled>复制</el-button>
+                <el-button size="default" type="primary" plain :icon="CopyDocument" disabled>复制</el-button>
               </div>
             </div>
           </div>
         </div>
 
-        <el-divider content-position="left">复制方式</el-divider>
+        <el-divider content-position="left">三种复制方式</el-divider>
 
         <div class="copy-methods">
           <div class="copy-method-item">
             <div class="copy-method-header">
               <el-tag type="primary" size="small">方式一</el-tag>
-              <span class="copy-method-title">单条复制</span>
+              <span class="copy-method-title">点击代码块</span>
             </div>
-            <p class="copy-method-desc">点击每条结果右侧的「复制」按钮，仅复制该条字符串到剪贴板</p>
+            <p class="copy-method-desc">鼠标悬停在字符串代码块上，出现「点击复制」提示，直接点击即可复制</p>
             <code class="copy-method-result">xK9$mP2vQr7&Lp3N</code>
           </div>
           <div class="copy-method-item">
             <div class="copy-method-header">
-              <el-tag type="success" size="small">方式二</el-tag>
-              <span class="copy-method-title">复制全部</span>
+              <el-tag type="warning" size="small">方式二</el-tag>
+              <span class="copy-method-title">点击按钮</span>
             </div>
-            <p class="copy-method-desc">点击顶部「复制全部（换行分隔）」按钮，多条结果以换行符分隔</p>
+            <p class="copy-method-desc">点击每条结果右侧醒目的「复制」按钮，仅复制该条字符串</p>
+            <code class="copy-method-result">xK9$mP2vQr7&Lp3N</code>
+          </div>
+          <div class="copy-method-item copy-method-full">
+            <div class="copy-method-header">
+              <el-tag type="success" size="small">方式三</el-tag>
+              <span class="copy-method-title">一键复制全部</span>
+            </div>
+            <p class="copy-method-desc">点击顶部「复制全部（换行分隔）」按钮，多条结果以换行符分隔，便于批量使用</p>
             <code class="copy-method-result copy-method-multiline">xK9$mP2vQr7&Lp3N
 bW5#t8YzRq@4fCj1Ks
 Hj$2nQpX9vBm&zL7rT4k</code>
@@ -829,6 +861,23 @@ const formatTime = (dateStr: string) => {
   min-width: 0;
 }
 
+.result-code-wrapper {
+  position: relative;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.result-code-wrapper:hover .result-code {
+  border-color: #165DFF;
+  background: #f0f7ff;
+}
+
+.result-code-wrapper:hover .result-code-copy-hint {
+  opacity: 1;
+  visibility: visible;
+}
+
 .result-code {
   display: block;
   font-family: 'Monaco', 'Menlo', monospace;
@@ -836,11 +885,46 @@ const formatTime = (dateStr: string) => {
   color: #303133;
   word-break: break-all;
   line-height: 1.6;
-  padding: 8px 12px;
+  padding: 10px 12px;
+  padding-right: 90px;
   background: #fff;
   border-radius: 4px;
   border: 1px solid #ebeef5;
-  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+.result-code-copy-hint {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #165DFF;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  pointer-events: none;
+}
+
+.demo-wrapper {
+  cursor: default;
+}
+
+.demo-wrapper:hover .result-code {
+  border-color: #ebeef5;
+  background: #f5f7fa;
+}
+
+.demo-wrapper .result-code-copy-hint {
+  background: #909399;
+  opacity: 1;
+  visibility: visible;
 }
 
 .result-meta {
@@ -930,7 +1014,7 @@ const formatTime = (dateStr: string) => {
 
 .copy-methods {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
 }
 
@@ -939,6 +1023,12 @@ const formatTime = (dateStr: string) => {
   background: #fafafa;
   border-radius: 8px;
   border: 1px solid #ebeef5;
+}
+
+.copy-method-full {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
+  border-color: #c2e7b0;
 }
 
 .copy-method-header {
