@@ -145,6 +145,11 @@ const routes: RouteRecordRaw[] = [
         path: '/number-to-chinese',
         name: 'NumberToChinese',
         component: () => import('@/views/NumberToChinese.vue')
+      },
+      {
+        path: '/text-expression-calculator',
+        name: 'TextExpressionCalculator',
+        component: () => import('@/views/TextExpressionCalculator.vue')
       }
     ]
   }
