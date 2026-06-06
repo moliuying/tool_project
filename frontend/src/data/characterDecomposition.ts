@@ -1822,4 +1822,17 @@ export const characterDatabase: Record<string, CharacterDecomposition> = {
     pinyin: ['le', 'liǎo'],
     meaning: '完成、了结',
     strokeCount: 2,
-    radical: '乙
+    radical: '乙',
+    radicalStrokeCount: 1,
+    structure: '独体字结构',
+    components: [
+      { name: '乙', meaning: '乙部、弯钩', strokeCount: 1, radical: true },
+      { name: '丨', meaning: '竖钩', strokeCount: 1, radical: false }
+    ],
+    decompositionTree: [
+      { level: 1, parts: ['了'] }
+    ],
+    order: ['了'],
+    words: ['好了', '了解', '了结', '了事']
+  }
+}

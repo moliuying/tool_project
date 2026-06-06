@@ -642,7 +642,7 @@ const sectorsPerCylinder = computed(() => {
 const referenceTable = computed(() => {
   const sizes = [10, 20, 30, 50, 60, 80, 100, 120, 150, 200, 256, 300, 500, 512, 1024]
   return sizes.map(size => {
-    const k4Cylinders = Math.round((size * 1024 * 1024 * 1024 / 512) / 2048
+    const k4Cylinders = Math.round((size * 1024 * 1024 * 1024 / 512) / 2048)
     const k4Sectors = k4Cylinders * 2048
     const k4Actual = (k4Sectors * 512) / (1024 * 1024 * 1024)
     
