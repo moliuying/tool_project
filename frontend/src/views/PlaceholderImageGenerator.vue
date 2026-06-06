@@ -242,9 +242,19 @@
                 <View />
               </el-icon>
               <span>实时预览</span>
+              <el-tag size="small" type="success" effect="light" class="header-tag">
+                <el-icon><Lightning /></el-icon>
+                修改参数自动更新
+              </el-tag>
               <el-tag size="small" type="info" class="header-tag">{{ width }} × {{ height }} px</el-tag>
             </div>
           </template>
+
+          <el-alert type="success" :closable="false" show-icon class="preview-notice">
+            <template #title>
+              <span>修改左侧任意参数后，预览图将自动刷新，无需手动点击生成。满意后点击「下载图片」即可保存。</span>
+            </template>
+          </el-alert>
 
           <div class="preview-wrapper">
             <div class="preview-container" ref="previewContainer">
@@ -322,7 +332,8 @@ import {
   Tickets,
   Grid,
   Warning,
-  CircleCheckFilled
+  CircleCheckFilled,
+  Lightning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -816,11 +827,20 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+.preview-notice {
+  margin-bottom: 16px;
+}
+
+.preview-notice :deep(.el-alert__title) {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .preview-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
+  min-height: 350px;
 }
 
 .preview-container {
