@@ -274,6 +274,131 @@ export const linuxCommands: LinuxCommand[] = [
     seeAlso: ['gzip', 'gunzip', 'bzip2', 'zip', 'unzip', 'dd']
   },
   {
+    name: 'gzip',
+    category: '压缩打包',
+    description: 'GNU 压缩工具，使用 Lempel-Ziv 算法（LZ77）压缩单个文件，压缩后文件扩展名为 .gz。不支持打包多个文件，通常与 tar 配合使用。',
+    syntax: 'gzip [选项]... 文件...',
+    options: [
+      { name: '-d, --decompress', description: '解压（等同于 gunzip）' },
+      { name: '-k, --keep', description: '压缩或解压时保留原始文件' },
+      { name: '-f, --force', description: '强制覆盖已存在的输出文件' },
+      { name: '-v, --verbose', description: '显示压缩比例和文件名' },
+      { name: '-1 ... -9', description: '压缩级别：1=最快（压缩率低），9=最慢（压缩率最高），默认 6' },
+      { name: '-r, --recursive', description: '递归压缩目录下所有文件' },
+      { name: '-l, --list', description: '列出压缩文件信息（压缩率、原始大小等）' },
+      { name: '-c, --stdout', description: '输出到标准输出，不修改原文件' }
+    ],
+    examples: [
+      { command: 'gzip file.txt', description: '压缩 file.txt 为 file.txt.gz（删除原文件）' },
+      { command: 'gzip -k file.txt', description: '压缩并保留原文件' },
+      { command: 'gzip -d file.txt.gz', description: '解压 file.txt.gz（等同于 gunzip）' },
+      { command: 'gzip -9 large_file.log', description: '使用最高压缩级别压缩' },
+      { command: 'gzip -rv logs/', description: '递归压缩 logs 目录下所有文件' },
+      { command: 'gzip -l file.txt.gz', description: '查看压缩文件信息和压缩率' },
+      { command: 'cat file.txt | gzip -c > file.txt.gz', description: '管道方式压缩并输出到指定文件' }
+    ],
+    seeAlso: ['gunzip', 'tar', 'bzip2', 'xz', 'zip']
+  },
+  {
+    name: 'gunzip',
+    category: '压缩打包',
+    description: 'gzip 的解压命令，用于解压 .gz 格式的压缩文件。功能等同于 gzip -d。',
+    syntax: 'gunzip [选项]... 文件...',
+    options: [
+      { name: '-k, --keep', description: '解压后保留原始 .gz 文件' },
+      { name: '-f, --force', description: '强制覆盖已存在的文件' },
+      { name: '-v, --verbose', description: '显示解压过程信息' },
+      { name: '-l, --list', description: '列出压缩文件内容信息' },
+      { name: '-c, --stdout', description: '将解压内容输出到标准输出' },
+      { name: '-r, --recursive', description: '递归解压目录下所有 .gz 文件' }
+    ],
+    examples: [
+      { command: 'gunzip file.txt.gz', description: '解压 file.txt.gz（删除压缩包）' },
+      { command: 'gunzip -k file.txt.gz', description: '解压并保留原始压缩包' },
+      { command: 'gunzip -c file.txt.gz | head -20', description: '解压内容输出到管道，查看前 20 行' },
+      { command: 'gunzip -rv logs/', description: '递归解压 logs 目录下所有 .gz 文件' }
+    ],
+    seeAlso: ['gzip', 'tar', 'unzip', 'bunzip2']
+  },
+  {
+    name: 'zip',
+    category: '压缩打包',
+    description: '创建和修改 ZIP 格式压缩包，支持多文件打包和目录递归。ZIP 格式跨平台兼容性好，Windows/macOS/Linux 均原生支持。',
+    syntax: 'zip [选项]... 压缩包.zip 文件/目录...',
+    options: [
+      { name: '-r, --recurse-paths', description: '递归压缩目录及其所有子目录' },
+      { name: '-e, --encrypt', description: '加密压缩包（需输入密码）' },
+      { name: '-P 密码', description: '使用命令行指定密码（不安全，仅用于脚本）' },
+      { name: '-d, --delete', description: '从压缩包中删除指定文件' },
+      { name: '-u, --update', description: '只更新压缩包中已更改的文件' },
+      { name: '-m, --move', description: '压缩后删除原文件（移动到压缩包）' },
+      { name: '-x 模式', description: '排除匹配模式的文件' },
+      { name: '-v, --verbose', description: '显示详细压缩过程' },
+      { name: '-1 ... -9', description: '压缩级别：1=最快，9=压缩率最高，默认 6' }
+    ],
+    examples: [
+      { command: 'zip archive.zip file1.txt file2.txt', description: '将多个文件打包为 archive.zip' },
+      { command: 'zip -r project.zip project/', description: '递归压缩整个 project 目录' },
+      { command: 'zip -r site.zip public/ -x "*.log"', description: '压缩 public 目录，排除所有 .log 文件' },
+      { command: 'zip -e secret.zip important.txt', description: '加密压缩文件（交互输入密码）' },
+      { command: 'zip -u archive.zip new_file.txt', description: '将新文件添加到已有的压缩包' },
+      { command: 'zip -d archive.zip old_file.txt', description: '从压缩包中删除 old_file.txt' },
+      { command: 'zip -r -9 backup.zip data/', description: '使用最高压缩级别压缩' }
+    ],
+    seeAlso: ['unzip', 'tar', 'gzip', '7z']
+  },
+  {
+    name: 'unzip',
+    category: '压缩打包',
+    description: '解压 ZIP 格式压缩包，支持列出内容、选择性提取、密码解压等功能。ZIP 是 Windows 世界最常见的压缩格式。',
+    syntax: 'unzip [选项]... 压缩包.zip [文件...]',
+    options: [
+      { name: '-l, --list', description: '列出压缩包内容但不解压' },
+      { name: '-d 目录', description: '解压到指定目录（目录不存在会自动创建）' },
+      { name: '-o, --overwrite', description: '直接覆盖已存在文件而不询问' },
+      { name: '-n, --never-overwrite', description: '不覆盖已存在的文件' },
+      { name: '-q, --quiet', description: '静默模式，不输出过程信息' },
+      { name: '-v, --verbose', description: '显示详细信息' },
+      { name: '-P 密码', description: '使用密码解压加密压缩包' },
+      { name: '-j, --junk-paths', description: '不保留压缩包内的目录结构，所有文件解压到同一层' },
+      { name: '-x 模式', description: '排除指定文件不提取' }
+    ],
+    examples: [
+      { command: 'unzip archive.zip', description: '解压 archive.zip 到当前目录' },
+      { command: 'unzip archive.zip -d /tmp/extract', description: '解压到指定目录 /tmp/extract' },
+      { command: 'unzip -l archive.zip', description: '列出压缩包内容但不解压' },
+      { command: 'unzip -o archive.zip', description: '强制覆盖同名文件' },
+      { command: 'unzip archive.zip specific_file.txt', description: '只解压压缩包中的 specific_file.txt' },
+      { command: 'unzip -P mysecret secret.zip', description: '使用密码解压加密压缩包' },
+      { command: 'unzip -j archive.zip', description: '解压后不保留目录结构，所有文件平铺在当前目录' }
+    ],
+    seeAlso: ['zip', 'tar', 'gunzip', '7z']
+  },
+  {
+    name: 'bzip2',
+    category: '压缩打包',
+    description: '使用 Burrows-Wheeler 变换算法的高压缩率工具，压缩率通常优于 gzip，但压缩/解压速度较慢。压缩后扩展名为 .bz2。',
+    syntax: 'bzip2 [选项]... 文件...',
+    options: [
+      { name: '-d, --decompress', description: '解压（等同于 bunzip2）' },
+      { name: '-k, --keep', description: '压缩/解压时保留原始文件' },
+      { name: '-f, --force', description: '强制覆盖输出文件' },
+      { name: '-v, --verbose', description: '显示压缩比例' },
+      { name: '-1 ... -9', description: '压缩块大小：1=100KB（快），9=900KB（压缩率高），默认 9' },
+      { name: '-c, --stdout', description: '输出到标准输出' },
+      { name: '-t, --test', description: '测试压缩包完整性，不解压' }
+    ],
+    examples: [
+      { command: 'bzip2 large_file.iso', description: '压缩 large_file.iso 为 large_file.iso.bz2' },
+      { command: 'bzip2 -k large_file.iso', description: '压缩并保留原文件' },
+      { command: 'bzip2 -d large_file.iso.bz2', description: '解压 .bz2 文件' },
+      { command: 'bzip2 -t archive.bz2', description: '测试压缩包是否完整' },
+      { command: 'bzip2 -c -9 < big.log > big.log.bz2', description: '使用最高压缩率通过管道压缩' },
+      { command: 'tar -cjvf archive.tar.bz2 data/', description: '与 tar 配合使用，创建 tar.bz2 包' }
+    ],
+    seeAlso: ['gzip', 'tar', 'xz', 'bunzip2', 'zip']
+  },
+  {
     name: 'find',
     category: '文件搜索',
     description: '在目录树中搜索文件和目录，支持按名称、类型、大小、时间、权限等多种条件查找，并可对找到的文件执行操作。',

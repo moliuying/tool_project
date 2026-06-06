@@ -105,13 +105,54 @@
           <el-icon :size="16" color="#165DFF"><List /></el-icon>
           <span>查询结果</span>
           <el-tag size="small" type="info">共 {{ filteredCommands.length }} 个命令</el-tag>
+          <el-tag v-if="searchKeyword.trim()" size="small" type="warning" effect="plain">
+            关键词：「{{ searchKeyword }}」
+          </el-tag>
         </div>
 
         <el-empty
           v-if="filteredCommands.length === 0"
-          description="未找到匹配的命令，试试其他关键词"
+          description="未找到匹配的命令"
           :image-size="100"
-        />
+        >
+          <template #description>
+            <div class="empty-wrapper">
+              <p>未找到与「<strong>{{ searchKeyword }}</strong>」匹配的命令</p>
+              <el-alert v-if="getSuggestions(searchKeyword).length > 0" type="warning" :closable="false" class="suggest-alert">
+                <template #title>
+                  <div class="suggest-box">
+                    <span>💡 你可能想搜索：</span>
+                    <el-tag
+                      v-for="sug in getSuggestions(searchKeyword)"
+                      :key="sug"
+                      size="small"
+                      type="warning"
+                      effect="dark"
+                      class="suggest-tag"
+                      @click="quickSearch(sug)"
+                    >
+                      {{ sug }}
+                    </el-tag>
+                  </div>
+                </template>
+              </el-alert>
+              <el-alert type="info" :closable="false" class="search-capability-alert">
+                <template #title>
+                  <div class="capability-tips">
+                    <p>📌 支持的搜索方式：</p>
+                    <ul>
+                      <li><strong>命令名</strong>：如 ls、grep、ssh</li>
+                      <li><strong>中文功能描述</strong>：如「文件复制」「网络连接」</li>
+                      <li><strong>俗称/别名</strong>：如「解压」「列文件」「杀进程」</li>
+                      <li><strong>选项参数</strong>：如 -R、-z、-v</li>
+                      <li><strong>场景关键词</strong>：如「查看日志」「端口占用」</li>
+                    </ul>
+                  </div>
+                </template>
+              </el-alert>
+            </div>
+          </template>
+        </el-empty>
 
         <div v-else class="command-grid">
           <div
@@ -124,7 +165,13 @@
               <code class="command-name">{{ cmd.name }}</code>
               <el-tag size="small" type="primary" effect="plain">{{ cmd.category }}</el-tag>
             </div>
-            <div class="command-desc">{{ cmd.description }}</div>
+            <div class="command-desc" v-html="highlightKeyword(cmd.description, searchKeyword)"></div>
+            <div v-if="getMatchReason(cmd, searchKeyword)" class="match-reason">
+              <el-tag size="small" type="success" effect="plain">
+                <el-icon><Right /></el-icon>
+                {{ getMatchReason(cmd, searchKeyword) }}
+              </el-tag>
+            </div>
             <div class="command-card-footer">
               <span class="option-count">
                 <el-icon><Setting /></el-icon>
@@ -357,7 +404,12 @@ const aliasMap: Record<string, string[]> = {
   'cut': ['截取', '分割', '提取列', '剪切'],
   'less': ['分页查看', '浏览文件', 'more'],
   'find': ['查找文件', '搜索文件', '文件搜索', '遍历目录'],
-  'tar': ['打包', '压缩解压', 'tar.gz', '归档'],
+  'tar': ['打包', '压缩解压', '解压', '解包', '压缩', 'tar.gz', 'tgz', '归档', 'tar.bz2', 'tar.xz'],
+  'gzip': ['压缩', '解压', 'gz压缩', 'gz解压', 'gnu压缩'],
+  'gunzip': ['解压', 'gz解压', '解压缩gzip'],
+  'zip': ['压缩', '打包', 'zip压缩', '创建压缩包'],
+  'unzip': ['解压', '解压缩', 'zip解压', '提取zip', '解包'],
+  'bzip2': ['压缩', '解压', 'bz2压缩', '高压缩率'],
   'chmod': ['修改权限', '权限', '改权限'],
   'chown': ['修改所有者', '改所属', '所有者'],
   'ps': ['查看进程', '进程列表', '进程状态'],
@@ -388,7 +440,10 @@ const synonymMap: Record<string, string> = {
   '磁碟': '磁盘',
   '权限': '许可',
   '行程': '进程',
-  '连接埠': '端口'
+  '连接埠': '端口',
+  '解压缩': '解压',
+  '解包': '解压',
+  '打包': '压缩'
 }
 
 const normalizeKeyword = (kw: string): string => {
@@ -406,6 +461,121 @@ const getAliasesForCmd = (cmdName: string): string[] => {
 const matchByAlias = (cmd: LinuxCommand, keyword: string): boolean => {
   const aliases = getAliasesForCmd(cmd.name)
   return aliases.some(alias => alias.toLowerCase().includes(keyword) || keyword.includes(alias.toLowerCase()))
+}
+
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+const highlightKeyword = (text: string, keyword: string): string => {
+  if (!keyword.trim()) return escapeHtml(text)
+  const escapedHtml = escapeHtml(text)
+  const patterns = [
+    keyword.trim(),
+    normalizeKeyword(keyword)
+  ]
+  const uniquePatterns = [...new Set(patterns.filter(p => p.length > 0))]
+  let result = escapedHtml
+  uniquePatterns.forEach(pat => {
+    const regex = new RegExp(`(${pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    result = result.replace(regex, '<span class="highlight">$1</span>')
+  })
+  return result
+}
+
+const getMatchReason = (cmd: LinuxCommand, keyword: string): string | null => {
+  if (!keyword.trim()) return null
+  const kw = normalizeKeyword(keyword)
+  const originalKw = keyword.trim()
+
+  if (cmd.name.toLowerCase().includes(kw) || cmd.name.toLowerCase().includes(originalKw.toLowerCase())) {
+    return `匹配命令名：${cmd.name}`
+  }
+
+  const aliases = getAliasesForCmd(cmd.name)
+  const matchedAlias = aliases.find(alias =>
+    alias.toLowerCase().includes(kw) || kw.includes(alias.toLowerCase()) ||
+    alias.includes(originalKw) || originalKw.includes(alias)
+  )
+  if (matchedAlias) {
+    return `匹配别名：${matchedAlias}`
+  }
+
+  if (cmd.description.toLowerCase().includes(kw) || cmd.description.includes(originalKw)) {
+    return '匹配功能描述'
+  }
+
+  const matchedOption = cmd.options.find(opt =>
+    opt.name.toLowerCase().includes(kw) ||
+    opt.description.toLowerCase().includes(kw) ||
+    opt.description.includes(originalKw)
+  )
+  if (matchedOption) {
+    return `匹配选项：${matchedOption.name}`
+  }
+
+  const matchedExample = cmd.examples.find(ex =>
+    ex.command.toLowerCase().includes(kw) ||
+    ex.description.toLowerCase().includes(kw) ||
+    ex.description.includes(originalKw)
+  )
+  if (matchedExample) {
+    return '匹配使用示例'
+  }
+
+  if (cmd.syntax.toLowerCase().includes(kw)) {
+    return '匹配语法格式'
+  }
+
+  return null
+}
+
+const commonSuggestions: Record<string, string[]> = {
+  '解压': ['tar', 'unzip', 'gunzip'],
+  '压缩': ['tar', 'zip', 'gzip', 'bzip2'],
+  '打包': ['tar', 'zip'],
+  '文件': ['ls', 'cp', 'mv', 'rm', 'find', 'cat'],
+  '目录': ['ls', 'cd', 'pwd', 'mkdir', 'du'],
+  '网络': ['ssh', 'ping', 'curl', 'netstat', 'ss', 'wget'],
+  '进程': ['ps', 'top', 'kill'],
+  '文本': ['grep', 'sed', 'awk', 'wc', 'sort', 'head', 'tail'],
+  '权限': ['chmod', 'chown'],
+  '日志': ['tail', 'journalctl', 'less'],
+  '下载': ['wget', 'curl'],
+  '远程': ['ssh', 'scp', 'rsync'],
+  '端口': ['netstat', 'ss'],
+  '搜索': ['find', 'grep']
+}
+
+const getSuggestions = (keyword: string): string[] => {
+  if (!keyword.trim()) return []
+  const kw = keyword.trim().toLowerCase()
+  const suggestions: string[] = []
+
+  for (const [key, cmds] of Object.entries(commonSuggestions)) {
+    if (key.includes(kw) || kw.includes(key)) {
+      suggestions.push(...cmds)
+    }
+  }
+
+  for (const [cmdName, aliases] of Object.entries(aliasMap)) {
+    if (aliases.some(alias =>
+      alias.toLowerCase().includes(kw) || kw.includes(alias.toLowerCase())
+    )) {
+      suggestions.push(cmdName)
+    }
+  }
+
+  const allCmds = linuxCommands.map(c => c.name)
+  for (const cmd of allCmds) {
+    if (cmd.includes(kw) && !suggestions.includes(cmd)) {
+      suggestions.push(cmd)
+    }
+  }
+
+  return [...new Set(suggestions)].slice(0, 6)
 }
 
 const categories = computed(() => {
@@ -902,5 +1072,84 @@ onMounted(() => {
 .alias-tag:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(103, 194, 58, 0.3);
+}
+
+.highlight {
+  background-color: #fff7e6;
+  color: #e6a23c;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.match-reason {
+  margin-bottom: 8px;
+}
+
+.match-reason .el-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.empty-wrapper {
+  text-align: left;
+  padding: 0 20px;
+}
+
+.empty-wrapper p {
+  color: #606266;
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+.empty-wrapper strong {
+  color: #f56c6c;
+}
+
+.suggest-alert {
+  margin: 12px 0;
+}
+
+.suggest-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.suggest-tag {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.suggest-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(230, 162, 60, 0.3);
+}
+
+.search-capability-alert {
+  margin-top: 12px;
+}
+
+.capability-tips p {
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.capability-tips ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.capability-tips li {
+  margin: 4px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #606266;
+}
+
+.capability-tips li strong {
+  color: #165DFF;
 }
 </style>
