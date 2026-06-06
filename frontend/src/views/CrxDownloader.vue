@@ -68,42 +68,104 @@
             <div class="format-guide">
               <div class="format-title">
                 <el-icon :size="16" color="#165DFF"><InfoFilled /></el-icon>
-                <span>支持以下两种输入格式，点击示例可自动填入：</span>
+                <span>支持以下两种输入格式，点击卡片可自动填入示例：</span>
               </div>
 
               <div class="format-cards">
-                <div class="format-card" @click="selectExampleByType('link')">
+                <div class="format-card format-card-link" @click="selectExampleByType('link')">
                   <div class="format-card-header">
                     <el-icon :size="20" color="#409EFF"><Link /></el-icon>
                     <span class="format-name">格式一：Chrome Web Store 链接</span>
+                    <el-tag size="small" type="info" effect="plain">复制粘贴即用</el-tag>
                   </div>
                   <div class="format-card-body">
-                    <div class="format-desc">从 Chrome 网上应用店复制的完整链接</div>
-                    <div class="format-example">
-                      <span class="example-prefix">https://chrome.google.com/webstore/detail/</span>
-                      <span class="example-slug">google-translate/</span>
-                      <span class="example-id">aapbdbdomjkkjkaonfhkkikfgjllcleb</span>
+                    <div class="format-desc">从 Chrome 网上应用店地址栏复制的完整 URL</div>
+
+                    <div class="url-breakdown">
+                      <div class="url-segments">
+                        <div class="url-segment segment-host">
+                          <span class="segment-text">https://chrome.google.com/webstore/detail/</span>
+                          <span class="segment-label">固定前缀</span>
+                        </div>
+                        <div class="url-segment segment-slug">
+                          <span class="segment-text">google-translate/</span>
+                          <span class="segment-label">扩展名称（可省略）</span>
+                        </div>
+                        <div class="url-segment segment-id">
+                          <span class="segment-text">aapbdbdomjkkjkaonfhkkikfgjllcleb</span>
+                          <span class="segment-label">
+                            <el-icon><Aim /></el-icon>
+                            这就是扩展 ID！
+                          </span>
+                        </div>
+                      </div>
+                      <div class="url-arrow-hint">
+                        <div class="arrow-line">
+                          <span class="arrow-dot"></span>
+                          <span class="arrow-connector"></span>
+                          <el-icon class="arrow-icon" :size="20"><BottomRight /></el-icon>
+                        </div>
+                        <div class="arrow-text">
+                          <el-tag type="warning" effect="dark">
+                            <el-icon><WarningFilled /></el-icon>
+                            detail/ 后面的最后一段就是扩展 ID（32位字母）
+                          </el-tag>
+                        </div>
+                      </div>
                     </div>
-                    <div class="format-hint">
-                      <el-icon><Aim /></el-icon>
-                      链接末尾 32 位字母即为扩展 ID
+
+                    <div class="format-tips">
+                      <div class="tip-item">
+                        <el-icon color="#67C23A"><CircleCheckFilled /></el-icon>
+                        <span>在应用商店找到扩展后，直接复制浏览器地址栏的链接即可</span>
+                      </div>
+                      <div class="tip-item">
+                        <el-icon color="#67C23A"><CircleCheckFilled /></el-icon>
+                        <span>名称部分缺失也没关系，系统会自动识别末尾的 ID</span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div class="format-card" @click="selectExampleByType('id')">
+                <div class="format-card format-card-id" @click="selectExampleByType('id')">
                   <div class="format-card-header">
                     <el-icon :size="20" color="#67C23A"><Box /></el-icon>
                     <span class="format-name">格式二：扩展 ID（推荐）</span>
+                    <el-tag size="small" type="success" effect="plain">输入更简洁</el-tag>
                   </div>
                   <div class="format-card-body">
-                    <div class="format-desc">32 位小写字母（a-p）组成的扩展唯一标识</div>
-                    <div class="format-example">
-                      <span class="example-id-only">aapbdbdomjkkjkaonfhkkikfgjllcleb</span>
+                    <div class="format-desc">32 位小写字母（仅 a-p）组成的扩展唯一标识</div>
+
+                    <div class="id-display">
+                      <div class="id-char-row">
+                        <span
+                          v-for="(char, idx) in sampleIdChars"
+                          :key="idx"
+                          class="id-char"
+                          :class="{ 'char-highlight': idx >= 28 }"
+                        >{{ char }}</span>
+                      </div>
+                      <div class="id-legend">
+                        <div class="legend-item">
+                          <span class="legend-box"></span>
+                          <span>共 32 个字符</span>
+                        </div>
+                        <div class="legend-item">
+                          <span class="legend-box highlight"></span>
+                          <span>仅使用字母 a 到 p</span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="format-hint">
-                      <el-icon><Aim /></el-icon>
-                      可在 chrome://extensions/ 开发者模式下查看
+
+                    <div class="format-tips">
+                      <div class="tip-item">
+                        <el-icon color="#67C23A"><CircleCheckFilled /></el-icon>
+                        <span>地址栏输入 chrome://extensions/ 开启「开发者模式」即可查看</span>
+                      </div>
+                      <div class="tip-item">
+                        <el-icon color="#67C23A"><CircleCheckFilled /></el-icon>
+                        <span>也可在扩展详情页的 URL 末尾找到（如格式一所示）</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -307,7 +369,10 @@ import {
   QuestionFilled,
   Setting,
   FolderOpened,
-  Aim
+  Aim,
+  BottomRight,
+  WarningFilled,
+  CircleCheckFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { crxApi, type ExtensionInfo } from '@/api/crx'
@@ -330,6 +395,8 @@ const isDownloading = ref(false)
 const errorMessage = ref('')
 const downloadHistory = ref<DownloadRecord[]>([])
 const activeHelpTab = ref('webstore')
+
+const sampleIdChars = 'aapbdbdomjkkjkaonfhkkikfgjllcleb'.split('')
 
 const exampleExtensions: ExampleExtension[] = [
   { name: 'Google翻译', id: 'aapbdbdomjkkjkaonfhkkikfgjllcleb', input: 'aapbdbdomjkkjkaonfhkkikfgjllcleb' },
@@ -582,25 +649,32 @@ const formatSize = (bytes: number): string => {
 }
 
 .format-card {
-  padding: 16px;
+  padding: 18px;
   background: #fff;
   border: 2px solid #e4e7ed;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.format-card:hover {
-  border-color: #165DFF;
+.format-card-link:hover {
+  border-color: #409EFF;
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(22, 93, 255, 0.15);
+  box-shadow: 0 4px 16px rgba(64, 158, 255, 0.18);
+}
+
+.format-card-id:hover {
+  border-color: #67C23A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(103, 194, 58, 0.18);
 }
 
 .format-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 
 .format-name {
@@ -612,58 +686,234 @@ const formatSize = (bytes: number): string => {
 .format-card-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .format-desc {
   font-size: 13px;
   color: #606266;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
-.format-example {
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
+.url-breakdown {
+  background: linear-gradient(135deg, #f8f9fb 0%, #f0f5ff 100%);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #e1e8f0;
+}
+
+.url-segments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.url-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.segment-host {
+  border-color: #ebeef5;
+}
+
+.segment-slug {
+  border-color: #ebeef5;
+  opacity: 0.75;
+}
+
+.segment-id {
+  border: 2px solid #f59e0b;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  position: relative;
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+@keyframes pulse-border {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.1); }
+}
+
+.segment-text {
   font-family: 'Monaco', 'Menlo', monospace;
   font-size: 12px;
-  line-height: 1.6;
+  color: #606266;
   word-break: break-all;
-  border: 1px dashed #dcdfe6;
 }
 
-.example-prefix {
+.segment-host .segment-text,
+.segment-slug .segment-text {
   color: #909399;
 }
 
-.example-slug {
+.segment-id .segment-text {
+  color: #d97706;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.segment-label {
+  font-size: 11px;
   color: #909399;
+  flex-shrink: 0;
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  background: #f4f4f5;
+  border-radius: 10px;
 }
 
-.example-id {
-  color: #165DFF;
+.segment-id .segment-label {
+  color: #b45309;
+  background: #fde68a;
   font-weight: 600;
-  background: #ecf5ff;
-  padding: 1px 4px;
-  border-radius: 3px;
 }
 
-.example-id-only {
-  color: #165DFF;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-}
-
-.format-hint {
+.url-arrow-hint {
   display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px dashed #fbbf24;
+}
+
+.arrow-line {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex-shrink: 0;
+}
+
+.arrow-dot {
+  width: 8px;
+  height: 8px;
+  background: #f59e0b;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.arrow-connector {
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.arrow-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.arrow-text :deep(.el-tag) {
+  display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #e6a23c;
-  background: #fdf6ec;
-  padding: 6px 10px;
-  border-radius: 6px;
+}
+
+.format-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f0f9eb;
+  border-radius: 8px;
+  border: 1px solid #e1f3d8;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #5a6e49;
+  line-height: 1.6;
+}
+
+.tip-item .el-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.id-display {
+  background: linear-gradient(135deg, #f0f9eb 0%, #e1f3d8 100%);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #c2e7b0;
+}
+
+.id-char-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.id-char {
+  width: 24px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #c2e7b0;
+  border-radius: 5px;
+  font-family: 'Monaco', 'Menlo', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #529b2e;
+  transition: all 0.2s;
+}
+
+.id-char.char-highlight {
+  background: #67C23A;
+  border-color: #529b2e;
+  color: #fff;
+}
+
+.id-char:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(103, 194, 58, 0.3);
+}
+
+.id-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.legend-box {
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  border: 1px solid #c2e7b0;
+  border-radius: 3px;
+}
+
+.legend-box.highlight {
+  background: #67C23A;
+  border-color: #529b2e;
 }
 
 .extension-id-display {
@@ -850,8 +1100,28 @@ const formatSize = (bytes: number): string => {
     grid-template-columns: 1fr;
   }
 
-  .format-example {
+  .url-segment {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .segment-label {
+    margin-left: 0;
+  }
+
+  .id-char {
+    width: 20px;
+    height: 26px;
     font-size: 11px;
+  }
+
+  .id-legend {
+    gap: 12px;
+  }
+
+  .url-arrow-hint {
+    flex-direction: column;
   }
 }
 </style>
