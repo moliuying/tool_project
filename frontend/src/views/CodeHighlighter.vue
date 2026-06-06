@@ -114,10 +114,20 @@
           <el-icon><Document /></el-icon>
           从剪贴板粘贴
         </el-button>
-        <el-button type="primary" size="default" @click="applyHighlight" :loading="isHighlighting">
+        <el-button 
+          :type="autoHighlight ? 'default' : 'primary'" 
+          size="default" 
+          @click="applyHighlight" 
+          :loading="isHighlighting"
+        >
           <el-icon><Brush /></el-icon>
-          应用高亮
+          {{ autoHighlight ? '立即刷新高亮' : '应用高亮' }}
         </el-button>
+        <el-tooltip v-if="autoHighlight" content="实时模式下，代码修改后会自动更新预览，也可点击此按钮立即刷新" placement="top">
+          <el-button size="default" circle>
+            <el-icon><QuestionFilled /></el-icon>
+          </el-button>
+        </el-tooltip>
       </div>
 
       <div class="editor-container">
@@ -158,11 +168,25 @@
             <span class="editor-title">
               <el-icon color="#67c23a"><View /></el-icon>
               高亮预览
-              <el-tag v-if="detectedLanguage && selectedLanguage === 'auto'" size="small" type="primary" style="margin-left: 8px;">
+              <el-tag v-if="autoHighlight" size="small" type="success" effect="plain" class="sync-tag" :class="{ 'sync-updating': syncStatus === 'updating' }">
+                <el-icon v-if="syncStatus === 'idle'"><CircleCheck /></el-icon>
+                <el-icon v-else-if="syncStatus === 'updating'" class="is-loading"><Loading /></el-icon>
+                <el-icon v-else><Warning /></el-icon>
+                {{ syncStatusText }}
+              </el-tag>
+              <el-tag v-else size="small" type="info" effect="plain" class="sync-tag">
+                <el-icon><Cursor /></el-icon>
+                等待手动触发
+              </el-tag>
+              <el-tag v-if="detectedLanguage && selectedLanguage === 'auto'" size="small" type="primary" effect="plain" style="margin-left: 4px;">
                 自动检测：{{ detectedLanguage }}
               </el-tag>
             </span>
             <div class="editor-actions">
+              <span v-if="lastUpdateTime" class="last-update-text">
+                <el-icon><Clock /></el-icon>
+                {{ lastUpdateTimeText }}
+              </span>
               <el-button size="small" text @click="copyHighlightedHtml">
                 <el-icon><CopyDocument /></el-icon>
                 复制 HTML
@@ -179,12 +203,14 @@
           </div>
           <div
             class="highlight-preview"
-            :class="[themeClass, { 'show-line-numbers': showLineNumbers }]"
+            :class="[themeClass, { 'show-line-numbers': showLineNumbers, 'preview-updating': syncStatus === 'updating' }]"
           >
             <div v-if="showLanguageBadge && highlightedCode" class="language-badge">
               {{ displayLanguage }}
             </div>
-            <pre v-if="highlightedCode" class="code-block"><code v-html="highlightedCode" /></pre>
+            <transition name="fade">
+              <pre v-if="highlightedCode" class="code-block" :key="highlightKey"><code v-html="highlightedCode" /></pre>
+            </transition>
             <pre v-else class="code-block placeholder"><code>点击「应用高亮」按钮预览渲染效果...</code></pre>
           </div>
         </div>
@@ -276,7 +302,12 @@ import {
   Download,
   DataLine,
   Lightning,
-  Cursor
+  Cursor,
+  CircleCheck,
+  Loading,
+  Warning,
+  Clock,
+  QuestionFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import hljs from 'highlight.js'
@@ -294,6 +325,25 @@ const detectedLanguage = ref('')
 const isHighlighting = ref(false)
 const activeTab = ref('html')
 const autoHighlight = ref(true)
+const syncStatus = ref<'idle' | 'updating' | 'stale'>('idle')
+const lastUpdateTime = ref<number | null>(null)
+const highlightKey = ref(0)
+
+const syncStatusText = computed(() => {
+  if (syncStatus.value === 'idle') return '实时同步中'
+  if (syncStatus.value === 'updating') return '正在更新...'
+  return '内容已变更，等待更新'
+})
+
+const lastUpdateTimeText = computed(() => {
+  if (!lastUpdateTime.value) return ''
+  const diff = Date.now() - lastUpdateTime.value
+  if (diff < 5000) return '刚刚更新'
+  if (diff < 60000) return `${Math.floor(diff / 1000)} 秒前更新`
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前更新`
+  const date = new Date(lastUpdateTime.value)
+  return date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) + ' 更新'
+})
 
 const languageOptions = [
   { label: '自动检测', value: 'auto' },
@@ -381,6 +431,7 @@ const applyHighlight = () => {
   }
 
   isHighlighting.value = true
+  syncStatus.value = 'updating'
 
   try {
     let result: { value: string; language?: string }
@@ -412,9 +463,16 @@ const applyHighlight = () => {
       highlightedCode.value = result.value
     }
 
-    ElMessage.success('代码高亮应用成功')
+    highlightKey.value++
+    lastUpdateTime.value = Date.now()
+    syncStatus.value = 'idle'
+
+    if (!autoHighlight.value) {
+      ElMessage.success('代码高亮应用成功')
+    }
   } catch (error) {
     console.error('Highlight error:', error)
+    syncStatus.value = 'stale'
     ElMessage.error('代码高亮失败')
   } finally {
     isHighlighting.value = false
@@ -422,14 +480,19 @@ const applyHighlight = () => {
 }
 
 let debounceTimer: number | null = null
+let timeRefreshTimer: number | null = null
 const DEBOUNCE_DELAY = 300
 
 const autoHighlightIfEnabled = () => {
   if (!autoHighlight.value) return
   if (!sourceCode.value.trim()) {
     highlightedCode.value = ''
+    syncStatus.value = 'idle'
+    lastUpdateTime.value = null
     return
   }
+
+  syncStatus.value = 'stale'
 
   if (debounceTimer) {
     clearTimeout(debounceTimer)
@@ -439,10 +502,17 @@ const autoHighlightIfEnabled = () => {
   }, DEBOUNCE_DELAY)
 }
 
+const startRefreshTimer = () => {
+  if (timeRefreshTimer) clearInterval(timeRefreshTimer)
+  timeRefreshTimer = window.setInterval(() => {
+    if (lastUpdateTime.value) {
+    }
+  }, 30000)
+}
+
 onUnmounted(() => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
+  if (debounceTimer) clearTimeout(debounceTimer)
+  if (timeRefreshTimer) clearInterval(timeRefreshTimer)
 })
 
 const fullHtmlOutput = computed(() => {
@@ -839,6 +909,7 @@ watch([selectedTheme, showLineNumbers], () => {
 
 onMounted(() => {
   loadExample()
+  startRefreshTimer()
 })
 </script>
 
@@ -960,6 +1031,42 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.sync-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.sync-tag .el-icon {
+  font-size: 12px;
+}
+
+.sync-tag.sync-updating {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.last-update-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #909399;
+  margin-right: 4px;
+  padding: 2px 8px;
+  background: #f5f7fa;
+  border-radius: 4px;
+}
+
+.last-update-text .el-icon {
+  font-size: 12px;
+}
+
 .code-editor :deep(.el-textarea__inner) {
   font-size: 14px;
   line-height: 1.6;
@@ -976,6 +1083,12 @@ onMounted(() => {
   max-height: 600px;
   overflow-y: auto;
   border: 1px solid #ebeef5;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.highlight-preview.preview-updating {
+  box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.25);
+  border-color: #165DFF;
 }
 
 .language-badge {
@@ -1349,6 +1462,16 @@ onMounted(() => {
   font-size: 13px;
   line-height: 1.6;
   background: #fafafa;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 @media (max-width: 992px) {
