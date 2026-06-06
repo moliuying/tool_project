@@ -205,6 +205,11 @@ const routes: RouteRecordRaw[] = [
         path: '/string-hex-converter',
         name: 'StringHexConverter',
         component: () => import('@/views/StringHexConverter.vue')
+      },
+      {
+        path: '/placeholder-image',
+        name: 'PlaceholderImageGenerator',
+        component: () => import('@/views/PlaceholderImageGenerator.vue')
       }
     ]
   }
