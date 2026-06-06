@@ -12,14 +12,14 @@
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
         <el-step title="输入查询" description="输入成语、关键字或拼音" />
         <el-step title="筛选分类" description="按类别或情感色彩筛选成语" />
-        <el-step title="查看详情" description="获取释义、出处、例句等信息" />
-        <el-step title="复制使用" description="一键复制成语或例句" />
+        <el-step title="浏览结果" description="查看释义、出处、用法例句" />
+        <el-step title="查看详情" description="获取近反义词、全部例句等更多信息" />
       </el-steps>
       <el-divider />
       <el-alert type="info" :closable="false">
         <template #title>
           <div class="alert-content">
-            <p><strong>查询能力说明：</strong>支持通过成语名称、关键字、拼音、拼音首字母快速搜索</p>
+            <p><strong>查询能力说明：</strong>支持通过成语名称、关键字、拼音、拼音首字母快速搜索，列表直接展示释义、出处和用法例句</p>
             <p class="example-tips">💡 试试搜索：「画龙点睛」「hlbj」「坚持」「学习」或直接输入成语</p>
           </div>
         </template>
@@ -191,8 +191,34 @@
               <span class="idiom-name">{{ idiom.name }}</span>
               <el-tag :type="getEmotionType(idiom.emotion)" size="small" effect="plain">{{ idiom.emotion }}</el-tag>
             </div>
-            <div class="idiom-pinyin">{{ idiom.pinyin }}</div>
-            <div class="idiom-desc" v-html="highlightKeyword(idiom.explanation, searchKeyword)"></div>
+            <div class="idiom-pinyin-row">
+              <span class="idiom-pinyin">{{ idiom.pinyin }}</span>
+              <span class="pinyin-initials">首字母：{{ idiom.pinyinInitials.toUpperCase() }}</span>
+            </div>
+            <div class="idiom-section">
+              <div class="section-label">
+                <el-icon :size="12" color="#165DFF"><Edit /></el-icon>
+                释义
+              </div>
+              <div class="idiom-desc" v-html="highlightKeyword(idiom.explanation, searchKeyword)"></div>
+            </div>
+            <div v-if="idiom.source" class="idiom-section">
+              <div class="section-label">
+                <el-icon :size="12" color="#e6a23c"><Collection /></el-icon>
+                出处
+              </div>
+              <div class="idiom-source" v-html="highlightKeyword(idiom.source, searchKeyword)"></div>
+            </div>
+            <div v-if="idiom.examples && idiom.examples.length > 0" class="idiom-section">
+              <div class="section-label">
+                <el-icon :size="12" color="#f56c6c"><Promotion /></el-icon>
+                用法例句
+              </div>
+              <div class="idiom-example">
+                <span class="example-bullet">●</span>
+                <span>{{ idiom.examples[0].sentence }}</span>
+              </div>
+            </div>
             <div v-if="getMatchReason(idiom, searchKeyword)" class="match-reason">
               <el-tag size="small" type="success" effect="plain">
                 <el-icon><Right /></el-icon>
@@ -202,8 +228,11 @@
             <div class="idiom-card-footer">
               <el-tag size="small" type="primary" effect="plain">{{ idiom.category }}</el-tag>
               <span v-if="idiom.structure" class="structure-tag">
-                <el-icon><Collection /></el-icon>
+                <el-icon><Grid /></el-icon>
                 {{ idiom.structure }}
+              </span>
+              <span class="view-detail">
+                查看详情 →
               </span>
             </div>
           </div>
@@ -788,22 +817,90 @@ onMounted(() => {
   letter-spacing: 2px;
 }
 
+.idiom-pinyin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .idiom-pinyin {
   font-family: 'Georgia', serif;
-  font-size: 13px;
+  font-size: 14px;
   color: #67c23a;
+}
+
+.pinyin-initials {
+  font-size: 12px;
+  color: #909399;
+  background: #f5f7fa;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.idiom-section {
   margin-bottom: 10px;
+}
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+  margin-bottom: 4px;
 }
 
 .idiom-desc {
   font-size: 13px;
-  color: #606266;
+  color: #303133;
   line-height: 1.6;
-  margin-bottom: 12px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  background: #f5f7fa;
+  padding: 6px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #165DFF;
+}
+
+.idiom-source {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  background: #fdf6ec;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #e6a23c;
+  font-style: italic;
+}
+
+.idiom-example {
+  font-size: 12px;
+  color: #303133;
+  line-height: 1.5;
+  background: #fef0f0;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border-left: 3px solid #f56c6c;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.example-bullet {
+  color: #f56c6c;
+  margin-right: 4px;
+  font-size: 10px;
 }
 
 .idiom-card-footer {
@@ -812,12 +909,23 @@ onMounted(() => {
   gap: 10px;
   font-size: 12px;
   color: #909399;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #e4e7ed;
+  flex-wrap: wrap;
 }
 
 .structure-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+}
+
+.view-detail {
+  margin-left: auto;
+  font-size: 12px;
+  color: #165DFF;
+  font-weight: 500;
 }
 
 .match-reason {
