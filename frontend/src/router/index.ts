@@ -165,6 +165,11 @@ const routes: RouteRecordRaw[] = [
         path: '/random-string',
         name: 'RandomStringGenerator',
         component: () => import('@/views/RandomStringGenerator.vue')
+      },
+      {
+        path: '/crx-downloader',
+        name: 'CrxDownloader',
+        component: () => import('@/views/CrxDownloader.vue')
       }
     ]
   }

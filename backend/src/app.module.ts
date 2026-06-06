@@ -6,6 +6,7 @@ import { HolidayModule } from './holiday/holiday.module';
 import { Holiday } from './holiday/holiday.entity';
 import { WhoisModule } from './whois/whois.module';
 import { HttpHeadersModule } from './http-headers/http-headers.module';
+import { CrxDownloaderModule } from './crx-downloader/crx-downloader.module';
 import * as path from 'path';
 
 @Module({
@@ -21,6 +22,7 @@ import * as path from 'path';
     HolidayModule,
     WhoisModule,
     HttpHeadersModule,
+    CrxDownloaderModule,
   ],
 })
 export class AppModule {}
