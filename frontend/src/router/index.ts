@@ -175,6 +175,11 @@ const routes: RouteRecordRaw[] = [
         path: '/pun-generator',
         name: 'PunGenerator',
         component: () => import('@/views/PunGenerator.vue')
+      },
+      {
+        path: '/food-recommender',
+        name: 'FoodRecommender',
+        component: () => import('@/views/FoodRecommender.vue')
       }
     ]
   }
