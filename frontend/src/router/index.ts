@@ -180,6 +180,11 @@ const routes: RouteRecordRaw[] = [
         path: '/food-recommender',
         name: 'FoodRecommender',
         component: () => import('@/views/FoodRecommender.vue')
+      },
+      {
+        path: '/file-hash',
+        name: 'FileHashCalculator',
+        component: () => import('@/views/FileHashCalculator.vue')
       }
     ]
   }

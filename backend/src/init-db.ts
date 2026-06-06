@@ -44,8 +44,9 @@ async function bootstrap() {
       { name: '文本对比', path: '/text-diff', icon: 'DocumentCopy', parentId: null, sort: 27, component: 'views/TextDiff.vue' },
       { name: 'CIDR网段计算', path: '/cidr-calculator', icon: 'Connection', parentId: null, sort: 28, component: 'views/CidrCalculator.vue' },
       { name: '随机字符串生成', path: '/random-string', icon: 'Key', parentId: null, sort: 29, component: 'views/RandomStringGenerator.vue' },
+      { name: '文件哈希计算', path: '/file-hash', icon: 'Key', parentId: null, sort: 30, component: 'views/FileHashCalculator.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 30, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 31, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
