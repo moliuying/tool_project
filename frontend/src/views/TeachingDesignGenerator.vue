@@ -22,14 +22,14 @@
           <div class="expectation-item">
             <el-icon :size="24" color="#165DFF"><Collection /></el-icon>
             <div class="exp-text">
-              <div class="exp-num">5-7 个教学环节</div>
+              <div class="exp-num">5-8 个教学环节</div>
               <div class="exp-label">完整的课堂流程设计</div>
             </div>
           </div>
           <div class="expectation-item">
             <el-icon :size="24" color="#67c23a"><MagicStick /></el-icon>
             <div class="exp-text">
-              <div class="exp-num">40-45 分钟</div>
+              <div class="exp-num">35-50 分钟</div>
               <div class="exp-label">标准课时时间分配</div>
             </div>
           </div>
@@ -43,11 +43,75 @@
           <div class="expectation-item">
             <el-icon :size="24" color="#f56c6c"><Bulb /></el-icon>
             <div class="exp-text">
-              <div class="exp-num">完整预期效果</div>
-              <div class="exp-label">可量化的教学成果评估</div>
+              <div class="exp-num">可量化预期效果</div>
+              <div class="exp-label">完整教学成果评估指标</div>
             </div>
           </div>
         </div>
+        <el-divider />
+        <h4 class="expectation-title">📝 三种详细程度可选</h4>
+        <el-row :gutter="16" class="detail-levels">
+          <el-col :span="8">
+            <div class="detail-card outline-card">
+              <div class="detail-header">
+                <el-icon :size="20" color="#909399"><Memo /></el-icon>
+                <span class="detail-name">简单框架</span>
+                <el-tag size="small" type="info" effect="plain">提纲式</el-tag>
+              </div>
+              <div class="detail-desc">适合快速构思、确定思路</div>
+              <ul class="detail-features">
+                <li>5个核心教学环节</li>
+                <li>简明要点式描述</li>
+                <li>约 800-1200 字</li>
+                <li>包含：基本信息、目标、重难点、教学过程框架</li>
+              </ul>
+              <div class="detail-scenarios">
+                <span class="scenario-label">适用场景：</span>
+                <span>个人备课、快速搭框架</span>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="detail-card standard-card">
+              <div class="detail-header">
+                <el-icon :size="20" color="#165DFF"><Document /></el-icon>
+                <span class="detail-name">标准教案</span>
+                <el-tag size="small" type="primary" effect="dark">推荐 ⭐</el-tag>
+              </div>
+              <div class="detail-desc">规范完整，可直接用于日常教学</div>
+              <ul class="detail-features">
+                <li>6个完整教学环节 + 时间分配</li>
+                <li>详细的师生活动描述</li>
+                <li>约 2000-3000 字</li>
+                <li>包含：8大模块 + 板书设计 + 评价方案</li>
+              </ul>
+              <div class="detail-scenarios">
+                <span class="scenario-label">适用场景：</span>
+                <span>日常教学、检查教案</span>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="detail-card detailed-card">
+              <div class="detail-header">
+                <el-icon :size="20" color="#67c23a"><Files /></el-icon>
+                <span class="detail-name">详细教案</span>
+                <el-tag size="small" type="success" effect="plain">逐字稿级</el-tag>
+              </div>
+              <div class="detail-desc">面面俱到，适合展示和竞赛</div>
+              <ul class="detail-features">
+                <li>8个精细教学环节 + 精准到分钟</li>
+                <li>逐句教学话术 + 过渡语设计</li>
+                <li>约 4000-6000 字</li>
+                <li>包含：全部模块 + 学情分析 + 应急预案</li>
+              </ul>
+              <div class="detail-scenarios">
+                <span class="scenario-label">适用场景：</span>
+                <span>公开课、教学竞赛、新教师试讲</span>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
         <el-divider />
         <h4 class="expectation-title">🎯 适用场景</h4>
         <div class="scenario-tags">
@@ -178,6 +242,22 @@
         </div>
         <div class="preference-options">
           <div class="preference-group">
+            <span class="preference-label">详细程度：</span>
+            <el-radio-group v-model="formData.detailLevel" :disabled="isGenerating">
+              <el-radio-button v-for="level in detailLevels" :key="level.value" :value="level.value">
+                {{ level.label }}
+              </el-radio-button>
+            </el-radio-group>
+            <el-tooltip
+              v-if="formData.detailLevel"
+              :content="getDetailLevelTip(formData.detailLevel)"
+              placement="right"
+              effect="light"
+            >
+              <el-icon color="#909399" class="tip-icon"><QuestionFilled /></el-icon>
+            </el-tooltip>
+          </div>
+          <div class="preference-group">
             <span class="preference-label">教学模式：</span>
             <el-radio-group v-model="formData.teachingMode" :disabled="isGenerating">
               <el-radio-button v-for="mode in teachingModes" :key="mode.value" :value="mode.value">
@@ -231,8 +311,9 @@
           <span class="dot"></span>
         </div>
         <span class="generating-text">
-          🎓 AI 正在基于「{{ getSubjectLabel(formData.subject) }}」学科的「{{ formData.topic }}」主题
-          为 {{ getGradeLabel(formData.grade) }} 学生生成符合{{ getDifficultyLabel(formData.difficulty) }}难度的教学设计方案…
+          🎓 AI 正在基于「{{ getSubjectLabel(formData.subject) }}」学科的「{{ formData.value.topic }}」主题
+          为 {{ getGradeLabel(formData.value.grade) }} 学生生成【{{ getDetailLevelLabel(formData.value.detailLevel) }}】
+          符合{{ getDifficultyLabel(formData.value.difficulty) }}难度的教学设计方案…
         </span>
       </div>
     </el-card>
@@ -246,6 +327,9 @@
           <span>教学设计方案</span>
           <el-tag size="small" type="success">
             {{ generatedDesign.basicInfo.subject }} · {{ generatedDesign.basicInfo.grade }} · {{ generatedDesign.basicInfo.duration }}分钟
+          </el-tag>
+          <el-tag size="small" :type="getDetailLevelTagType(generatedDesign.basicInfo.detailLevel)" effect="dark">
+            {{ generatedDesign.basicInfo.detailLevel }}
           </el-tag>
           <div class="header-actions">
             <el-button size="small" type="primary" link :icon="CopyDocument" @click="copyAllDesign">
@@ -271,6 +355,14 @@
             <el-descriptions-item label="课时时长">{{ generatedDesign.basicInfo.duration }} 分钟</el-descriptions-item>
             <el-descriptions-item label="教学模式">{{ generatedDesign.basicInfo.teachingMode }}</el-descriptions-item>
             <el-descriptions-item label="难度等级">{{ generatedDesign.basicInfo.difficulty }}</el-descriptions-item>
+            <el-descriptions-item label="详细程度" :span="2">
+              <el-tag :type="getDetailLevelTagType(generatedDesign.basicInfo.detailLevel)" effect="plain" size="small">
+                {{ generatedDesign.basicInfo.detailLevel }}
+              </el-tag>
+              <span style="margin-left: 8px; color: #909399; font-size: 13px;">
+                {{ getDetailLevelDescription(generatedDesign.basicInfo.detailLevel) }}
+              </span>
+            </el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -461,6 +553,63 @@
             />
           </div>
         </div>
+
+        <div class="design-section" v-if="generatedDesign.studentAnalysis">
+          <div class="section-header">
+            <el-icon color="#13c2c2"><User /></el-icon>
+            <h3>九、学情分析</h3>
+            <el-tag size="small" type="success" effect="plain">详细教案专属</el-tag>
+          </div>
+          <div class="student-analysis">
+            <div class="sa-card">
+              <div class="sa-title"><el-icon color="#165DFF"><Opportunity /></el-icon>认知基础</div>
+              <p>{{ generatedDesign.studentAnalysis.cognitiveBase }}</p>
+            </div>
+            <div class="sa-card">
+              <div class="sa-title"><el-icon color="#67c23a"><TrendCharts /></el-icon>能力水平</div>
+              <p>{{ generatedDesign.studentAnalysis.abilityLevel }}</p>
+            </div>
+            <div class="sa-card">
+              <div class="sa-title"><el-icon color="#e6a23c"><Star /></el-icon>学习特点</div>
+              <p>{{ generatedDesign.studentAnalysis.learningStyle }}</p>
+            </div>
+            <div class="sa-card">
+              <div class="sa-title"><el-icon color="#f56c6c"><Warning /></el-icon>可能困难</div>
+              <p>{{ generatedDesign.studentAnalysis.possibleDifficulties }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="design-section" v-if="generatedDesign.emergencyPlan">
+          <div class="section-header">
+            <el-icon color="#f56c6c"><WarningFilled /></el-icon>
+            <h3>十、教学应急预案</h3>
+            <el-tag size="small" type="success" effect="plain">详细教案专属</el-tag>
+          </div>
+          <el-table :data="generatedDesign.emergencyPlan" border size="default">
+            <el-table-column prop="situation" label="可能突发情况" width="180">
+              <template #default="{ row }">
+                <el-tag type="danger" size="small" effect="plain">{{ row.situation }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="strategy" label="应对策略">
+              <template #default="{ row }">
+                <div style="display: flex; align-items: flex-start; gap: 6px;">
+                  <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                  <span>{{ row.strategy }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="backupPlan" label="备选方案" width="220">
+              <template #default="{ row }">
+                <div style="display: flex; align-items: flex-start; gap: 6px;">
+                  <el-icon color="#e6a23c"><Tools /></el-icon>
+                  <span style="font-size: 13px; color: #606266;">{{ row.backupPlan }}</span>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </div>
     </el-card>
 
@@ -525,7 +674,14 @@ import {
   ChatLineRound,
   Clock,
   InfoFilled,
-  CircleCheck
+  CircleCheck,
+  QuestionFilled,
+  Memo,
+  Files,
+  User,
+  Opportunity,
+  TrendCharts,
+  Star
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -537,6 +693,7 @@ interface FormData {
   knowledgeGoal: string
   processGoal: string
   emotionGoal: string
+  detailLevel: string
   teachingMode: string
   difficulty: string
 }
@@ -547,6 +704,21 @@ interface TeachingStage {
   teacherActivity: string
   studentActivity: string
   designIntent: string
+  teacherScript?: string
+  transitionTip?: string
+}
+
+interface StudentAnalysis {
+  cognitiveBase: string
+  abilityLevel: string
+  learningStyle: string
+  possibleDifficulties: string
+}
+
+interface EmergencyPlan {
+  situation: string
+  strategy: string
+  backupPlan: string
 }
 
 interface TeachingDesign {
@@ -555,6 +727,7 @@ interface TeachingDesign {
     subject: string
     grade: string
     duration: number
+    detailLevel: string
     teachingMode: string
     difficulty: string
   }
@@ -577,7 +750,9 @@ interface TeachingDesign {
     expectedEffects: string[]
     homework: string[]
   }
-  teachingReflection: string[]
+  teachingReflection?: string[]
+  studentAnalysis?: StudentAnalysis
+  emergencyPlan?: EmergencyPlan[]
 }
 
 interface HistoryItem {
@@ -659,6 +834,12 @@ const difficultyLevels = [
   { label: '进阶', value: 'advanced' }
 ]
 
+const detailLevels = [
+  { label: '简单框架', value: 'outline' },
+  { label: '标准教案', value: 'standard' },
+  { label: '详细教案', value: 'detailed' }
+]
+
 const quickSamples = [
   { topic: '二次函数的图像与性质', subject: 'math', grade: 'g9' },
   { topic: '荷塘月色', subject: 'chinese', grade: 'g10' },
@@ -683,6 +864,7 @@ const formData = ref<FormData>({
   knowledgeGoal: '',
   processGoal: '',
   emotionGoal: '',
+  detailLevel: 'standard',
   teachingMode: 'heuristic',
   difficulty: 'medium'
 })
@@ -725,6 +907,34 @@ const getGradeLabel = (value: string) => {
 const getDifficultyLabel = (value: string) => {
   const found = difficultyLevels.find(d => d.value === value)
   return found?.label || value
+}
+
+const getDetailLevelLabel = (value: string) => {
+  const found = detailLevels.find(d => d.value === value)
+  return found?.label || value
+}
+
+const getDetailLevelTip = (value: string) => {
+  const tips: Record<string, string> = {
+    outline: '简单框架：提供核心教学环节和要点，适合快速构思（约800-1200字）',
+    standard: '标准教案：8大模块完整内容，规范详细可直接用于日常教学（约2000-3000字）⭐推荐',
+    detailed: '详细教案：逐字稿级别的详细设计，含学情分析和应急预案（约4000-6000字）'
+  }
+  return tips[value] || ''
+}
+
+const getDetailLevelTagType = (label: string): '' | 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  if (label.includes('简单')) return 'info'
+  if (label.includes('标准')) return 'primary'
+  if (label.includes('详细')) return 'success'
+  return ''
+}
+
+const getDetailLevelDescription = (label: string) => {
+  if (label.includes('简单')) return '提纲式要点，约 800-1200 字'
+  if (label.includes('标准')) return '完整规范教案，约 2000-3000 字'
+  if (label.includes('详细')) return '逐字稿级详案，约 4000-6000 字'
+  return ''
 }
 
 const getStageTagType = (index: number): '' | 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
@@ -771,15 +981,52 @@ const getSubjectSpecificContent = (subject: string, topic: string) => {
   }
 }
 
-const generateTeachingProcess = (mode: string, duration: number, subject: string, topic: string, grade: string): TeachingStage[] => {
-  const stages = teachingStageTemplates[mode] || teachingStageTemplates.heuristic
-  const timeDistributions: Record<number, string[]> = {
-    35: ['3分钟', '10分钟', '8分钟', '8分钟', '4分钟', '2分钟'],
-    40: ['5分钟', '12分钟', '8分钟', '8分钟', '5分钟', '2分钟'],
-    45: ['5分钟', '15分钟', '10分钟', '8分钟', '5分钟', '2分钟'],
-    50: ['5分钟', '15分钟', '10分钟', '12分钟', '6分钟', '2分钟']
+const generateTeachingProcess = (mode: string, duration: number, subject: string, topic: string, grade: string, detailLevel: string): TeachingStage[] => {
+  const baseStages = teachingStageTemplates[mode] || teachingStageTemplates.heuristic
+  
+  const stageConfigs: Record<string, { stages: string[], times: Record<number, string[]> }> = {
+    outline: {
+      stages: baseStages.slice(0, 5),
+      times: {
+        35: ['3', '10', '8', '8', '6'],
+        40: ['5', '12', '8', '10', '5'],
+        45: ['5', '15', '10', '10', '5'],
+        50: ['5', '15', '12', '12', '6']
+      }
+    },
+    standard: {
+      stages: baseStages,
+      times: {
+        35: ['3', '10', '8', '8', '4', '2'],
+        40: ['5', '12', '8', '8', '5', '2'],
+        45: ['5', '15', '10', '8', '5', '2'],
+        50: ['5', '15', '10', '12', '6', '2']
+      }
+    },
+    detailed: {
+      stages: [
+        '课前准备',
+        baseStages[0],
+        baseStages[1],
+        baseStages[2],
+        '深入拓展',
+        baseStages[3],
+        baseStages[4],
+        baseStages[5] || '巩固拓展'
+      ].slice(0, 8),
+      times: {
+        35: ['2', '3', '8', '8', '6', '4', '3', '1'],
+        40: ['2', '5', '10', '9', '6', '5', '2', '1'],
+        45: ['3', '5', '12', '10', '7', '5', '2', '1'],
+        50: ['3', '5', '12', '12', '8', '6', '3', '1']
+      }
+    }
   }
-  const times = timeDistributions[duration] || timeDistributions[45]
+
+  const config = stageConfigs[detailLevel] || stageConfigs.standard
+  const stages = config.stages
+  const times = (config.times[duration] || config.times[45]).map(t => t + '分钟')
+
   const gradeNum = parseInt(grade.replace('g', ''))
   const isElementary = gradeNum <= 6
   const isMiddle = gradeNum >= 7 && gradeNum <= 9
@@ -1029,13 +1276,59 @@ const generateTeachingProcess = (mode: string, duration: number, subject: string
     '拓展延伸': `将课堂学习延伸到课外，培养学生的自主学习能力和探究精神。`
   }
 
-  return stages.map((stage) => ({
-    stage,
-    time: times[stages.indexOf(stage)] || '5分钟',
-    teacherActivity: randomPick(activityTemplates[stage as keyof typeof activityTemplates] || activityTemplates['讲授新知']),
-    studentActivity: randomPick(studentActivityTemplates[stage as keyof typeof studentActivityTemplates] || studentActivityTemplates['讲授新知']),
-    designIntent: designIntentTemplates[stage as keyof typeof designIntentTemplates] || designIntentTemplates['讲授新知']
-  }))
+  const truncateText = (text: string, maxLen: number) => {
+    if (text.length <= maxLen) return text
+    return text.slice(0, maxLen) + '…'
+  }
+
+  const extraStages: Record<string, Record<string, string[]>> = {
+    '课前准备': {
+      teacher: [`检查教具设备，发放学习材料，布置预习任务，提醒学生做好上课准备。`],
+      student: [`整理学习用品，回顾上节课内容，快速进入学习状态。`],
+      intent: `建立良好课堂秩序，为${topic}的学习做好身心准备。`
+    },
+    '深入拓展': {
+      teacher: [`提供${topic}的进阶案例或拓展问题，引导学有余力的学生深入思考，联系生活实际。`],
+      student: [`尝试挑战拓展题目，分享思考见解，与同学交流不同的解题思路和应用场景。`],
+      intent: `因材施教，满足不同层次学生的学习需求，实现知识的深度内化和迁移。`
+    }
+  }
+
+  return stages.map((stage, index) => {
+    const hasExtra = extraStages[stage]
+    const teacherAct = hasExtra
+      ? hasExtra.teacher[0]
+      : randomPick(activityTemplates[stage as keyof typeof activityTemplates] || activityTemplates['讲授新知'])
+    const studentAct = hasExtra
+      ? hasExtra.student[0]
+      : randomPick(studentActivityTemplates[stage as keyof typeof studentActivityTemplates] || studentActivityTemplates['讲授新知'])
+    const designIt = hasExtra
+      ? hasExtra.intent
+      : designIntentTemplates[stage as keyof typeof designIntentTemplates] || designIntentTemplates['讲授新知']
+
+    const result: TeachingStage = {
+      stage,
+      time: times[index] || '5分钟',
+      teacherActivity: detailLevel === 'outline' ? truncateText(teacherAct, 45) : teacherAct,
+      studentActivity: detailLevel === 'outline' ? truncateText(studentAct, 40) : studentAct,
+      designIntent: detailLevel === 'outline' ? truncateText(designIt, 35) : designIt
+    }
+
+    if (detailLevel === 'detailed') {
+      result.teacherScript = `师：${randomPick([
+        `同学们，我们今天一起来学习${topic}这个内容。首先，请大家看大屏幕上的这个问题…`,
+        `好，上节课我们学习了相关的基础知识，今天我们来深入探讨${topic}。请大家思考一下…`,
+        `上课！同学们好。在开始今天的新课之前，老师想先问问大家…`
+      ])}`
+      result.transitionTip = `过渡语建议：${randomPick([
+        `承上启下，自然衔接："刚才我们学习了…，接下来让我们看看如何应用这些知识。"`,
+        `问题引导，激发思考："既然我们已经理解了…，那么大家想一想如果…会怎么样呢？"`,
+        `生活联结，增强代入："其实在我们的日常生活中，…，这就用到了我们今天学的知识。"`
+      ])}`
+    }
+
+    return result
+  })
 }
 
 const generateDesign = async () => {
@@ -1047,7 +1340,8 @@ const generateDesign = async () => {
   isGenerating.value = true
   generatedDesign.value = null
 
-  await new Promise(resolve => setTimeout(resolve, 1500))
+  const waitTime = formData.value.detailLevel === 'detailed' ? 2000 : formData.value.detailLevel === 'outline' ? 1000 : 1500
+  await new Promise(resolve => setTimeout(resolve, waitTime))
 
   const subjectContent = getSubjectSpecificContent(
     formData.value.subject,
@@ -1056,6 +1350,7 @@ const generateDesign = async () => {
 
   const gradeNum = parseInt(formData.value.grade.replace('g', ''))
   const isElementary = gradeNum <= 6
+  const detailLevel = formData.value.detailLevel
 
   const blackboardLeft = [
     `${formData.value.topic}的定义`,
@@ -1073,6 +1368,7 @@ const generateDesign = async () => {
       subject: getSubjectLabel(formData.value.subject),
       grade: getGradeLabel(formData.value.grade),
       duration: formData.value.duration,
+      detailLevel: getDetailLevelLabel(detailLevel),
       teachingMode: teachingModes.find(m => m.value === formData.value.teachingMode)?.label || '启发式',
       difficulty: getDifficultyLabel(formData.value.difficulty)
     },
@@ -1081,22 +1377,65 @@ const generateDesign = async () => {
       process: formData.value.processGoal.trim() || subjectContent.processDefault,
       emotion: formData.value.emotionGoal.trim() || subjectContent.emotionDefault
     },
-    keyPoints: subjectContent.keyPoints,
-    difficultPoints: subjectContent.difficultPoints,
-    preparations: subjectContent.preparations,
+    keyPoints: detailLevel === 'outline'
+      ? subjectContent.keyPoints.slice(0, 2)
+      : detailLevel === 'detailed'
+      ? [...subjectContent.keyPoints, `${formData.value.topic}在实际问题中的综合应用`]
+      : subjectContent.keyPoints,
+    difficultPoints: detailLevel === 'outline'
+      ? subjectContent.difficultPoints.slice(0, 2)
+      : subjectContent.difficultPoints,
+    preparations: detailLevel === 'outline'
+      ? subjectContent.preparations.slice(0, 3)
+      : detailLevel === 'detailed'
+      ? [...subjectContent.preparations, '学习单/评价表设计', '课前学情调研分析']
+      : subjectContent.preparations,
     teachingProcess: generateTeachingProcess(
       formData.value.teachingMode,
       formData.value.duration,
       formData.value.subject,
       formData.value.topic,
-      formData.value.grade
+      formData.value.grade,
+      detailLevel
     ),
-    blackboardDesign: {
+    blackboardDesign: detailLevel === 'outline' ? {
+      left: blackboardLeft.slice(0, 2),
+      center: `${formData.value.topic}`,
+      right: blackboardRight.slice(0, 1)
+    } : {
       left: blackboardLeft,
       center: `${formData.value.topic}\n核心：${randomPick(['掌握方法', '理解概念', '灵活运用', '形成能力'])}`,
       right: blackboardRight
     },
-    evaluation: {
+    evaluation: detailLevel === 'outline' ? {
+      methods: ['课堂观察', '练习检测'],
+      expectedEffects: [
+        `学生能够理解${formData.value.topic}的基本概念`,
+        `完成基础练习，正确率达到70%以上`
+      ],
+      homework: ['完成教材配套基础练习']
+    } : detailLevel === 'detailed' ? {
+      methods: [
+        '课堂观察：通过提问、巡视、观察学生参与度和表现，实时记录学生反应',
+        '练习检测：通过分层课堂练习和作业检测知识掌握程度，收集错题分析',
+        '学生自评：引导学生对照学习目标反思学习过程和收获，填写自评表',
+        '小组互评：在合作学习中评价同伴的表现和贡献，促进共同进步',
+        '课后访谈：选取不同层次学生进行简短访谈，深入了解学习效果'
+      ],
+      expectedEffects: [
+        `95%以上的学生能够准确表述${formData.value.topic}的核心概念和原理`,
+        `85%以上的学生能够独立完成基础练习题，正确率达到85%以上`,
+        `70%以上的学生能够完成拓展题，展现知识迁移能力`,
+        `学生能够积极参与课堂活动，发言率达到80%以上，小组参与度100%`,
+        `培养学生的${randomPick(['合作意识', '探究精神', '创新思维', '实践能力'])}，增强学习自信心和学科兴趣`
+      ],
+      homework: [
+        '基础作业：完成教材配套练习第X-Y题，巩固本节课所学知识',
+        `拓展作业：思考${formData.value.topic}在生活中的应用实例，撰写100字以上的小短文或绘制思维导图`,
+        '实践作业（选做）：通过网络或图书馆查阅相关资料，了解${formData.value.topic}的最新应用进展'.replace('${formData.value.topic}', formData.value.topic),
+        '预习作业：预习下节课内容，完成预习单，标记预习中的疑问点'
+      ]
+    } : {
       methods: [
         '课堂观察：通过提问、巡视、观察学生参与度和表现',
         '练习检测：通过课堂练习和作业检测知识掌握程度',
@@ -1114,11 +1453,57 @@ const generateDesign = async () => {
         `拓展作业：思考${formData.value.topic}在生活中的应用实例，下节课分享交流`,
         '预习作业：预习下节课内容，标记预习中的疑问点'
       ]
-    },
-    teachingReflection: [
+    }
+  }
+
+  if (detailLevel !== 'outline') {
+    design.teachingReflection = detailLevel === 'detailed' ? [
+      '关注不同层次学生的学习情况，对学困生给予更多的个别辅导和鼓励，课堂上多设计基础问题让他们回答体验成功',
+      '根据课堂生成及时调整教学节奏和策略，灵活应对学生的突发问题，准备好2-3个备选教学方案',
+      '课后收集学生反馈（通过问卷或纸条形式），评估教学目标的达成度，为后续教学改进提供数据支持',
+      '记录本节课的精彩生成和存在问题，撰写详细教学反思日志，与同组教师交流研讨',
+      '分析学生作业中的典型错误，在下节课开始进行5分钟的针对性讲评和巩固'
+    ] : [
       '关注不同层次学生的学习情况，对学困生给予更多的个别辅导和鼓励',
       '根据课堂生成及时调整教学节奏和策略，灵活应对学生的突发问题',
       '课后收集学生反馈，评估教学目标的达成度，为后续教学改进提供依据'
+    ]
+  }
+
+  if (detailLevel === 'detailed') {
+    design.studentAnalysis = {
+      cognitiveBase: `${getGradeLabel(formData.value.grade)}学生在学习${formData.value.topic}之前，已初步掌握相关基础知识，具有一定的生活经验和感性认识，但对${formData.value.topic}的本质特征和内在规律缺乏系统理解。约${randomPick(['60%', '65%', '70%'])}的学生能够顺利完成前测基础题。`,
+      abilityLevel: `本班学生整体思维活跃，具备一定的观察、比较和分析能力。约${randomPick(['30%', '35%', '40%'])}的学生具备较强的自主探究和知识迁移能力，能够举一反三；约${randomPick(['50%', '55%'])}的学生能够在教师引导下完成学习任务；另有约${randomPick(['10%', '15%', '20%'])}的学生学习基础较薄弱，需要更多的个别指导和同伴帮助。`,
+      learningStyle: `${isElementary ? '小学生以形象思维为主，喜欢直观、有趣的学习方式，注意力集中时间约为15-20分钟，需要通过游戏、动画、动手操作等方式保持学习兴趣。' : gradeNum <= 9 ? '初中学生正处于由形象思维向抽象思维过渡的阶段，好奇心强，喜欢动手操作和合作交流，但思维的深刻性和严谨性有待提升。' : '高中学生已具备一定的抽象思维能力，能够进行逻辑推理和系统分析，但学习主动性差异较大，需要创设富有挑战性的问题情境激发深度思考。'}`,
+      possibleDifficulties: `学生在学习${formData.value.topic}时可能遇到的困难包括：1）对${formData.value.topic}的抽象概念理解不到位，容易与相近概念混淆；2）在复杂情境中灵活运用知识解决问题存在困难；3）${isElementary ? '容易出现计算或操作失误，需要加强规范性训练。' : '知识的综合应用和迁移能力有待提升，需要更多变式训练。'}`
+    }
+
+    design.emergencyPlan = [
+      {
+        situation: '学生冷场无回应',
+        strategy: '降低问题难度，采用选择题、判断题等封闭性问题引导；提供思考支架和提示；先让小组讨论后再全班分享；教师可先说出部分答案请学生补充。',
+        backupPlan: '转为教师讲授为主，穿插简单问答，课后再反思问题设计。'
+      },
+      {
+        situation: '学生提出预设外问题',
+        strategy: '首先肯定学生的提问，然后判断问题价值：与本课核心相关的，可组织简短讨论；超出范围的，记录在"问题银行"中，课后探究或下节课解答。',
+        backupPlan: '告诉学生"这个问题提得很好，我们课后专门研究，现在先回到今天的主题"。'
+      },
+      {
+        situation: '学生争论偏离主题',
+        strategy: '适时介入，用问题引导回归："这个讨论和我们今天的${formData.value.topic}有什么关系呢？"；肯定学生的积极性，同时明确本节课的核心任务。',
+        backupPlan: '教师直接总结不同观点，指出焦点，重新聚焦学习目标。'
+      },
+      {
+        situation: '教学进度超时/时间不足',
+        strategy: '优先保证核心环节的完整性，可适当压缩练习和拓展环节；后续作业布置时补充删减的内容；课后分析时间分配问题，改进下一次设计。',
+        backupPlan: '巩固练习和拓展内容转为课后作业，下节课开始用5分钟讲评。'
+      },
+      {
+        situation: '多媒体/设备故障',
+        strategy: '保持镇定，不慌乱；改用板书、实物、挂图等传统手段继续教学；充分发挥语言描述和肢体演示的作用。',
+        backupPlan: '课前务必打印好纸质教案和关键图片备用，做到无设备也能完整上课。'
+      }
     ]
   }
 
@@ -1134,10 +1519,11 @@ const generateDesign = async () => {
   })
   saveHistory()
 
+  const sizeText = detailLevel === 'outline' ? '精简版' : detailLevel === 'detailed' ? '详案版' : '标准版'
   ElMessage.success({
-    message: `🎓 已成功生成「${design.basicInfo.subject}·${design.basicInfo.topic}」的教学设计方案`,
+    message: `🎓 已成功生成「${design.basicInfo.subject}·${design.basicInfo.topic}」的${design.basicInfo.detailLevel}（${sizeText}）`,
     type: 'success',
-    duration: 3000,
+    duration: 3500,
     showClose: true
   })
 }
@@ -1160,12 +1546,13 @@ const copyText = async (text: string) => {
 const copyAllDesign = async () => {
   if (!generatedDesign.value) return
   const d = generatedDesign.value
-  let text = `《${d.basicInfo.topic}》教学设计方案\n\n`
+  let text = `《${d.basicInfo.topic}》教学设计方案（${d.basicInfo.detailLevel}）\n\n`
   text += `一、课程基本信息\n`
   text += `课程主题：${d.basicInfo.topic}\n`
   text += `授课学科：${d.basicInfo.subject}\n`
   text += `授课年级：${d.basicInfo.grade}\n`
   text += `课时时长：${d.basicInfo.duration}分钟\n`
+  text += `详细程度：${d.basicInfo.detailLevel}\n`
   text += `教学模式：${d.basicInfo.teachingMode}\n`
   text += `难度等级：${d.basicInfo.difficulty}\n\n`
   text += `二、教学目标\n`
@@ -1182,7 +1569,14 @@ const copyAllDesign = async () => {
     text += `${i + 1}. ${stage.stage}（${stage.time}）\n`
     text += `   教师活动：${stage.teacherActivity}\n`
     text += `   学生活动：${stage.studentActivity}\n`
-    text += `   设计意图：${stage.designIntent}\n\n`
+    text += `   设计意图：${stage.designIntent}\n`
+    if (stage.teacherScript) {
+      text += `   教师话术参考：${stage.teacherScript}\n`
+    }
+    if (stage.transitionTip) {
+      text += `   过渡语建议：${stage.transitionTip}\n`
+    }
+    text += `\n`
   })
   text += `六、板书设计\n`
   text += `左侧（知识要点）：${d.blackboardDesign.left.join('、')}\n`
@@ -1194,7 +1588,22 @@ const copyAllDesign = async () => {
   text += `作业布置：${d.evaluation.homework.join('；')}\n\n`
   if (d.teachingReflection) {
     text += `八、教学反思建议\n`
-    text += d.teachingReflection.map((p, i) => `${i + 1}. ${p}`).join('\n')
+    text += d.teachingReflection.map((p, i) => `${i + 1}. ${p}`).join('\n') + '\n\n'
+  }
+  if (d.studentAnalysis) {
+    text += `九、学情分析\n`
+    text += `【认知基础】${d.studentAnalysis.cognitiveBase}\n`
+    text += `【能力水平】${d.studentAnalysis.abilityLevel}\n`
+    text += `【学习特点】${d.studentAnalysis.learningStyle}\n`
+    text += `【可能困难】${d.studentAnalysis.possibleDifficulties}\n\n`
+  }
+  if (d.emergencyPlan) {
+    text += `十、教学应急预案\n`
+    d.emergencyPlan.forEach((item, i) => {
+      text += `${i + 1}. 突发情况：${item.situation}\n`
+      text += `   应对策略：${item.strategy}\n`
+      text += `   备选方案：${item.backupPlan}\n\n`
+    })
   }
   await copyText(text)
 }
@@ -1202,7 +1611,7 @@ const copyAllDesign = async () => {
 const exportDesign = () => {
   if (!generatedDesign.value) return
   const d = generatedDesign.value
-  let text = `《${d.basicInfo.topic}》教学设计方案\n`
+  let text = `《${d.basicInfo.topic}》教学设计方案（${d.basicInfo.detailLevel}）\n`
   text += '='.repeat(50) + '\n\n'
   text += `一、课程基本信息\n`
   text += `-`.repeat(30) + '\n'
@@ -1210,6 +1619,7 @@ const exportDesign = () => {
   text += `授课学科：${d.basicInfo.subject}\n`
   text += `授课年级：${d.basicInfo.grade}\n`
   text += `课时时长：${d.basicInfo.duration}分钟\n`
+  text += `详细程度：${d.basicInfo.detailLevel}\n`
   text += `教学模式：${d.basicInfo.teachingMode}\n`
   text += `难度等级：${d.basicInfo.difficulty}\n\n`
   text += `二、教学目标\n`
@@ -1231,6 +1641,12 @@ const exportDesign = () => {
     text += `  ▸ 教师活动：${stage.teacherActivity}\n`
     text += `  ▸ 学生活动：${stage.studentActivity}\n`
     text += `  ▸ 设计意图：${stage.designIntent}\n`
+    if (stage.teacherScript) {
+      text += `  ▸ 教师话术参考：${stage.teacherScript}\n`
+    }
+    if (stage.transitionTip) {
+      text += `  ▸ 过渡语建议：${stage.transitionTip}\n`
+    }
   })
   text += `\n\n六、板书设计\n`
   text += `-`.repeat(30) + '\n'
@@ -1244,14 +1660,31 @@ const exportDesign = () => {
   if (d.teachingReflection && d.teachingReflection.length > 0) {
     text += `八、教学反思建议\n`
     text += `-`.repeat(30) + '\n'
-    text += d.teachingReflection.map((p, i) => `${i + 1}. ${p}`).join('\n')
+    text += d.teachingReflection.map((p, i) => `${i + 1}. ${p}`).join('\n') + '\n\n'
+  }
+  if (d.studentAnalysis) {
+    text += `九、学情分析\n`
+    text += `-`.repeat(30) + '\n'
+    text += `▶ 认知基础：${d.studentAnalysis.cognitiveBase}\n\n`
+    text += `▶ 能力水平：${d.studentAnalysis.abilityLevel}\n\n`
+    text += `▶ 学习特点：${d.studentAnalysis.learningStyle}\n\n`
+    text += `▶ 可能困难：${d.studentAnalysis.possibleDifficulties}\n\n`
+  }
+  if (d.emergencyPlan && d.emergencyPlan.length > 0) {
+    text += `十、教学应急预案\n`
+    text += `-`.repeat(30) + '\n'
+    d.emergencyPlan.forEach((item, i) => {
+      text += `\n【${i + 1}】突发情况：${item.situation}\n`
+      text += `   应对策略：${item.strategy}\n`
+      text += `   备选方案：${item.backupPlan}\n`
+    })
   }
 
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `教学设计_${d.basicInfo.topic}_${new Date().toISOString().split('T')[0]}.txt`
+  link.download = `教学设计_${d.basicInfo.detailLevel}_${d.basicInfo.topic}_${new Date().toISOString().split('T')[0]}.txt`
   link.click()
   URL.revokeObjectURL(url)
   ElMessage.success('教学设计方案已导出')
@@ -1266,6 +1699,7 @@ const resetAll = () => {
     knowledgeGoal: '',
     processGoal: '',
     emotionGoal: '',
+    detailLevel: 'standard',
     teachingMode: 'heuristic',
     difficulty: 'medium'
   }
@@ -1385,6 +1819,130 @@ onMounted(() => {
 
 .scenario-tags :deep(.el-tag) {
   padding: 8px 16px;
+}
+
+.detail-levels {
+  margin-bottom: 8px;
+}
+
+.detail-card {
+  border: 2px solid #ebeef5;
+  border-radius: 12px;
+  padding: 18px 16px;
+  transition: all 0.3s;
+  height: 100%;
+}
+
+.detail-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.outline-card {
+  border-color: #e4e7ed;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f7fa 100%);
+}
+
+.standard-card {
+  border-color: #c6e2ff;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  box-shadow: 0 0 0 1px rgba(22, 93, 255, 0.1);
+}
+
+.detailed-card {
+  border-color: #d1f0d1;
+  background: linear-gradient(135deg, #f0fff0 0%, #e8ffe8 100%);
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.detail-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #303133;
+}
+
+.detail-desc {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 12px;
+}
+
+.detail-features {
+  margin: 0;
+  padding-left: 18px;
+  margin-bottom: 12px;
+}
+
+.detail-features li {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.8;
+}
+
+.detail-scenarios {
+  font-size: 12px;
+  color: #909399;
+  padding-top: 10px;
+  border-top: 1px dashed #dcdfe6;
+}
+
+.scenario-label {
+  font-weight: 600;
+  color: #606266;
+  margin-right: 4px;
+}
+
+.tip-icon {
+  cursor: help;
+  margin-left: 4px;
+}
+
+.student-analysis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.sa-card {
+  padding: 16px;
+  background: linear-gradient(135deg, #f5fffa 0%, #e6fff2 100%);
+  border: 1px solid #d1f0d1;
+  border-radius: 10px;
+}
+
+.sa-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.sa-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .detail-levels {
+    :deep(.el-col) {
+      margin-bottom: 12px;
+    }
+  }
+
+  .student-analysis {
+    grid-template-columns: 1fr;
+  }
 }
 
 .main-card {
