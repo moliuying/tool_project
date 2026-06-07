@@ -210,6 +210,11 @@ const routes: RouteRecordRaw[] = [
         path: '/placeholder-image',
         name: 'PlaceholderImageGenerator',
         component: () => import('@/views/PlaceholderImageGenerator.vue')
+      },
+      {
+        path: '/js-beautifier',
+        name: 'JsCodeBeautifier',
+        component: () => import('@/views/JsCodeBeautifier.vue')
       }
     ]
   }
