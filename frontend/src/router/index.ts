@@ -230,6 +230,11 @@ const routes: RouteRecordRaw[] = [
         path: '/date-difference',
         name: 'DateDifferenceCalculator',
         component: () => import('@/views/DateDifferenceCalculator.vue')
+      },
+      {
+        path: '/title-rewriter',
+        name: 'TitleRewriter',
+        component: () => import('@/views/TitleRewriter.vue')
       }
     ]
   }
