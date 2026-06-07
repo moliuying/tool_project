@@ -35,14 +35,118 @@
       </div>
     </el-card>
 
+    <el-card class="wizard-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#165DFF">
+            <Guide />
+          </el-icon>
+          <span>快速选择向导</span>
+          <el-tag size="small" type="success" effect="plain">2 个问题帮你找到答案</el-tag>
+        </div>
+      </template>
+      <div class="wizard-body">
+        <div class="wizard-steps">
+          <div class="wizard-step" :class="{ active: wizardStep >= 1, done: wizardStep > 1 }">
+            <div class="step-circle">1</div>
+            <div class="step-label">是否需要保留代码的可读性（换行和缩进）？</div>
+          </div>
+          <div class="step-arrow">
+            <el-icon><ArrowRight /></el-icon>
+          </div>
+          <div class="wizard-step" :class="{ active: wizardStep >= 2, done: wizardStep > 2 }">
+            <div class="step-circle">2</div>
+            <div class="step-label">是否需要删除注释？</div>
+          </div>
+          <div class="step-arrow">
+            <el-icon><ArrowRight /></el-icon>
+          </div>
+          <div class="wizard-step" :class="{ active: wizardStep >= 3 }">
+            <div class="step-circle">
+              <el-icon><CircleCheck /></el-icon>
+            </div>
+            <div class="step-label">推荐结果</div>
+          </div>
+        </div>
+
+        <div class="wizard-content">
+          <div v-if="wizardStep === 1" class="wizard-question">
+            <div class="question-title">问题 1 / 2：处理后代码还需要被人类阅读吗？</div>
+            <div class="question-hint">例如：代码审查、提交仓库、团队共享 → 需要可读；生产部署、压缩传输 → 不需要可读</div>
+            <div class="question-options">
+              <el-button type="primary" size="large" @click="wizardQ1 = 'readable'; wizardStep = 2">
+                <el-icon><Reading /></el-icon>
+                需要保留换行和缩进，方便人阅读
+              </el-button>
+              <el-button type="warning" size="large" @click="wizardQ1 = 'small'; wizardStep = 2">
+                <el-icon><Van /></el-icon>
+                不需要，目标是体积尽可能小
+              </el-button>
+            </div>
+          </div>
+
+          <div v-if="wizardStep === 2" class="wizard-question">
+            <div class="question-title">问题 2 / 2：是否需要删除代码中的注释？</div>
+            <div class="question-hint">注释可能包含敏感信息、TODO、内部说明等，发布前通常需要清理</div>
+            <div class="question-options">
+              <el-button type="success" size="large" @click="wizardQ2 = 'keep'; wizardStep = 3; calcRecommendation()">
+                <el-icon><Document /></el-icon>
+                保留注释
+              </el-button>
+              <el-button type="danger" size="large" @click="wizardQ2 = 'remove'; wizardStep = 3; calcRecommendation()">
+                <el-icon><Delete /></el-icon>
+                删除所有注释
+              </el-button>
+            </div>
+            <el-button text @click="wizardStep = 1" style="margin-top: 12px;">
+              <el-icon><ArrowLeft /></el-icon>
+              返回上一步
+            </el-button>
+          </div>
+
+          <div v-if="wizardStep === 3" class="wizard-result">
+            <div class="result-title">根据你的选择，推荐使用：</div>
+            <el-card shadow="hover" class="recommend-card" :class="`recommend-${wizardRecommendation}`">
+              <div class="recommend-icon">
+                <el-icon :size="48" :color="recommendColor">
+                  <component :is="recommendIcon" />
+                </el-icon>
+              </div>
+              <div class="recommend-name">{{ recommendName }}</div>
+              <div class="recommend-reason">{{ recommendReason }}</div>
+              <div class="recommend-details">
+                <div class="detail-item">
+                  <el-tag size="small" :type="wizardQ2 === 'remove' ? 'danger' : 'success'">
+                    注释：{{ wizardQ2 === 'remove' ? '全部删除' : '完整保留' }}
+                  </el-tag>
+                  <el-tag size="small" :type="wizardQ1 === 'readable' ? 'success' : 'warning'">
+                    格式：{{ wizardQ1 === 'readable' ? '保留缩进换行' : '全部去除' }}
+                  </el-tag>
+                  <el-tag size="small" type="primary">变量名：完整保留</el-tag>
+                </div>
+              </div>
+              <el-button :type="recommendBtnType" size="default" @click="applyRecommended">
+                <el-icon><component :is="recommendIcon" /></el-icon>
+                立即使用「{{ recommendName }}」
+              </el-button>
+            </el-card>
+            <el-button text @click="resetWizard" style="margin-top: 16px;">
+              <el-icon><Refresh /></el-icon>
+              重新选择
+            </el-button>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <el-card class="mode-card">
       <template #header>
         <div class="card-header">
           <el-icon :size="20" color="#165DFF">
             <Operation />
           </el-icon>
-          <span>三种处理模式对比</span>
-          <el-tag size="small" type="info" effect="plain">不知道选哪个？先看这里</el-tag>
+          <span>三种处理模式详细对比</span>
+          <el-tag size="small" type="info" effect="plain">三种模式均完整保留变量名，不会混淆或重命名</el-tag>
         </div>
       </template>
       <el-row :gutter="16">
@@ -52,20 +156,28 @@
               <el-icon :size="32" color="#409eff"><MagicStick /></el-icon>
             </div>
             <div class="mode-name">美化 (Beautify)</div>
-            <div class="mode-brief">让代码变得好看易读</div>
+            <div class="mode-brief">格式化代码，保留注释，方便阅读</div>
+            <el-tag size="small" type="primary" effect="plain" class="mode-guarantee">
+              <el-icon><Lock /></el-icon>
+              完整保留变量名
+            </el-tag>
             <el-divider />
             <div class="mode-features">
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>保留所有注释</span>
+                <span>保留所有注释（行/块）</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>正确缩进与换行</span>
+                <span>新增正确的缩进与换行</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>运算符之间加空格</span>
+                <span>运算符之间添加空格</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>所有变量名、函数名原样保留</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#e6a23c"><WarningFilled /></el-icon>
@@ -93,24 +205,32 @@
               <el-icon :size="32" color="#e6a23c"><Brush /></el-icon>
             </div>
             <div class="mode-name">净化 (Purify)</div>
-            <div class="mode-brief">去除注释，保留整洁格式</div>
+            <div class="mode-brief">删除注释，保留整洁缩进格式</div>
+            <el-tag size="small" type="warning" effect="plain" class="mode-guarantee">
+              <el-icon><Lock /></el-icon>
+              完整保留变量名
+            </el-tag>
             <el-divider />
             <div class="mode-features">
               <div class="feature-item">
                 <el-icon color="#f56c6c"><CircleClose /></el-icon>
-                <span>删除所有注释（行/块）</span>
+                <span>删除所有注释（行注释 // 和块注释 /* */）</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>保留正确缩进与换行</span>
+                <span>保留换行和正确缩进（人仍可阅读）</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>去除多余空白字符</span>
+                <span>去除行尾空格、连续空行等多余空白</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>所有变量名、函数名原样保留</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#e6a23c"><WarningFilled /></el-icon>
-                <span>丢失注释信息</span>
+                <span>注释信息将丢失，无法恢复</span>
               </div>
             </div>
             <el-divider />
@@ -134,7 +254,11 @@
               <el-icon :size="32" color="#f56c6c"><Compress /></el-icon>
             </div>
             <div class="mode-name">压缩 (Minify)</div>
-            <div class="mode-brief">极致压缩，最小化体积</div>
+            <div class="mode-brief">极致压缩，体积最小化</div>
+            <el-tag size="small" type="danger" effect="plain" class="mode-guarantee">
+              <el-icon><Lock /></el-icon>
+              完整保留变量名
+            </el-tag>
             <el-divider />
             <div class="mode-features">
               <div class="feature-item">
@@ -147,11 +271,15 @@
               </div>
               <div class="feature-item">
                 <el-icon color="#f56c6c"><CircleClose /></el-icon>
-                <span>删除非必要空格</span>
+                <span>删除非必要空格（运算符空格等）</span>
               </div>
               <div class="feature-item">
                 <el-icon color="#67c23a"><CircleCheck /></el-icon>
-                <span>代码体积最小化</span>
+                <span>所有变量名、函数名原样保留</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>代码体积最小化，加载最快</span>
               </div>
             </div>
             <el-divider />
@@ -394,6 +522,7 @@ import { ref, computed, watch } from 'vue'
 import {
   InfoFilled,
   Suitcase,
+  Guide,
   Operation,
   EditPen,
   Edit,
@@ -411,7 +540,13 @@ import {
   QuestionFilled,
   CircleCheck,
   CircleClose,
-  WarningFilled
+  WarningFilled,
+  ArrowRight,
+  ArrowLeft,
+  Reading,
+  Van,
+  Lock,
+  Refresh
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -430,6 +565,96 @@ const autoProcess = ref(false)
 const isProcessing = ref(false)
 const currentMode = ref<ProcessMode>(null)
 const lastProcessTime = ref('')
+
+const wizardStep = ref(1)
+const wizardQ1 = ref<'readable' | 'small' | ''>('')
+const wizardQ2 = ref<'keep' | 'remove' | ''>('')
+const wizardRecommendation = ref<ProcessMode>(null)
+
+const calcRecommendation = () => {
+  if (wizardQ1.value === 'readable' && wizardQ2.value === 'keep') {
+    wizardRecommendation.value = 'beautify'
+  } else if (wizardQ1.value === 'readable' && wizardQ2.value === 'remove') {
+    wizardRecommendation.value = 'purify'
+  } else if (wizardQ1.value === 'small' && wizardQ2.value === 'keep') {
+    wizardRecommendation.value = 'beautify'
+  } else if (wizardQ1.value === 'small' && wizardQ2.value === 'remove') {
+    wizardRecommendation.value = 'minify'
+  }
+}
+
+const resetWizard = () => {
+  wizardStep.value = 1
+  wizardQ1.value = ''
+  wizardQ2.value = ''
+  wizardRecommendation.value = null
+}
+
+const recommendName = computed(() => {
+  const map: Record<string, string> = {
+    beautify: '美化 (Beautify)',
+    purify: '净化 (Purify)',
+    minify: '压缩 (Minify)'
+  }
+  return wizardRecommendation.value ? map[wizardRecommendation.value] : ''
+})
+
+const recommendIcon = computed(() => {
+  const map: Record<string, any> = {
+    beautify: MagicStick,
+    purify: Brush,
+    minify: Compress
+  }
+  return wizardRecommendation.value ? map[wizardRecommendation.value] : MagicStick
+})
+
+const recommendColor = computed(() => {
+  const map: Record<string, string> = {
+    beautify: '#409eff',
+    purify: '#e6a23c',
+    minify: '#f56c6c'
+  }
+  return wizardRecommendation.value ? map[wizardRecommendation.value] : '#409eff'
+})
+
+const recommendBtnType = computed<'primary' | 'warning' | 'danger'>(() => {
+  const map: Record<string, 'primary' | 'warning' | 'danger'> = {
+    beautify: 'primary',
+    purify: 'warning',
+    minify: 'danger'
+  }
+  return wizardRecommendation.value ? map[wizardRecommendation.value] : 'primary'
+})
+
+const recommendReason = computed(() => {
+  if (wizardRecommendation.value === 'beautify') {
+    return wizardQ2.value === 'keep'
+      ? '你需要保留注释并保持代码可读，美化模式会为代码添加正确的缩进和换行，同时完整保留所有注释和变量名'
+      : '虽然你希望体积小，但保留注释意味着无法做到极致压缩；美化模式会在保留注释的前提下让代码更易读'
+  }
+  if (wizardRecommendation.value === 'purify') {
+    return '你既希望删除所有注释（清理敏感信息），又需要保留代码的缩进和换行以便人类阅读，净化模式正适合这种场景'
+  }
+  if (wizardRecommendation.value === 'minify') {
+    return '你希望删除注释并最小化代码体积，压缩模式会去除所有注释、换行和多余空格，同时完整保留变量名，非常适合生产部署'
+  }
+  return ''
+})
+
+const applyRecommended = () => {
+  if (!sourceCode.value.trim()) {
+    loadExample()
+    setTimeout(() => {
+      if (wizardRecommendation.value === 'beautify') doBeautify()
+      else if (wizardRecommendation.value === 'purify') doPurify()
+      else if (wizardRecommendation.value === 'minify') doMinify()
+    }, 150)
+  } else {
+    if (wizardRecommendation.value === 'beautify') doBeautify()
+    else if (wizardRecommendation.value === 'purify') doPurify()
+    else if (wizardRecommendation.value === 'minify') doMinify()
+  }
+}
 
 const newlineChar = computed(() => newlineType.value === '\\r\\n' ? '\r\n' : '\n')
 const indentChar = computed(() => indentType.value === 'tab' ? '\t' : ' '.repeat(indentSize.value))
@@ -1134,7 +1359,8 @@ watch([indentType, indentSize, newlineType], () => {
 
 .guide-card,
 .scene-card,
-.mode-card {
+.mode-card,
+.wizard-card {
   margin-bottom: 16px;
 }
 
@@ -1142,6 +1368,176 @@ watch([indentType, indentSize, newlineType], () => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.wizard-body {
+  padding: 4px 0;
+}
+
+.wizard-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+
+.wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 24px;
+  background: #f5f7fa;
+  transition: all 0.3s;
+  opacity: 0.5;
+}
+
+.wizard-step.active {
+  opacity: 1;
+  background: #ecf5ff;
+}
+
+.wizard-step.done {
+  opacity: 1;
+  background: #f0f9eb;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #c0c4cc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.wizard-step.active .step-circle {
+  background: #409eff;
+}
+
+.wizard-step.done .step-circle {
+  background: #67c23a;
+}
+
+.step-label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.step-arrow {
+  color: #dcdfe6;
+}
+
+.wizard-content {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+.wizard-question {
+  text-align: center;
+}
+
+.question-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.question-hint {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 28px;
+}
+
+.question-options {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.question-options .el-button {
+  min-width: 280px;
+  height: 52px;
+  font-size: 15px;
+}
+
+.wizard-result {
+  text-align: center;
+}
+
+.result-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 20px;
+}
+
+.recommend-card {
+  max-width: 480px;
+  margin: 0 auto;
+  border-width: 2px;
+  text-align: center;
+}
+
+.recommend-card.recommend-beautify {
+  border-color: #409eff;
+  background: linear-gradient(135deg, #ecf5ff 0%, #fff 60%);
+}
+
+.recommend-card.recommend-purify {
+  border-color: #e6a23c;
+  background: linear-gradient(135deg, #fdf6ec 0%, #fff 60%);
+}
+
+.recommend-card.recommend-minify {
+  border-color: #f56c6c;
+  background: linear-gradient(135deg, #fef0f0 0%, #fff 60%);
+}
+
+.recommend-icon {
+  margin-bottom: 12px;
+}
+
+.recommend-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.recommend-reason {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+  margin-bottom: 16px;
+}
+
+.recommend-details {
+  margin-bottom: 16px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mode-guarantee {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  align-self: center;
 }
 
 .mode-item {
@@ -1444,6 +1840,21 @@ watch([indentType, indentSize, newlineType], () => {
 
   .mode-card :deep(.el-col) {
     margin-bottom: 16px;
+  }
+
+  .wizard-steps {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .step-arrow {
+    transform: rotate(90deg);
+    padding-left: 16px;
+  }
+
+  .question-options .el-button {
+    min-width: 100%;
   }
 }
 </style>
