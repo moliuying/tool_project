@@ -193,11 +193,23 @@
                 <template v-if="resizeMode === 'custom'">
                   <el-form-item label="目标尺寸">
                     <div class="custom-size-header">
-                      <span class="ratio-info">
-                        <el-icon :size="14" color="#165DFF"><InfoFilled /></el-icon>
-                        原图比例：<strong>{{ originalRatioText }}</strong>
-                        <span v-if="originalWidth > 0">({{ originalWidth }} × {{ originalHeight }})</span>
-                      </span>
+                      <div class="ratio-compare-bar">
+                        <span class="ratio-info ratio-original">
+                          <el-icon :size="14" color="#165DFF"><InfoFilled /></el-icon>
+                          原图：<strong>{{ originalRatioText }}</strong>
+                          <span class="ratio-pixel">({{ originalWidth }} × {{ originalHeight }})</span>
+                        </span>
+                        <el-icon :size="16" :class="['ratio-arrow', { 'ratio-warning': isRatioMismatch }]">
+                          <component :is="isRatioMismatch ? 'Warning' : 'Right'" />
+                        </el-icon>
+                        <span class="ratio-info" :class="{ 'ratio-mismatch': isRatioMismatch, 'ratio-match': !isRatioMismatch && targetWidth > 0 }">
+                          <el-icon :size="14" :color="isRatioMismatch ? '#f56c6c' : '#67c23a'">
+                            <component :is="isRatioMismatch ? 'Warning' : 'CircleCheckFilled'" />
+                          </el-icon>
+                          目标：<strong>{{ targetRatioText }}</strong>
+                          <span class="ratio-pixel">({{ targetWidth }} × {{ targetHeight }})</span>
+                        </span>
+                      </div>
                     </div>
                     <div class="size-input-group">
                       <div class="size-input-wrapper">
@@ -237,17 +249,45 @@
                         <span class="size-input-unit">px</span>
                       </div>
                     </div>
-                    <div class="ratio-status-tip" :class="keepRatio ? 'tip-locked' : 'tip-unlocked'">
+                    <div class="ratio-status-tip" :class="keepRatio ? 'tip-locked' : isRatioMismatch ? 'tip-danger' : 'tip-unlocked'">
                       <el-icon :size="12">
                         <CircleCheckFilled v-if="keepRatio" />
-                        <Warning v-else />
+                        <Warning v-else-if="isRatioMismatch" />
+                        <InfoFilled v-else />
                       </el-icon>
                       <span v-if="keepRatio">
                         <strong>已锁定</strong> 宽高比，修改<strong>宽度</strong>或<strong>高度</strong>后，另一侧将自动等比计算
                       </span>
-                      <span v-else>
-                        <strong>未锁定</strong> 宽高比，宽高可各自独立设置，可能导致图片拉伸变形
+                      <span v-else-if="isRatioMismatch">
+                        <strong>⚠️ 比例不匹配！</strong> 原图 <strong>{{ originalRatioText }}</strong>，目标 <strong>{{ targetRatioText }}</strong>，相差约 <strong>{{ distortionAmount }}%</strong>，GIF画面<strong>将被拉伸变形</strong>
                       </span>
+                      <span v-else>
+                        <strong>未锁定</strong> 宽高比，宽高可各自独立设置
+                      </span>
+                    </div>
+
+                    <div v-if="isRatioMismatch" class="ratio-fix-panel">
+                      <div class="fix-panel-title">
+                        <el-icon :size="14" color="#f56c6c"><Warning /></el-icon>
+                        <span>防止变形，一键修正为等比尺寸：</span>
+                      </div>
+                      <div class="fix-btn-group">
+                        <el-button size="small" type="primary" plain @click="fixByWidth">
+                          <el-icon><Aim /></el-icon>
+                          以宽度 {{ targetWidth }}px 为准
+                          <span class="fix-sub">→ 高 {{ Math.max(1, Math.round(targetWidth / (originalWidth / originalHeight))) }}px</span>
+                        </el-button>
+                        <el-button size="small" type="success" plain @click="fixByHeight">
+                          <el-icon><Aim /></el-icon>
+                          以高度 {{ targetHeight }}px 为准
+                          <span class="fix-sub">→ 宽 {{ Math.max(1, Math.round(targetHeight * (originalWidth / originalHeight))) }}px</span>
+                        </el-button>
+                        <el-button size="small" type="warning" plain @click="fixToOriginal">
+                          <el-icon><RefreshLeft /></el-icon>
+                          恢复原始尺寸
+                          <span class="fix-sub">{{ originalWidth }} × {{ originalHeight }}</span>
+                        </el-button>
+                      </div>
                     </div>
                   </el-form-item>
                 </template>
@@ -266,10 +306,29 @@
           </el-card>
 
           <el-card class="action-card">
+            <el-alert
+              v-if="isRatioMismatch"
+              type="error"
+              :closable="false"
+              class="distortion-warning"
+              show-icon
+            >
+              <template #title>
+                <div class="distortion-warning-content">
+                  <span>
+                    ⚠️ <strong>尺寸比例不匹配</strong>（原图 {{ originalRatioText }} → 目标 {{ targetRatioText }}，相差 {{ distortionAmount }}%），输出GIF将会被<strong>拉伸变形</strong>
+                  </span>
+                  <div class="distortion-warning-actions">
+                    <el-button size="small" type="primary" plain @click="fixByWidth">按宽度修正</el-button>
+                    <el-button size="small" type="success" plain @click="fixByHeight">按高度修正</el-button>
+                  </div>
+                </div>
+              </template>
+            </el-alert>
             <div class="action-buttons">
               <el-button type="primary" size="large" @click="processGif" :loading="processing" :disabled="!canProcess">
                 <el-icon v-if="!processing"><RefreshRight /></el-icon>
-                {{ processing ? `处理中 ${processProgress}%` : '开始处理并下载' }}
+                {{ processing ? `处理中 ${processProgress}%` : (isRatioMismatch ? '仍要处理（可能变形）' : '开始处理并下载') }}
               </el-button>
             </div>
             <el-progress v-if="processing" :percentage="processProgress" :stroke-width="6" />
@@ -302,7 +361,9 @@ import {
   Link,
   Connection,
   CircleCheckFilled,
-  Warning
+  Warning,
+  Aim,
+  RefreshLeft
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -373,6 +434,29 @@ const originalRatioText = computed(() => {
   const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
   const g = gcd(originalWidth.value, originalHeight.value)
   return `${originalWidth.value / g}:${originalHeight.value / g}`
+})
+
+const targetRatioText = computed(() => {
+  if (!targetWidth.value || !targetHeight.value) return '--:--'
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+  const g = gcd(targetWidth.value, targetHeight.value)
+  return `${targetWidth.value / g}:${targetHeight.value / g}`
+})
+
+const isRatioMismatch = computed(() => {
+  if (!originalWidth.value || !originalHeight.value || !targetWidth.value || !targetHeight.value) return false
+  if (keepRatio.value) return false
+  const originalRatio = originalWidth.value / originalHeight.value
+  const targetRatio = targetWidth.value / targetHeight.value
+  return Math.abs(originalRatio - targetRatio) > 0.01
+})
+
+const distortionAmount = computed(() => {
+  if (!isRatioMismatch.value) return 0
+  const originalRatio = originalWidth.value / originalHeight.value
+  const targetRatio = targetWidth.value / targetHeight.value
+  const diff = Math.abs(originalRatio - targetRatio) / originalRatio
+  return Math.round(diff * 100)
 })
 
 const formatFileSize = (bytes: number): string => {
@@ -490,6 +574,29 @@ watch(keepRatio, (val) => {
     onWidthChange(targetWidth.value)
   }
 })
+
+const fixByWidth = () => {
+  if (!originalWidth.value || !originalHeight.value || !targetWidth.value) return
+  const ratio = originalWidth.value / originalHeight.value
+  targetHeight.value = Math.max(1, Math.round(targetWidth.value / ratio))
+  keepRatio.value = true
+  ElMessage.success('已按宽度修正为等比尺寸')
+}
+
+const fixByHeight = () => {
+  if (!originalWidth.value || !originalHeight.value || !targetHeight.value) return
+  const ratio = originalWidth.value / originalHeight.value
+  targetWidth.value = Math.max(1, Math.round(targetHeight.value * ratio))
+  keepRatio.value = true
+  ElMessage.success('已按高度修正为等比尺寸')
+}
+
+const fixToOriginal = () => {
+  targetWidth.value = originalWidth.value
+  targetHeight.value = originalHeight.value
+  keepRatio.value = true
+  ElMessage.success('已恢复为原始尺寸')
+}
 
 const processGif = async () => {
   if (!originalFile.value || !canProcess.value) return
@@ -997,6 +1104,139 @@ const processGif = async () => {
 
 .ratio-status-tip.tip-unlocked :deep(.el-icon) {
   color: #f59e0b;
+}
+
+.ratio-status-tip.tip-danger {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  animation: dangerPulse 2s ease-in-out infinite;
+}
+
+@keyframes dangerPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.05); }
+}
+
+.ratio-status-tip.tip-danger :deep(.el-icon) {
+  color: #ef4444;
+}
+
+.ratio-compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ratio-info.ratio-original {
+  background: linear-gradient(135deg, #ecf5ff 0%, #f0f9ff 100%);
+  border-color: #d9ecff;
+}
+
+.ratio-info.ratio-match {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #bbf7d0;
+}
+
+.ratio-info.ratio-match strong {
+  color: #16a34a;
+}
+
+.ratio-info.ratio-mismatch {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border-color: #fecaca;
+  animation: dangerPulse 2s ease-in-out infinite;
+}
+
+.ratio-info.ratio-mismatch strong {
+  color: #dc2626;
+}
+
+.ratio-pixel {
+  font-size: 11px;
+  color: #909399;
+  margin-left: 4px;
+  opacity: 0.85;
+}
+
+.ratio-arrow {
+  color: #909399;
+  transition: all 0.2s;
+}
+
+.ratio-arrow.ratio-warning {
+  color: #ef4444;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.ratio-fix-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+}
+
+.fix-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #9a3412;
+  margin-bottom: 10px;
+}
+
+.fix-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fix-btn-group .el-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.fix-sub {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-left: 4px;
+  font-weight: normal;
+}
+
+.distortion-warning {
+  margin-bottom: 16px;
+}
+
+.distortion-warning-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.distortion-warning-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .distortion-warning-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
 
 .quality-tip {
