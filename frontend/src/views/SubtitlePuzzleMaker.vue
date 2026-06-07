@@ -108,6 +108,19 @@
             <el-tag size="small">{{ currentMode === 'image' ? `图片数量: ${imageList.length}` : `台词数量: ${textList.length}` }}</el-tag>
             <el-tag size="small" type="info">拼图尺寸: {{ finalWidth }} x {{ finalHeight }}</el-tag>
             <el-tag size="small" type="success">输出格式: PNG</el-tag>
+            <el-tooltip placement="top">
+              <template #content>
+                <div class="output-tip">
+                  <p>· PNG 无损格式，保留原图最高清晰度</p>
+                  <p v-if="currentMode === 'image'">· 所有截图等比缩放到统一宽度，无拉伸变形</p>
+                  <p v-else>· 文字以矢量方式渲染，边缘清晰锐利</p>
+                </div>
+              </template>
+              <el-tag size="small" type="warning" class="quality-tag">
+                <el-icon :size="12"><InfoFilled /></el-icon>
+                <span>高清无损输出</span>
+              </el-tag>
+            </el-tooltip>
           </div>
         </el-card>
       </el-col>
@@ -143,6 +156,10 @@
                 <div class="el-upload__tip">
                   支持 JPG、PNG、WEBP 格式，单张不超过 10MB
                 </div>
+                <div class="el-upload__tip upload-tip-extra">
+                  <el-icon :size="12" color="#165DFF"><InfoFilled /></el-icon>
+                  <span>宽度不一致的截图将自动统一宽度（默认以最宽图为基准，保持比例缩放），不会出现错位或留白</span>
+                </div>
               </template>
             </el-upload>
           </div>
@@ -155,6 +172,15 @@
                 清空全部
               </el-button>
             </div>
+            <el-alert
+              v-if="currentMode === 'image' && hasDifferentWidths"
+              type="info"
+              :closable="false"
+              class="width-warning"
+              show-icon
+              title="检测到图片宽度不一致"
+              description="系统已自动以最宽图片（{{ contentWidth }}px）为基准，将所有图片等比缩放至统一宽度，确保边缘对齐无错位，不会拉伸变形。"
+            />
             <draggable
               v-model="imageList"
               item-key="id"
@@ -169,7 +195,12 @@
                   <img :src="element.src" class="item-thumb" />
                   <div class="item-info">
                     <div class="item-name">{{ element.name }}</div>
-                    <div class="item-size">{{ element.width }} x {{ element.height }}</div>
+                    <div class="item-size">
+                      原始: {{ element.width }} x {{ element.height }}
+                      <span v-if="currentMode === 'image' && element.width !== contentWidth" class="size-scaled">
+                        · 输出: {{ contentWidth }} x {{ Math.round(element.height * (contentWidth / element.width)) }}
+                      </span>
+                    </div>
                   </div>
                   <div class="item-actions">
                     <el-button size="small" text @click="moveImageUp(index)" :disabled="index === 0">
@@ -310,9 +341,18 @@
               <el-form label-position="top">
                 <el-form-item label="拼图宽度">
                   <el-radio-group v-model="widthMode" size="small">
-                    <el-radio-button value="max">自适应</el-radio-button>
+                    <el-radio-button value="max" v-if="currentMode === 'image'">自适应（统一宽度）</el-radio-button>
+                    <el-radio-button value="max" v-else>自适应</el-radio-button>
                     <el-radio-button value="custom">自定义</el-radio-button>
                   </el-radio-group>
+                  <div class="width-hint" v-if="currentMode === 'image'">
+                    <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                    <span>自适应模式将以最宽图片为基准，所有图片等比缩放至同一宽度，确保边缘对齐无错位</span>
+                  </div>
+                  <div class="width-hint" v-else>
+                    <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                    <span>文字模式默认宽度 700px，可自定义 300-1200px 范围</span>
+                  </div>
                   <el-slider
                     v-if="widthMode === 'custom'"
                     v-model="customWidth"
@@ -460,7 +500,13 @@
             </div>
             <el-alert type="info" :closable="false" class="download-tip">
               <template #title>
-                <span>下载说明：图片将以 PNG 格式保存，支持透明背景。所有处理均在本地完成，不会上传任何数据。</span>
+                <div class="download-tip-content">
+                  <p><strong>下载说明：</strong>图片将以 PNG 格式保存，支持透明背景。</p>
+                  <p>· 输出尺寸为 {{ finalWidth }} x {{ finalHeight }} 像素（含内边距）</p>
+                  <p v-if="currentMode === 'image'">· 所有截图已等比缩放到统一宽度（{{ contentWidth }}px），边缘对齐无错位，保持原始清晰度</p>
+                  <p v-else>· 文字以矢量方式渲染，边缘清晰锐利，适合社交媒体分享</p>
+                  <p>· 所有处理均在本地完成，不会上传任何数据。</p>
+                </div>
               </template>
             </el-alert>
           </el-card>
@@ -588,6 +634,12 @@ const scenes = [
 
 const hasContent = computed(() => {
   return currentMode.value === 'image' ? imageList.value.length > 0 : textList.value.length > 0
+})
+
+const hasDifferentWidths = computed(() => {
+  if (currentMode.value !== 'image' || imageList.value.length < 2) return false
+  const widths = new Set(imageList.value.map(img => img.width))
+  return widths.size > 1
 })
 
 const contentWidth = computed(() => {
@@ -1311,6 +1363,59 @@ watch(currentMode, () => {
   padding: 30px 20px;
 }
 
+.upload-tip-extra {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #eff6ff;
+  border-radius: 6px;
+  color: #1e40af;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+.quality-tag {
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.output-tip {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.output-tip p {
+  margin: 0;
+}
+
+.width-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.5;
+}
+
+.size-scaled {
+  color: #165DFF;
+  font-weight: 500;
+}
+
+.download-tip-content {
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.download-tip-content p {
+  margin: 2px 0;
+}
+
 .image-uploader :deep(.el-upload) {
   width: 100%;
 }
@@ -1341,6 +1446,10 @@ watch(currentMode, () => {
   margin-bottom: 12px;
   font-size: 14px;
   color: #606266;
+}
+
+.width-warning {
+  margin-bottom: 12px;
 }
 
 .image-drag-list,
