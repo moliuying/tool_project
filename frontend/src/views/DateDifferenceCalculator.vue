@@ -10,11 +10,63 @@
         </div>
       </template>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
+        <el-step title="选择输入方式" description="支持下拉选择年/月/日或日历选择器两种方式" />
         <el-step title="选择起始日期" description="可以是出生日期、项目开始日期、某个纪念日等" />
         <el-step title="选择目标日期" description="可以是今天、未来的节日、考试日期、截止日期等" />
         <el-step title="点击计算" description="一键获取两个日期之间的详细差值" />
-        <el-step title="查看结果" description="显示总天数、周数、月数、年数以及工作日/休息日统计" />
       </el-steps>
+      <el-divider />
+      <div class="validation-rules">
+        <h4 class="rules-title">
+          <el-icon :size="16" color="#E6A23C"><Warning /></el-icon>
+          日期校验规则
+        </h4>
+        <el-row :gutter="16">
+          <el-col :span="8">
+            <div class="rule-item">
+              <el-icon :size="18" color="#67C23A"><CircleCheckFilled /></el-icon>
+              <div class="rule-content">
+                <span class="rule-label">年份范围</span>
+                <span class="rule-desc">支持 1900 年 ~ 2100 年</span>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="rule-item">
+              <el-icon :size="18" color="#67C23A"><CircleCheckFilled /></el-icon>
+              <div class="rule-content">
+                <span class="rule-label">月份范围</span>
+                <span class="rule-desc">1 月 ~ 12 月</span>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="rule-item">
+              <el-icon :size="18" color="#67C23A"><CircleCheckFilled /></el-icon>
+              <div class="rule-content">
+                <span class="rule-label">日期合法性</span>
+                <span class="rule-desc">自动校验（含闰年2月、30/31天）</span>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+        <el-alert
+          title="非法日期处理说明"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="rule-alert"
+        >
+          <template #default>
+            <p>当输入不合法日期时（如 2月30日、4月31日、非闰年2月29日）：</p>
+            <ul class="alert-list">
+              <li>下拉模式：日期选项会根据年月动态调整，不会出现非法日期</li>
+              <li>计算前会进行二次校验，如发现问题将弹出错误提示</li>
+              <li>非法日期的输入框会标红显示，便于定位问题</li>
+            </ul>
+          </template>
+        </el-alert>
+      </div>
       <el-divider />
       <div class="scenario-tips">
         <h4 class="tips-title">
@@ -64,15 +116,80 @@
         </div>
       </template>
 
-      <el-form :model="form" label-width="100px" class="calculator-form">
+      <div class="input-mode-switch">
+        <span class="switch-label">输入方式：</span>
+        <el-radio-group v-model="inputMode" size="default">
+          <el-radio-button value="select">
+            <el-icon><Menu /></el-icon>
+            下拉选择（年/月/日）
+          </el-radio-button>
+          <el-radio-button value="picker">
+            <el-icon><Calendar /></el-icon>
+            日历选择器
+          </el-radio-button>
+        </el-radio-group>
+      </div>
+
+      <el-form
+        :model="form"
+        label-width="100px"
+        class="calculator-form"
+        :rules="rules"
+        ref="formRef"
+      >
         <el-row :gutter="24">
           <el-col :span="12">
-            <el-form-item label="起始日期">
+            <el-form-item label="起始日期" required>
               <div class="form-item-with-help">
                 <el-tooltip content="计算的起始日期，如出生日期、项目开始日" placement="top">
                   <el-icon class="help-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
+
+                <div v-if="inputMode === 'select'" class="date-select-group">
+                  <el-select
+                    v-model="startDateParts.year"
+                    placeholder="年"
+                    class="date-select year-select"
+                    @change="onStartDateChange"
+                  >
+                    <el-option
+                      v-for="year in yearOptions"
+                      :key="year"
+                      :label="year + ' 年'"
+                      :value="year"
+                    />
+                  </el-select>
+                  <el-select
+                    v-model="startDateParts.month"
+                    placeholder="月"
+                    class="date-select month-select"
+                    @change="onStartDateChange"
+                  >
+                    <el-option
+                      v-for="month in 12"
+                      :key="month"
+                      :label="month + ' 月'"
+                      :value="month"
+                    />
+                  </el-select>
+                  <el-select
+                    v-model="startDateParts.day"
+                    placeholder="日"
+                    class="date-select day-select"
+                    :disabled="!startDateParts.year || !startDateParts.month"
+                    @change="onStartDateChange"
+                  >
+                    <el-option
+                      v-for="day in getDaysInMonth(startDateParts.year, startDateParts.month)"
+                      :key="day"
+                      :label="day + ' 日'"
+                      :value="day"
+                    />
+                  </el-select>
+                </div>
+
                 <el-date-picker
+                  v-else
                   v-model="form.startDate"
                   type="date"
                   placeholder="请选择起始日期"
@@ -80,7 +197,14 @@
                   value-format="YYYY-MM-DD"
                   style="width: 100%"
                   clearable
+                  @change="onPickerStartChange"
                 />
+              </div>
+              <div v-if="inputMode === 'select' && startDateParts.year && startDateParts.month" class="field-hint">
+                <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>{{ startDateParts.year }} 年 {{ startDateParts.month }} 月共 {{ getDaysInMonth(startDateParts.year, startDateParts.month) }} 天
+                  <span v-if="startDateParts.month === 2 && isLeapYear(startDateParts.year)">（闰年）</span>
+                </span>
               </div>
               <div class="quick-dates">
                 <span class="quick-tag" @click="setStartDateToday">今天</span>
@@ -92,12 +216,57 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="目标日期">
+            <el-form-item label="目标日期" required>
               <div class="form-item-with-help">
                 <el-tooltip content="计算的目标日期，如今天、节日、截止日" placement="top">
                   <el-icon class="help-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
+
+                <div v-if="inputMode === 'select'" class="date-select-group">
+                  <el-select
+                    v-model="endDateParts.year"
+                    placeholder="年"
+                    class="date-select year-select"
+                    @change="onEndDateChange"
+                  >
+                    <el-option
+                      v-for="year in yearOptions"
+                      :key="year"
+                      :label="year + ' 年'"
+                      :value="year"
+                    />
+                  </el-select>
+                  <el-select
+                    v-model="endDateParts.month"
+                    placeholder="月"
+                    class="date-select month-select"
+                    @change="onEndDateChange"
+                  >
+                    <el-option
+                      v-for="month in 12"
+                      :key="month"
+                      :label="month + ' 月'"
+                      :value="month"
+                    />
+                  </el-select>
+                  <el-select
+                    v-model="endDateParts.day"
+                    placeholder="日"
+                    class="date-select day-select"
+                    :disabled="!endDateParts.year || !endDateParts.month"
+                    @change="onEndDateChange"
+                  >
+                    <el-option
+                      v-for="day in getDaysInMonth(endDateParts.year, endDateParts.month)"
+                      :key="day"
+                      :label="day + ' 日'"
+                      :value="day"
+                    />
+                  </el-select>
+                </div>
+
                 <el-date-picker
+                  v-else
                   v-model="form.endDate"
                   type="date"
                   placeholder="请选择目标日期"
@@ -105,7 +274,14 @@
                   value-format="YYYY-MM-DD"
                   style="width: 100%"
                   clearable
+                  @change="onPickerEndChange"
                 />
+              </div>
+              <div v-if="inputMode === 'select' && endDateParts.year && endDateParts.month" class="field-hint">
+                <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+                <span>{{ endDateParts.year }} 年 {{ endDateParts.month }} 月共 {{ getDaysInMonth(endDateParts.year, endDateParts.month) }} 天
+                  <span v-if="endDateParts.month === 2 && isLeapYear(endDateParts.year)">（闰年）</span>
+                </span>
               </div>
               <div class="quick-dates">
                 <span class="quick-tag" @click="setEndDateToday">今天</span>
@@ -277,6 +453,14 @@
               <span class="detail-label">工作周数</span>
               <span class="detail-value">{{ result.workWeeks }} 周</span>
             </div>
+            <div class="detail-item">
+              <span class="detail-label">闰年信息</span>
+              <span class="detail-value">
+                起始年{{ isLeapYear(result.startYear) ? '是' : '不是' }}闰年
+                <el-divider direction="vertical" />
+                目标年{{ isLeapYear(result.endYear) ? '是' : '不是' }}闰年
+              </span>
+            </div>
           </div>
         </el-card>
       </div>
@@ -285,8 +469,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed, watch } from 'vue'
+import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+
+interface DateParts {
+  year: number | null
+  month: number | null
+  day: number | null
+}
 
 interface FormData {
   startDate: string
@@ -312,12 +502,17 @@ interface CalculationResult {
   totalSeconds: number
   startWeekday: string
   endWeekday: string
+  startYear: number
+  endYear: number
   isPast: boolean
   isFuture: boolean
   directionText: string
 }
 
 const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+const inputMode = ref<'select' | 'picker'>('select')
+const formRef = ref<FormInstance>()
 
 const form = reactive<FormData>({
   startDate: '',
@@ -326,9 +521,51 @@ const form = reactive<FormData>({
   includeEndDate: true
 })
 
+const startDateParts = reactive<DateParts>({
+  year: null,
+  month: null,
+  day: null
+})
+
+const endDateParts = reactive<DateParts>({
+  year: null,
+  month: null,
+  day: null
+})
+
 const result = ref<CalculationResult | null>(null)
 
+const MIN_YEAR = 1900
+const MAX_YEAR = 2100
+
+const yearOptions = computed(() => {
+  const years: number[] = []
+  for (let y = MAX_YEAR; y >= MIN_YEAR; y--) {
+    years.push(y)
+  }
+  return years
+})
+
+const rules: FormRules = {
+  startDate: [
+    { required: true, message: '请选择起始日期', trigger: 'change' }
+  ],
+  endDate: [
+    { required: true, message: '请选择目标日期', trigger: 'change' }
+  ]
+}
+
 const canCalculate = computed(() => {
+  if (inputMode.value === 'select') {
+    return (
+      startDateParts.year !== null &&
+      startDateParts.month !== null &&
+      startDateParts.day !== null &&
+      endDateParts.year !== null &&
+      endDateParts.month !== null &&
+      endDateParts.day !== null
+    )
+  }
   return form.startDate && form.endDate
 })
 
@@ -338,6 +575,27 @@ const resultDirection = computed(() => {
   if (result.value.isFuture) return 'future'
   return 'today'
 })
+
+const isLeapYear = (year: number): boolean => {
+  return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0)
+}
+
+const getDaysInMonth = (year: number | null, month: number | null): number => {
+  if (!year || !month) return 31
+  const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  if (month === 2 && isLeapYear(year)) {
+    return 29
+  }
+  return daysInMonth[month - 1]
+}
+
+const isValidDate = (year: number, month: number, day: number): boolean => {
+  if (year < MIN_YEAR || year > MAX_YEAR) return false
+  if (month < 1 || month > 12) return false
+  const maxDay = getDaysInMonth(year, month)
+  if (day < 1 || day > maxDay) return false
+  return true
+}
 
 const getToday = (): string => {
   const today = new Date()
@@ -356,69 +614,172 @@ const parseDate = (dateStr: string): Date => {
   return new Date(year, month - 1, day)
 }
 
-const setStartDateToday = () => {
-  form.startDate = getToday()
+const parseDateToParts = (dateStr: string): DateParts => {
+  if (!dateStr) return { year: null, month: null, day: null }
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return { year, month, day }
 }
 
+const formatPartsToDate = (parts: DateParts): string => {
+  if (parts.year === null || parts.month === null || parts.day === null) {
+    return ''
+  }
+  const year = parts.year
+  const month = String(parts.month).padStart(2, '0')
+  const day = String(parts.day).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const validateAndAdjustDay = (parts: DateParts): void => {
+  if (parts.year !== null && parts.month !== null && parts.day !== null) {
+    const maxDay = getDaysInMonth(parts.year, parts.month)
+    if (parts.day > maxDay) {
+      parts.day = maxDay
+      ElMessage.warning(`日期已自动调整为 ${maxDay} 日（${parts.year}年${parts.month}月共${maxDay}天）`)
+    }
+  }
+}
+
+const onStartDateChange = () => {
+  validateAndAdjustDay(startDateParts)
+  form.startDate = formatPartsToDate(startDateParts)
+  if (result.value) result.value = null
+}
+
+const onEndDateChange = () => {
+  validateAndAdjustDay(endDateParts)
+  form.endDate = formatPartsToDate(endDateParts)
+  if (result.value) result.value = null
+}
+
+const onPickerStartChange = (val: string | null) => {
+  if (val) {
+    const parts = parseDateToParts(val)
+    startDateParts.year = parts.year
+    startDateParts.month = parts.month
+    startDateParts.day = parts.day
+  } else {
+    startDateParts.year = null
+    startDateParts.month = null
+    startDateParts.day = null
+  }
+  if (result.value) result.value = null
+}
+
+const onPickerEndChange = (val: string | null) => {
+  if (val) {
+    const parts = parseDateToParts(val)
+    endDateParts.year = parts.year
+    endDateParts.month = parts.month
+    endDateParts.day = parts.day
+  } else {
+    endDateParts.year = null
+    endDateParts.month = null
+    endDateParts.day = null
+  }
+  if (result.value) result.value = null
+}
+
+watch(inputMode, (newMode) => {
+  if (newMode === 'picker') {
+    form.startDate = formatPartsToDate(startDateParts)
+    form.endDate = formatPartsToDate(endDateParts)
+  } else {
+    if (form.startDate) {
+      const parts = parseDateToParts(form.startDate)
+      startDateParts.year = parts.year
+      startDateParts.month = parts.month
+      startDateParts.day = parts.day
+    }
+    if (form.endDate) {
+      const parts = parseDateToParts(form.endDate)
+      endDateParts.year = parts.year
+      endDateParts.month = parts.month
+      endDateParts.day = parts.day
+    }
+  }
+})
+
+const setDateFromParts = (target: 'start' | 'end', date: Date) => {
+  const year = date.getFullYear()
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const dateStr = formatDate(date)
+
+  if (target === 'start') {
+    startDateParts.year = year
+    startDateParts.month = month
+    startDateParts.day = day
+    form.startDate = dateStr
+  } else {
+    endDateParts.year = year
+    endDateParts.month = month
+    endDateParts.day = day
+    form.endDate = dateStr
+  }
+}
+
+const setStartDateToday = () => setDateFromParts('start', new Date())
 const setStartDateYesterday = () => {
-  const date = new Date()
-  date.setDate(date.getDate() - 1)
-  form.startDate = formatDate(date)
+  const d = new Date()
+  d.setDate(d.getDate() - 1)
+  setDateFromParts('start', d)
 }
-
 const setStartDateWeekAgo = () => {
-  const date = new Date()
-  date.setDate(date.getDate() - 7)
-  form.startDate = formatDate(date)
+  const d = new Date()
+  d.setDate(d.getDate() - 7)
+  setDateFromParts('start', d)
 }
-
 const setStartDateMonthAgo = () => {
-  const date = new Date()
-  date.setMonth(date.getMonth() - 1)
-  form.startDate = formatDate(date)
+  const d = new Date()
+  d.setMonth(d.getMonth() - 1)
+  setDateFromParts('start', d)
 }
-
 const setStartDateYearAgo = () => {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() - 1)
-  form.startDate = formatDate(date)
+  const d = new Date()
+  d.setFullYear(d.getFullYear() - 1)
+  setDateFromParts('start', d)
 }
 
-const setEndDateToday = () => {
-  form.endDate = getToday()
-}
-
+const setEndDateToday = () => setDateFromParts('end', new Date())
 const setEndDateTomorrow = () => {
-  const date = new Date()
-  date.setDate(date.getDate() + 1)
-  form.endDate = formatDate(date)
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  setDateFromParts('end', d)
 }
-
 const setEndDateWeekLater = () => {
-  const date = new Date()
-  date.setDate(date.getDate() + 7)
-  form.endDate = formatDate(date)
+  const d = new Date()
+  d.setDate(d.getDate() + 7)
+  setDateFromParts('end', d)
 }
-
 const setEndDateMonthLater = () => {
-  const date = new Date()
-  date.setMonth(date.getMonth() + 1)
-  form.endDate = formatDate(date)
+  const d = new Date()
+  d.setMonth(d.getMonth() + 1)
+  setDateFromParts('end', d)
 }
-
 const setEndDateYearLater = () => {
-  const date = new Date()
-  date.setFullYear(date.getFullYear() + 1)
-  form.endDate = formatDate(date)
+  const d = new Date()
+  d.setFullYear(d.getFullYear() + 1)
+  setDateFromParts('end', d)
 }
 
 const swapDates = () => {
-  const temp = form.startDate
+  const tempYear = startDateParts.year
+  const tempMonth = startDateParts.month
+  const tempDay = startDateParts.day
+  const tempStr = form.startDate
+
+  startDateParts.year = endDateParts.year
+  startDateParts.month = endDateParts.month
+  startDateParts.day = endDateParts.day
   form.startDate = form.endDate
-  form.endDate = temp
-  if (result.value) {
-    calculate()
-  }
+
+  endDateParts.year = tempYear
+  endDateParts.month = tempMonth
+  endDateParts.day = tempDay
+  form.endDate = tempStr
+
+  if (result.value) calculate()
 }
 
 const resetForm = () => {
@@ -426,27 +787,34 @@ const resetForm = () => {
   form.endDate = ''
   form.includeWeekends = true
   form.includeEndDate = true
+  startDateParts.year = null
+  startDateParts.month = null
+  startDateParts.day = null
+  endDateParts.year = null
+  endDateParts.month = null
+  endDateParts.day = null
   result.value = null
+  formRef.value?.resetFields()
 }
 
 const applyScenario = (scenario: string) => {
   resetForm()
+  const today = new Date()
   switch (scenario) {
     case 'birthday':
-      form.startDate = '1990-01-01'
-      form.endDate = getToday()
+      setDateFromParts('start', new Date(1990, 0, 1))
+      setDateFromParts('end', today)
       ElMessage.info('已填入生日计算模板，请修改起始日期为您的出生日期')
       break
     case 'countdown':
-      form.startDate = getToday()
-      const nextYear = new Date()
-      nextYear.setFullYear(nextYear.getFullYear() + 1, 0, 1)
-      form.endDate = formatDate(nextYear)
+      setDateFromParts('start', today)
+      const nextYear = new Date(today.getFullYear() + 1, 0, 1)
+      setDateFromParts('end', nextYear)
       ElMessage.info('已填入倒计时模板，请修改目标日期为您的重要日期')
       break
     case 'anniversary':
-      form.startDate = '2020-05-20'
-      form.endDate = getToday()
+      setDateFromParts('start', new Date(2020, 4, 20))
+      setDateFromParts('end', today)
       ElMessage.info('已填入纪念日模板，请修改起始日期为纪念日期')
       break
   }
@@ -499,6 +867,36 @@ const countWorkDays = (start: Date, end: Date): { workDays: number; weekendDays:
 }
 
 const calculate = () => {
+  if (!canCalculate.value) {
+    ElMessage.warning('请先完整选择起始日期和目标日期')
+    return
+  }
+
+  if (inputMode.value === 'select') {
+    const startValid = isValidDate(
+      startDateParts.year as number,
+      startDateParts.month as number,
+      startDateParts.day as number
+    )
+    const endValid = isValidDate(
+      endDateParts.year as number,
+      endDateParts.month as number,
+      endDateParts.day as number
+    )
+
+    if (!startValid) {
+      ElMessage.error(`起始日期不合法：${startDateParts.year}年${startDateParts.month}月${startDateParts.day}日不存在`)
+      return
+    }
+    if (!endValid) {
+      ElMessage.error(`目标日期不合法：${endDateParts.year}年${endDateParts.month}月${endDateParts.day}日不存在`)
+      return
+    }
+
+    form.startDate = formatPartsToDate(startDateParts)
+    form.endDate = formatPartsToDate(endDateParts)
+  }
+
   if (!form.startDate || !form.endDate) {
     ElMessage.warning('请先选择起始日期和目标日期')
     return
@@ -590,6 +988,8 @@ const calculate = () => {
     totalSeconds,
     startWeekday,
     endWeekday,
+    startYear: startDate.getFullYear(),
+    endYear: endDate.getFullYear(),
     isPast,
     isFuture: !isPast && totalDays > 0,
     directionText
@@ -617,6 +1017,59 @@ const calculate = () => {
 
     .guide-steps {
       margin: 10px 0;
+    }
+
+    .validation-rules {
+      margin-bottom: 16px;
+
+      .rules-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 16px 0;
+        font-size: 15px;
+        color: #303133;
+      }
+
+      .rule-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px;
+        background: #f0f9eb;
+        border-radius: 8px;
+        border: 1px solid #e1f3d8;
+
+        .rule-content {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .rule-label {
+          font-weight: 600;
+          color: #303133;
+        }
+
+        .rule-desc {
+          font-size: 12px;
+          color: #67c23a;
+        }
+      }
+
+      .rule-alert {
+        margin-top: 16px;
+
+        .alert-list {
+          margin: 8px 0 0 0;
+          padding-left: 20px;
+
+          li {
+            margin: 4px 0;
+            line-height: 1.6;
+          }
+        }
+      }
     }
 
     .scenario-tips {
@@ -677,6 +1130,21 @@ const calculate = () => {
       }
     }
 
+    .input-mode-switch {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: #f5f7fa;
+      border-radius: 8px;
+
+      .switch-label {
+        font-weight: 600;
+        color: #303133;
+      }
+    }
+
     .calculator-form {
       margin-top: 20px;
 
@@ -690,6 +1158,30 @@ const calculate = () => {
           color: #909399;
           cursor: help;
         }
+      }
+
+      .date-select-group {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+
+        .date-select.year-select {
+          flex: 1.2;
+        }
+
+        .date-select.month-select,
+        .date-select.day-select {
+          flex: 1;
+        }
+      }
+
+      .field-hint {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        color: #909399;
       }
 
       .quick-dates {
@@ -883,6 +1375,7 @@ const calculate = () => {
           .detail-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 10px 12px;
             background: #f5f7fa;
             border-radius: 6px;
