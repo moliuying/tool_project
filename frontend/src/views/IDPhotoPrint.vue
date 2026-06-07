@@ -154,6 +154,56 @@
             <el-icon><Lock /></el-icon>
             <span>所有操作均在浏览器本地完成，照片不会上传到服务器</span>
           </div>
+
+          <el-card class="image-spec-card" shadow="never">
+            <template #header>
+              <div class="spec-header">
+                <el-icon :size="14" color="#165DFF"><InfoFilled /></el-icon>
+                <span>图片规格说明</span>
+              </div>
+            </template>
+            <div class="spec-list">
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">无需提前裁剪</span>
+                  <span class="spec-value">系统会自动按选定的证件照尺寸适配裁切</span>
+                </div>
+              </div>
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">支持格式</span>
+                  <span class="spec-value">JPG、PNG、WEBP</span>
+                </div>
+              </div>
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">文件大小</span>
+                  <span class="spec-value">不超过 10MB</span>
+                </div>
+              </div>
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">当前选定尺寸</span>
+                  <span class="spec-value">{{ currentPhotoSize?.name }}（{{ currentPhotoSize?.width }}×{{ currentPhotoSize?.height }}mm）</span>
+                </div>
+              </div>
+              <div class="spec-item">
+                <el-icon color="#67c23a"><SuccessFilled /></el-icon>
+                <div class="spec-content">
+                  <span class="spec-label">{{ dpi }}dpi推荐像素</span>
+                  <span class="spec-value">{{ photoWidthPx }} × {{ photoHeightPx }} 像素以上</span>
+                </div>
+              </div>
+            </div>
+            <div class="spec-tips">
+              <el-icon :size="12" color="#e6a23c"><Warning /></el-icon>
+              <span>提示：建议上传高清证件照原图，分辨率越高打印越清晰。照片比例接近所选证件照比例效果最佳，系统会自动居中裁切或缩放适配。</span>
+            </div>
+          </el-card>
         </el-card>
 
         <template v-if="sourceImage">
@@ -260,7 +310,9 @@ import {
   Picture,
   Camera,
   Document,
-  User
+  User,
+  SuccessFilled,
+  Warning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -933,6 +985,73 @@ watch(
 
 .privacy-note .el-icon {
   color: #22c55e;
+}
+
+.image-spec-card {
+  margin-top: 16px;
+  border: 1px solid #ebeef5;
+}
+
+.image-spec-card :deep(.el-card__header) {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e6f4ff 100%);
+  border-bottom: none;
+}
+
+.image-spec-card :deep(.el-card__body) {
+  padding: 16px;
+}
+
+.spec-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.spec-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.spec-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.spec-label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.spec-value {
+  font-size: 13px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.spec-tips {
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #b88230;
+  line-height: 1.5;
 }
 
 .settings-card {
