@@ -220,6 +220,11 @@ const routes: RouteRecordRaw[] = [
         path: '/id-photo-print',
         name: 'IDPhotoPrint',
         component: () => import('@/views/IDPhotoPrint.vue')
+      },
+      {
+        path: '/gif-resizer',
+        name: 'GifResizer',
+        component: () => import('@/views/GifResizer.vue')
       }
     ]
   }
