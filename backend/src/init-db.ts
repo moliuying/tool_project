@@ -53,8 +53,9 @@ async function bootstrap() {
       { name: 'JS代码美化', path: '/js-beautifier', icon: 'EditPen', parentId: null, sort: 36, component: 'views/JsCodeBeautifier.vue' },
       { name: '证件照打印排版', path: '/id-photo-print', icon: 'Picture', parentId: null, sort: 37, component: 'views/IDPhotoPrint.vue' },
       { name: '日期差计算', path: '/date-difference', icon: 'Calendar', parentId: null, sort: 38, component: 'views/DateDifferenceCalculator.vue' },
+      { name: '教学设计生成', path: '/teaching-design', icon: 'Reading', parentId: null, sort: 39, component: 'views/TeachingDesignGenerator.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 39, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 40, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

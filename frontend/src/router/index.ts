@@ -235,6 +235,11 @@ const routes: RouteRecordRaw[] = [
         path: '/title-rewriter',
         name: 'TitleRewriter',
         component: () => import('@/views/TitleRewriter.vue')
+      },
+      {
+        path: '/teaching-design',
+        name: 'TeachingDesignGenerator',
+        component: () => import('@/views/TeachingDesignGenerator.vue')
       }
     ]
   }
