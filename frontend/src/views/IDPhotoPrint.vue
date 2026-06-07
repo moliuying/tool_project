@@ -269,6 +269,58 @@
             </div>
           </el-card>
 
+          <el-card class="adjust-card">
+            <template #header>
+              <div class="card-header">
+                <el-icon :size="20" color="#165DFF">
+                  <MagicStick />
+                </el-icon>
+                <span>照片调整</span>
+                <el-tag size="small" type="warning" class="header-tag">上传全身照时请调整使人脸居中</el-tag>
+              </div>
+            </template>
+
+            <div class="adjust-controls">
+              <div class="control-buttons">
+                <el-button-group>
+                  <el-button @click="rotateImage(-90)" title="逆时针旋转90°">
+                    <el-icon><RefreshLeft /></el-icon>
+                  </el-button>
+                  <el-button @click="rotateImage(90)" title="顺时针旋转90°">
+                    <el-icon><RefreshRight /></el-icon>
+                  </el-button>
+                </el-button-group>
+                <el-button text type="primary" @click="resetImageTransform">
+                  <el-icon><Refresh /></el-icon>
+                  重置位置
+                </el-button>
+              </div>
+
+              <div class="control-group">
+                <span class="control-label">缩放</span>
+                <el-slider v-model="imageScale" :min="0.5" :max="3" :step="0.01" class="control-slider" />
+                <span class="control-value">{{ Math.round(imageScale * 100) }}%</span>
+              </div>
+
+              <div class="control-group">
+                <span class="control-label">左右偏移</span>
+                <el-slider v-model="imageOffsetX" :min="-50" :max="50" class="control-slider" />
+                <span class="control-value">{{ imageOffsetX > 0 ? '→' : imageOffsetX < 0 ? '←' : '·' }} {{ Math.abs(imageOffsetX) }}%</span>
+              </div>
+
+              <div class="control-group">
+                <span class="control-label">上下偏移</span>
+                <el-slider v-model="imageOffsetY" :min="-50" :max="50" class="control-slider" />
+                <span class="control-value">{{ imageOffsetY > 0 ? '↓' : imageOffsetY < 0 ? '↑' : '·' }} {{ Math.abs(imageOffsetY) }}%</span>
+              </div>
+            </div>
+
+            <div class="adjust-tips">
+              <el-icon :size="12" color="#e6a23c"><Warning /></el-icon>
+              <span>提示：上传照片不是标准证件照时，请调整缩放和偏移使人脸位于合适位置。证件照一般要求头部占照片高度约 2/3，头顶留白约 1/10。</span>
+            </div>
+          </el-card>
+
           <el-card class="action-card">
             <div class="layout-info">
               <el-alert :closable="false" type="info" :title="layoutInfoText" show-icon />
@@ -312,7 +364,10 @@ import {
   Document,
   User,
   SuccessFilled,
-  Warning
+  Warning,
+  RefreshLeft,
+  RefreshRight,
+  Refresh
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -370,6 +425,11 @@ const borderColor = ref('#cccccc')
 const borderWidth = ref(0.5)
 const cropMode = ref<'cover' | 'contain' | 'stretch'>('cover')
 
+const imageScale = ref(1)
+const imageOffsetX = ref(0)
+const imageOffsetY = ref(0)
+const imageRotation = ref(0)
+
 const currentPhotoSize = computed(() => photoSizes.find(s => s.id === selectedPhotoSizeId.value))
 const currentPaperSize = computed(() => paperSizes.find(s => s.id === selectedPaperSizeId.value))
 
@@ -413,6 +473,9 @@ const layoutInfoText = computed(() => {
 
 const selectPhotoSize = (id: string) => {
   selectedPhotoSizeId.value = id
+  if (sourceImage.value) {
+    resetImageTransform()
+  }
 }
 
 const selectPaperSize = (id: string) => {
@@ -485,6 +548,7 @@ const handleFileChange = async (file: UploadFile) => {
     const reader = new FileReader()
     reader.onload = (e) => {
       sourceImage.value = e.target?.result as string
+      resetImageTransform()
       const img = new Image()
       img.onload = () => {
         imageWidth.value = img.width
@@ -504,10 +568,104 @@ const handleExceed = () => {
   ElMessage.warning('请先删除已上传的图片再重新上传')
 }
 
+const resetImageTransform = () => {
+  imageScale.value = 1
+  imageOffsetX.value = 0
+  imageOffsetY.value = 0
+  imageRotation.value = 0
+}
+
+const rotateImage = (deg: number) => {
+  imageRotation.value = (imageRotation.value + deg) % 360
+}
+
 const handleReupload = () => {
   sourceImage.value = ''
   imageWidth.value = 0
   imageHeight.value = 0
+  resetImageTransform()
+}
+
+const drawPhotoCell = (
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number,
+  y: number,
+  pw: number,
+  ph: number
+) => {
+  ctx.save()
+
+  if (showBorder.value) {
+    ctx.strokeStyle = borderColor.value
+    ctx.lineWidth = borderWidthPx.value
+    ctx.strokeRect(
+      x - borderWidthPx.value / 2,
+      y - borderWidthPx.value / 2,
+      pw + borderWidthPx.value,
+      ph + borderWidthPx.value
+    )
+  }
+
+  ctx.beginPath()
+  ctx.rect(x, y, pw, ph)
+  ctx.clip()
+
+  const centerX = x + pw / 2
+  const centerY = y + ph / 2
+
+  ctx.translate(centerX, centerY)
+  ctx.rotate((imageRotation.value * Math.PI) / 180)
+  ctx.scale(imageScale.value, imageScale.value)
+
+  let drawW: number, drawH: number
+
+  if (cropMode.value === 'cover' || cropMode.value === 'stretch') {
+    drawW = pw
+    drawH = ph
+  } else {
+    const imgRatio = img.width / img.height
+    const targetRatio = pw / ph
+    if (imgRatio > targetRatio) {
+      drawW = pw
+      drawH = drawW / imgRatio
+    } else {
+      drawH = ph
+      drawW = drawH * imgRatio
+    }
+  }
+
+  let sx = 0, sy = 0, sw = img.width, sh = img.height
+
+  if (cropMode.value === 'cover') {
+    const imgRatio = img.width / img.height
+    const targetRatio = pw / ph
+    if (imgRatio > targetRatio) {
+      sh = img.height
+      sw = sh * targetRatio
+      sx = (img.width - sw) / 2
+      sy = 0
+    } else {
+      sw = img.width
+      sh = sw / targetRatio
+      sx = 0
+      sy = (img.height - sh) / 2
+    }
+  }
+
+  const offsetXPx = (imageOffsetX.value / 100) * pw
+  const offsetYPx = (imageOffsetY.value / 100) * ph
+
+  ctx.drawImage(
+    img,
+    sx, sy, sw, sh,
+    -drawW / 2 + offsetXPx / imageScale.value,
+    -drawH / 2 + offsetYPx / imageScale.value,
+    drawW,
+    drawH
+  )
+
+  ctx.restore()
 }
 
 const drawLayout = () => {
@@ -555,62 +713,7 @@ const drawLayout = () => {
       for (let col = 0; col < cols; col++) {
         const x = startX + col * (pw + gap)
         const y = startY + row * (ph + gap)
-
-        ctx.save()
-
-        if (showBorder.value) {
-          ctx.strokeStyle = borderColor.value
-          ctx.lineWidth = borderWidthPx.value
-          ctx.strokeRect(
-            x - borderWidthPx.value / 2,
-            y - borderWidthPx.value / 2,
-            pw + borderWidthPx.value,
-            ph + borderWidthPx.value
-          )
-        }
-
-        ctx.beginPath()
-        ctx.rect(x, y, pw, ph)
-        ctx.clip()
-
-        let sx = 0, sy = 0, sw = img.width, sh = img.height
-        let dx = x, dy = y, dw = pw, dh = ph
-
-        if (cropMode.value === 'cover') {
-          const imgRatio = img.width / img.height
-          const targetRatio = pw / ph
-          if (imgRatio > targetRatio) {
-            sh = img.height
-            sw = sh * targetRatio
-            sx = (img.width - sw) / 2
-            sy = 0
-          } else {
-            sw = img.width
-            sh = sw / targetRatio
-            sx = 0
-            sy = (img.height - sh) / 2
-          }
-        } else if (cropMode.value === 'contain') {
-          const imgRatio = img.width / img.height
-          const targetRatio = pw / ph
-          if (imgRatio > targetRatio) {
-            dw = pw
-            dh = dw / imgRatio
-            dx = x
-            dy = y + (ph - dh) / 2
-          } else {
-            dh = ph
-            dw = dh * imgRatio
-            dx = x + (pw - dw) / 2
-            dy = y
-          }
-          sw = img.width
-          sh = img.height
-        }
-
-        ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
-
-        ctx.restore()
+        drawPhotoCell(ctx, img, x, y, pw, ph)
       }
     }
   }
@@ -658,62 +761,7 @@ const downloadLayout = () => {
         for (let col = 0; col < cols; col++) {
           const x = startX + col * (pw + gap)
           const y = startY + row * (ph + gap)
-
-          ctx.save()
-
-          if (showBorder.value) {
-            ctx.strokeStyle = borderColor.value
-            ctx.lineWidth = borderWidthPx.value
-            ctx.strokeRect(
-              x - borderWidthPx.value / 2,
-              y - borderWidthPx.value / 2,
-              pw + borderWidthPx.value,
-              ph + borderWidthPx.value
-            )
-          }
-
-          ctx.beginPath()
-          ctx.rect(x, y, pw, ph)
-          ctx.clip()
-
-          let sx = 0, sy = 0, sw = img.width, sh = img.height
-          let dx = x, dy = y, dw = pw, dh = ph
-
-          if (cropMode.value === 'cover') {
-            const imgRatio = img.width / img.height
-            const targetRatio = pw / ph
-            if (imgRatio > targetRatio) {
-              sh = img.height
-              sw = sh * targetRatio
-              sx = (img.width - sw) / 2
-              sy = 0
-            } else {
-              sw = img.width
-              sh = sw / targetRatio
-              sx = 0
-              sy = (img.height - sh) / 2
-            }
-          } else if (cropMode.value === 'contain') {
-            const imgRatio = img.width / img.height
-            const targetRatio = pw / ph
-            if (imgRatio > targetRatio) {
-              dw = pw
-              dh = dw / imgRatio
-              dx = x
-              dy = y + (ph - dh) / 2
-            } else {
-              dh = ph
-              dw = dh * imgRatio
-              dx = x + (pw - dw) / 2
-              dy = y
-            }
-            sw = img.width
-            sh = img.height
-          }
-
-          ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh)
-
-          ctx.restore()
+          drawPhotoCell(ctx, img, x, y, pw, ph)
         }
       }
 
@@ -740,7 +788,7 @@ const downloadLayout = () => {
 }
 
 watch(
-  [sourceImage, selectedPhotoSizeId, selectedPaperSizeId, photoGap, paperMargin, dpi, bgColor, showBorder, borderColor, borderWidth, cropMode],
+  [sourceImage, selectedPhotoSizeId, selectedPaperSizeId, photoGap, paperMargin, dpi, bgColor, showBorder, borderColor, borderWidth, cropMode, imageScale, imageOffsetX, imageOffsetY, imageRotation],
   () => {
     if (sourceImage.value) {
       nextTick(() => drawLayout())
@@ -1066,6 +1114,63 @@ watch(
   margin-top: 6px;
   font-size: 12px;
   color: #909399;
+}
+
+.adjust-card {
+  margin-bottom: 24px;
+}
+
+.adjust-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 8px 0;
+}
+
+.control-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.control-label {
+  font-size: 13px;
+  color: #606266;
+  min-width: 70px;
+  font-weight: 500;
+}
+
+.control-slider {
+  flex: 1;
+}
+
+.control-value {
+  font-size: 12px;
+  color: #909399;
+  min-width: 60px;
+  text-align: right;
+  font-weight: 500;
+}
+
+.adjust-tips {
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #b88230;
+  line-height: 1.5;
 }
 
 .action-card {
