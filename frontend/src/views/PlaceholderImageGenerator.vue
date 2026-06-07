@@ -200,7 +200,7 @@
           <template #header>
             <div class="card-header">
               <el-icon :size="16" color="#E6A23C">
-                <LightBulb />
+                <Flag />
               </el-icon>
               <span>适用场景</span>
             </div>
@@ -336,7 +336,7 @@ import {
   CopyDocument,
   Refresh,
   View,
-  LightBulb,
+  Flag,
   Document,
   Monitor,
   Tickets,
