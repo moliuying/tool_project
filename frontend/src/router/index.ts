@@ -215,6 +215,11 @@ const routes: RouteRecordRaw[] = [
         path: '/js-beautifier',
         name: 'JsCodeBeautifier',
         component: () => import('@/views/JsCodeBeautifier.vue')
+      },
+      {
+        path: '/id-photo-print',
+        name: 'IDPhotoPrint',
+        component: () => import('@/views/IDPhotoPrint.vue')
       }
     ]
   }
