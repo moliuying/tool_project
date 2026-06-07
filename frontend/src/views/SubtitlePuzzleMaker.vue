@@ -173,13 +173,22 @@
               </el-button>
             </div>
             <el-alert
-              v-if="currentMode === 'image' && hasDifferentWidths"
+              v-if="currentMode === 'image' && hasMixedOrientation"
+              type="warning"
+              :closable="false"
+              class="width-warning orientation-warning"
+              show-icon
+              :title="`检测到横版/竖版图片混合（横版 ${landscapeCount} 张，竖版 ${portraitCount} 张）`"
+              :description="`混合拼接可能导致高度差异过大、视觉不协调。当前以 ${strategyLabels[widthStrategy]}（${contentWidth}px）统一宽度，竖版图会被大幅压缩或横版图被大幅拉伸。建议尽量使用同方向截图以获得最佳效果。`"
+            />
+            <el-alert
+              v-else-if="currentMode === 'image' && hasDifferentWidths"
               type="info"
               :closable="false"
               class="width-warning"
               show-icon
               title="检测到图片宽度不一致"
-              description="系统已自动以最宽图片（{{ contentWidth }}px）为基准，将所有图片等比缩放至统一宽度，确保边缘对齐无错位，不会拉伸变形。"
+              :description="`系统已自动以 ${strategyLabels[widthStrategy]}（${contentWidth}px）为基准，将所有图片等比缩放至统一宽度，确保边缘对齐无错位，不会拉伸变形。`"
             />
             <draggable
               v-model="imageList"
@@ -192,11 +201,22 @@
               <template #item="{ element, index }">
                 <div class="image-item">
                   <div class="item-index">{{ index + 1 }}</div>
-                  <img :src="element.src" class="item-thumb" />
+                  <div class="item-thumb-wrap">
+                    <img :src="element.src" class="item-thumb" />
+                    <span
+                      class="orientation-badge"
+                      :style="{ background: getOrientationColor(getImageOrientation(element.width, element.height)) }"
+                    >
+                      {{ getOrientationLabel(getImageOrientation(element.width, element.height)) }}
+                    </span>
+                  </div>
                   <div class="item-info">
                     <div class="item-name">{{ element.name }}</div>
                     <div class="item-size">
                       原始: {{ element.width }} x {{ element.height }}
+                      <span class="orient-tag" :style="{ color: getOrientationColor(getImageOrientation(element.width, element.height)) }">
+                        {{ getOrientationLabel(getImageOrientation(element.width, element.height)) }}
+                      </span>
                       <span v-if="currentMode === 'image' && element.width !== contentWidth" class="size-scaled">
                         · 输出: {{ contentWidth }} x {{ Math.round(element.height * (contentWidth / element.width)) }}
                       </span>
@@ -339,17 +359,43 @@
 
             <div class="settings-form">
               <el-form label-position="top">
-                <el-form-item label="拼图宽度">
+                <el-form-item label="拼图宽度" v-if="currentMode === 'image'">
+                  <div class="strategy-tip" v-if="imageList.length > 0">
+                    <span>当前统一宽度：</span>
+                    <strong class="width-value">{{ contentWidth }}px</strong>
+                    <span class="width-desc">
+                      （{{ strategyLabels[widthStrategy] }}）
+                    </span>
+                  </div>
+                  <el-select v-model="widthStrategy" size="small" class="w-full mb-2">
+                    <el-option
+                      v-for="(label, value) in strategyLabels"
+                      :key="value"
+                      :label="label"
+                      :value="value"
+                    />
+                  </el-select>
+                  <div class="width-hint">
+                    <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
+                    <span>所有图片将等比缩放至统一宽度，确保边缘对齐无错位，无拉伸变形</span>
+                  </div>
+                  <el-slider
+                    v-if="widthStrategy === 'custom'"
+                    v-model="customWidth"
+                    :min="300"
+                    :max="1200"
+                    :step="10"
+                    show-input
+                    class="mt-2"
+                  />
+                </el-form-item>
+
+                <el-form-item label="拼图宽度" v-else>
                   <el-radio-group v-model="widthMode" size="small">
-                    <el-radio-button value="max" v-if="currentMode === 'image'">自适应（统一宽度）</el-radio-button>
-                    <el-radio-button value="max" v-else>自适应</el-radio-button>
+                    <el-radio-button value="max">自适应</el-radio-button>
                     <el-radio-button value="custom">自定义</el-radio-button>
                   </el-radio-group>
-                  <div class="width-hint" v-if="currentMode === 'image'">
-                    <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
-                    <span>自适应模式将以最宽图片为基准，所有图片等比缩放至同一宽度，确保边缘对齐无错位</span>
-                  </div>
-                  <div class="width-hint" v-else>
+                  <div class="width-hint">
                     <el-icon :size="12" color="#909399"><InfoFilled /></el-icon>
                     <span>文字模式默认宽度 700px，可自定义 300-1200px 范围</span>
                   </div>
@@ -642,15 +688,74 @@ const hasDifferentWidths = computed(() => {
   return widths.size > 1
 })
 
+const getImageOrientation = (width: number, height: number): 'landscape' | 'portrait' | 'square' => {
+  const ratio = width / height
+  if (Math.abs(ratio - 1) < 0.05) return 'square'
+  return ratio > 1 ? 'landscape' : 'portrait'
+}
+
+const getOrientationLabel = (orientation: 'landscape' | 'portrait' | 'square') => {
+  const map = { landscape: '横版', portrait: '竖版', square: '方形' }
+  return map[orientation]
+}
+
+const getOrientationColor = (orientation: 'landscape' | 'portrait' | 'square') => {
+  const map = { landscape: '#409eff', portrait: '#e6a23c', square: '#909399' }
+  return map[orientation]
+}
+
+const hasMixedOrientation = computed(() => {
+  if (currentMode.value !== 'image' || imageList.value.length < 2) return false
+  const orientations = new Set(
+    imageList.value
+      .map(img => getImageOrientation(img.width, img.height))
+      .filter(o => o !== 'square')
+  )
+  return orientations.size > 1
+})
+
+const landscapeCount = computed(() => {
+  return imageList.value.filter(img => getImageOrientation(img.width, img.height) === 'landscape').length
+})
+
+const portraitCount = computed(() => {
+  return imageList.value.filter(img => getImageOrientation(img.width, img.height) === 'portrait').length
+})
+
+const widthStrategy = ref<'max' | 'first' | 'min' | 'median' | 'custom'>('max')
+
+const strategyLabels: Record<string, string> = {
+  max: '以最宽图为基准',
+  first: '以第一张为基准',
+  min: '以最窄图为基准',
+  median: '取中位数宽度',
+  custom: '自定义宽度'
+}
+
 const contentWidth = computed(() => {
-  if (widthMode.value === 'custom') return customWidth.value
   if (currentMode.value === 'image' && imageList.value.length > 0) {
-    return Math.max(...imageList.value.map(img => img.width))
+    if (widthStrategy.value === 'custom') return customWidth.value
+    const widths = imageList.value.map(img => img.width)
+    switch (widthStrategy.value) {
+      case 'max':
+        return Math.max(...widths)
+      case 'min':
+        return Math.min(...widths)
+      case 'first':
+        return widths[0]
+      case 'median': {
+        const sorted = [...widths].sort((a, b) => a - b)
+        const mid = Math.floor(sorted.length / 2)
+        return sorted.length % 2 === 0 ? Math.round((sorted[mid - 1] + sorted[mid]) / 2) : sorted[mid]
+      }
+      default:
+        return Math.max(...widths)
+    }
   }
   if (currentMode.value === 'text') {
-    return 700
+    return widthMode.value === 'custom' ? customWidth.value : 700
   }
-  return 800
+  return widthMode.value === 'custom' ? customWidth.value : 800
 })
 
 const finalWidth = computed(() => {
@@ -791,6 +896,7 @@ const onDragEnd = () => {
 
 const resetSettings = () => {
   widthMode.value = 'max'
+  widthStrategy.value = 'max'
   customWidth.value = 800
   gap.value = 16
   padding.value = 24
@@ -1101,6 +1207,7 @@ watch(
     imageList,
     textList,
     widthMode,
+    widthStrategy,
     customWidth,
     gap,
     padding,
@@ -1450,6 +1557,76 @@ watch(currentMode, () => {
 
 .width-warning {
   margin-bottom: 12px;
+}
+
+.orientation-warning :deep(.el-alert__title) {
+  font-weight: 600;
+}
+
+.orientation-warning :deep(.el-alert__description) {
+  line-height: 1.6;
+}
+
+.item-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.orientation-badge {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+  line-height: 1.4;
+  backdrop-filter: blur(4px);
+  z-index: 1;
+}
+
+.orient-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  line-height: 16px;
+  vertical-align: middle;
+}
+
+.strategy-tip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1e40af;
+}
+
+.width-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #165DFF;
+}
+
+.width-desc {
+  color: #606266;
+  font-size: 12px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
 }
 
 .image-drag-list,
