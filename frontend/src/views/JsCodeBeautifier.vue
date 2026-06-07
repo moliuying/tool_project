@@ -35,6 +35,143 @@
       </div>
     </el-card>
 
+    <el-card class="mode-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#165DFF">
+            <Operation />
+          </el-icon>
+          <span>三种处理模式对比</span>
+          <el-tag size="small" type="info" effect="plain">不知道选哪个？先看这里</el-tag>
+        </div>
+      </template>
+      <el-row :gutter="16">
+        <el-col :span="8">
+          <div class="mode-item mode-beautify" @click="loadExample; setTimeout(() => doBeautify(), 100)">
+            <div class="mode-icon">
+              <el-icon :size="32" color="#409eff"><MagicStick /></el-icon>
+            </div>
+            <div class="mode-name">美化 (Beautify)</div>
+            <div class="mode-brief">让代码变得好看易读</div>
+            <el-divider />
+            <div class="mode-features">
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>保留所有注释</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>正确缩进与换行</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>运算符之间加空格</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#e6a23c"><WarningFilled /></el-icon>
+                <span>代码体积会增大</span>
+              </div>
+            </div>
+            <el-divider />
+            <div class="mode-scenarios">
+              <div class="scenario-title">适用场景：</div>
+              <div class="scenario-tag-group">
+                <el-tag size="small" type="primary" effect="light">阅读压缩源码</el-tag>
+                <el-tag size="small" type="primary" effect="light">调试第三方库</el-tag>
+                <el-tag size="small" type="primary" effect="light">学习分析代码</el-tag>
+              </div>
+            </div>
+            <el-button type="primary" size="small" class="mode-btn" @click.stop="doBeautify">
+              <el-icon><MagicStick /></el-icon>
+              使用美化
+            </el-button>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="mode-item mode-purify" @click="loadExample; setTimeout(() => doPurify(), 100)">
+            <div class="mode-icon">
+              <el-icon :size="32" color="#e6a23c"><Brush /></el-icon>
+            </div>
+            <div class="mode-name">净化 (Purify)</div>
+            <div class="mode-brief">去除注释，保留整洁格式</div>
+            <el-divider />
+            <div class="mode-features">
+              <div class="feature-item">
+                <el-icon color="#f56c6c"><CircleClose /></el-icon>
+                <span>删除所有注释（行/块）</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>保留正确缩进与换行</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>去除多余空白字符</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#e6a23c"><WarningFilled /></el-icon>
+                <span>丢失注释信息</span>
+              </div>
+            </div>
+            <el-divider />
+            <div class="mode-scenarios">
+              <div class="scenario-title">适用场景：</div>
+              <div class="scenario-tag-group">
+                <el-tag size="small" type="warning" effect="light">代码提交前清理</el-tag>
+                <el-tag size="small" type="warning" effect="light">去除敏感注释</el-tag>
+                <el-tag size="small" type="warning" effect="light">规范代码格式</el-tag>
+              </div>
+            </div>
+            <el-button type="warning" size="small" class="mode-btn" @click.stop="doPurify">
+              <el-icon><Brush /></el-icon>
+              使用净化
+            </el-button>
+          </div>
+        </el-col>
+        <el-col :span="8">
+          <div class="mode-item mode-minify" @click="loadExample; setTimeout(() => doMinify(), 100)">
+            <div class="mode-icon">
+              <el-icon :size="32" color="#f56c6c"><Compress /></el-icon>
+            </div>
+            <div class="mode-name">压缩 (Minify)</div>
+            <div class="mode-brief">极致压缩，最小化体积</div>
+            <el-divider />
+            <div class="mode-features">
+              <div class="feature-item">
+                <el-icon color="#f56c6c"><CircleClose /></el-icon>
+                <span>删除所有注释</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#f56c6c"><CircleClose /></el-icon>
+                <span>删除所有换行和缩进</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#f56c6c"><CircleClose /></el-icon>
+                <span>删除非必要空格</span>
+              </div>
+              <div class="feature-item">
+                <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                <span>代码体积最小化</span>
+              </div>
+            </div>
+            <el-divider />
+            <div class="mode-scenarios">
+              <div class="scenario-title">适用场景：</div>
+              <div class="scenario-tag-group">
+                <el-tag size="small" type="danger" effect="light">生产环境部署</el-tag>
+                <el-tag size="small" type="danger" effect="light">减小传输体积</el-tag>
+                <el-tag size="small" type="danger" effect="light">提升加载速度</el-tag>
+              </div>
+            </div>
+            <el-button type="danger" size="small" class="mode-btn" @click.stop="doMinify">
+              <el-icon><Compress /></el-icon>
+              使用压缩
+            </el-button>
+          </div>
+        </el-col>
+      </el-row>
+    </el-card>
+
     <el-card class="main-card">
       <template #header>
         <div class="card-header">
@@ -103,18 +240,24 @@
           <el-icon><Document /></el-icon>
           从剪贴板粘贴
         </el-button>
-        <el-button type="primary" size="default" @click="doBeautify" :loading="isProcessing">
-          <el-icon><MagicStick /></el-icon>
-          美化 (Beautify)
-        </el-button>
-        <el-button type="warning" size="default" @click="doPurify" :loading="isProcessing">
-          <el-icon><Brush /></el-icon>
-          净化 (Purify)
-        </el-button>
-        <el-button type="danger" size="default" @click="doMinify" :loading="isProcessing">
-          <el-icon><Compress /></el-icon>
-          压缩 (Minify)
-        </el-button>
+        <el-tooltip content="格式化代码：保留注释、添加正确缩进和换行，让压缩代码变得清晰可读" placement="top">
+          <el-button type="primary" size="default" @click="doBeautify" :loading="isProcessing">
+            <el-icon><MagicStick /></el-icon>
+            美化 (Beautify)
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="净化代码：删除所有注释（行/块），保留整洁的缩进和格式，使代码干净规范" placement="top">
+          <el-button type="warning" size="default" @click="doPurify" :loading="isProcessing">
+            <el-icon><Brush /></el-icon>
+            净化 (Purify)
+          </el-button>
+        </el-tooltip>
+        <el-tooltip content="压缩代码：删除所有注释、换行和多余空格，最大程度减小代码体积，用于生产部署" placement="top">
+          <el-button type="danger" size="default" @click="doMinify" :loading="isProcessing">
+            <el-icon><Compress /></el-icon>
+            压缩 (Minify)
+          </el-button>
+        </el-tooltip>
       </div>
 
       <div class="editor-container">
@@ -251,6 +394,7 @@ import { ref, computed, watch } from 'vue'
 import {
   InfoFilled,
   Suitcase,
+  Operation,
   EditPen,
   Edit,
   View,
@@ -264,7 +408,10 @@ import {
   Download,
   DataLine,
   Lightning,
-  QuestionFilled
+  QuestionFilled,
+  CircleCheck,
+  CircleClose,
+  WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -986,7 +1133,8 @@ watch([indentType, indentSize, newlineType], () => {
 }
 
 .guide-card,
-.scene-card {
+.scene-card,
+.mode-card {
   margin-bottom: 16px;
 }
 
@@ -994,6 +1142,114 @@ watch([indentType, indentSize, newlineType], () => {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+}
+
+.mode-item {
+  border: 2px solid #ebeef5;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #fff;
+  position: relative;
+}
+
+.mode-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.mode-beautify {
+  border-color: #ecf5ff;
+}
+
+.mode-beautify:hover {
+  border-color: #409eff;
+  background: linear-gradient(135deg, #ecf5ff 0%, #fff 100%);
+}
+
+.mode-purify {
+  border-color: #fdf6ec;
+}
+
+.mode-purify:hover {
+  border-color: #e6a23c;
+  background: linear-gradient(135deg, #fdf6ec 0%, #fff 100%);
+}
+
+.mode-minify {
+  border-color: #fef0f0;
+}
+
+.mode-minify:hover {
+  border-color: #f56c6c;
+  background: linear-gradient(135deg, #fef0f0 0%, #fff 100%);
+}
+
+.mode-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.mode-name {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.mode-brief {
+  text-align: center;
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.mode-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.feature-item span {
+  flex: 1;
+}
+
+.mode-scenarios {
+  margin-top: 4px;
+}
+
+.scenario-title {
+  font-size: 12px;
+  color: #909399;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.scenario-tag-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mode-btn {
+  margin-top: 16px;
+  align-self: center;
+  width: 120px;
 }
 
 .card-header {
@@ -1184,6 +1440,10 @@ watch([indentType, indentSize, newlineType], () => {
 @media (max-width: 900px) {
   .editor-container {
     grid-template-columns: 1fr;
+  }
+
+  .mode-card :deep(.el-col) {
+    margin-bottom: 16px;
   }
 }
 </style>
