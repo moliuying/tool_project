@@ -276,7 +276,7 @@
           <el-row :gutter="12">
             <el-col :span="12" v-for="scene in scenes" :key="scene.name">
               <div class="scene-card">
-                <el-icon :size="24" :color="scene.color">{{ scene.icon }}</el-icon>
+                <el-icon :size="24" :color="scene.color"><component :is="scene.icon" /></el-icon>
                 <span>{{ scene.name }}</span>
               </div>
             </el-col>
