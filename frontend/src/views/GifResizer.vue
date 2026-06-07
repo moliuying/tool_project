@@ -192,29 +192,63 @@
 
                 <template v-if="resizeMode === 'custom'">
                   <el-form-item label="目标尺寸">
-                    <div class="size-input-group">
-                      <el-input-number
-                        v-model="targetWidth"
-                        :min="1"
-                        :max="4096"
-                        :step="10"
-                        controls-position="right"
-                        size="large"
-                      />
-                      <span class="size-separator">×</span>
-                      <el-input-number
-                        v-model="targetHeight"
-                        :min="1"
-                        :max="4096"
-                        :step="10"
-                        controls-position="right"
-                        size="large"
-                      />
-                      <span class="size-unit">px</span>
+                    <div class="custom-size-header">
+                      <span class="ratio-info">
+                        <el-icon :size="14" color="#165DFF"><InfoFilled /></el-icon>
+                        原图比例：<strong>{{ originalRatioText }}</strong>
+                        <span v-if="originalWidth > 0">({{ originalWidth }} × {{ originalHeight }})</span>
+                      </span>
                     </div>
-                  </el-form-item>
-                  <el-form-item>
-                    <el-checkbox v-model="keepRatio">保持宽高比</el-checkbox>
+                    <div class="size-input-group">
+                      <div class="size-input-wrapper">
+                        <span class="size-input-label">宽</span>
+                        <el-input-number
+                          v-model="targetWidth"
+                          :min="1"
+                          :max="4096"
+                          :step="10"
+                          controls-position="right"
+                          size="large"
+                          @change="onWidthChange"
+                        />
+                        <span class="size-input-unit">px</span>
+                      </div>
+                      <button
+                        type="button"
+                        class="ratio-toggle-btn"
+                        :class="{ locked: keepRatio, unlocked: !keepRatio }"
+                        @click="keepRatio = !keepRatio"
+                        :title="keepRatio ? '已锁定宽高比，修改任意一侧将自动等比缩放' : '未锁定宽高比，可自由设置宽高'"
+                      >
+                        <el-icon v-if="keepRatio" :size="20" color="#165DFF"><Link /></el-icon>
+                        <el-icon v-else :size="20" color="#909399"><Connection /></el-icon>
+                      </button>
+                      <div class="size-input-wrapper">
+                        <span class="size-input-label">高</span>
+                        <el-input-number
+                          v-model="targetHeight"
+                          :min="1"
+                          :max="4096"
+                          :step="10"
+                          controls-position="right"
+                          size="large"
+                          @change="onHeightChange"
+                        />
+                        <span class="size-input-unit">px</span>
+                      </div>
+                    </div>
+                    <div class="ratio-status-tip" :class="keepRatio ? 'tip-locked' : 'tip-unlocked'">
+                      <el-icon :size="12">
+                        <CircleCheckFilled v-if="keepRatio" />
+                        <Warning v-else />
+                      </el-icon>
+                      <span v-if="keepRatio">
+                        <strong>已锁定</strong> 宽高比，修改<strong>宽度</strong>或<strong>高度</strong>后，另一侧将自动等比计算
+                      </span>
+                      <span v-else>
+                        <strong>未锁定</strong> 宽高比，宽高可各自独立设置，可能导致图片拉伸变形
+                      </span>
+                    </div>
                   </el-form-item>
                 </template>
 
@@ -264,7 +298,11 @@ import {
   Download,
   Picture,
   Right,
-  RefreshRight
+  RefreshRight,
+  Link,
+  Connection,
+  CircleCheckFilled,
+  Warning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -328,6 +366,13 @@ const scenes = [
 
 const canProcess = computed(() => {
   return sourceGif.value && targetWidth.value > 0 && targetHeight.value > 0
+})
+
+const originalRatioText = computed(() => {
+  if (!originalWidth.value || !originalHeight.value) return '--:--'
+  const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b))
+  const g = gcd(originalWidth.value, originalHeight.value)
+  return `${originalWidth.value / g}:${originalHeight.value / g}`
 })
 
 const formatFileSize = (bytes: number): string => {
@@ -428,12 +473,21 @@ watch(scalePercent, (val) => {
   }
 })
 
-watch([targetWidth, targetHeight, keepRatio], ([newW, newH, kr]) => {
-  if (!kr || !originalWidth.value || !originalHeight.value) return
+const onWidthChange = (newWidth: number | undefined) => {
+  if (!newWidth || !keepRatio.value || !originalWidth.value || !originalHeight.value) return
   const ratio = originalWidth.value / originalHeight.value
-  if (newW !== Math.round(targetWidth.value)) return
-  if (resizeMode.value === 'custom') {
-    targetHeight.value = Math.round(newW / ratio)
+  targetHeight.value = Math.max(1, Math.round(newWidth / ratio))
+}
+
+const onHeightChange = (newHeight: number | undefined) => {
+  if (!newHeight || !keepRatio.value || !originalWidth.value || !originalHeight.value) return
+  const ratio = originalWidth.value / originalHeight.value
+  targetWidth.value = Math.max(1, Math.round(newHeight * ratio))
+}
+
+watch(keepRatio, (val) => {
+  if (val && originalWidth.value > 0 && originalHeight.value > 0) {
+    onWidthChange(targetWidth.value)
   }
 })
 
@@ -798,19 +852,151 @@ const processGif = async () => {
 
 .size-input-group {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 8px;
+  margin-bottom: 12px;
 }
 
-.size-separator {
-  font-size: 18px;
+.size-input-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f5f7fa;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  padding: 6px 10px;
+  transition: all 0.2s;
+}
+
+.size-input-wrapper:focus-within {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.size-input-label {
+  font-size: 13px;
   font-weight: 600;
   color: #606266;
+  white-space: nowrap;
 }
 
-.size-unit {
-  font-size: 14px;
+.size-input-wrapper :deep(.el-input-number) {
+  flex: 1;
+}
+
+.size-input-wrapper :deep(.el-input-number .el-input__wrapper) {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.size-input-wrapper :deep(.el-input-number .el-input__inner) {
+  text-align: right;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.size-input-unit {
+  font-size: 12px;
   color: #909399;
+  white-space: nowrap;
+}
+
+.ratio-toggle-btn {
+  flex-shrink: 0;
+  width: 44px;
+  min-width: 44px;
+  border: none;
+  background: #f5f7fa;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s;
+  border: 2px solid transparent;
+}
+
+.ratio-toggle-btn:hover {
+  transform: scale(1.05);
+}
+
+.ratio-toggle-btn.locked {
+  background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%);
+  border-color: #165DFF;
+  box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.08);
+}
+
+.ratio-toggle-btn.locked:hover {
+  box-shadow: 0 0 0 4px rgba(22, 93, 255, 0.15);
+}
+
+.ratio-toggle-btn.unlocked {
+  background: #f5f7fa;
+  border-color: #dcdfe6;
+}
+
+.ratio-toggle-btn.unlocked:hover {
+  background: #ebeef5;
+  border-color: #c0c4cc;
+}
+
+.custom-size-header {
+  margin-bottom: 12px;
+}
+
+.ratio-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #606266;
+  background: linear-gradient(135deg, #ecf5ff 0%, #f0f9ff 100%);
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d9ecff;
+}
+
+.ratio-info strong {
+  color: #165DFF;
+  font-weight: 700;
+  margin: 0 2px;
+}
+
+.ratio-status-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+
+.ratio-status-tip strong {
+  font-weight: 700;
+}
+
+.ratio-status-tip.tip-locked {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.ratio-status-tip.tip-locked :deep(.el-icon) {
+  color: #22c55e;
+}
+
+.ratio-status-tip.tip-unlocked {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.ratio-status-tip.tip-unlocked :deep(.el-icon) {
+  color: #f59e0b;
 }
 
 .quality-tip {
