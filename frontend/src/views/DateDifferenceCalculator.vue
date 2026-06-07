@@ -10,7 +10,7 @@
         </div>
       </template>
       <el-steps :active="0" finish-status="wait" simple class="guide-steps">
-        <el-step title="选择输入方式" description="支持下拉选择年/月/日或日历选择器两种方式" />
+        <el-step title="选择输入方式" description="支持数字输入（年/月/日）或日历选择器两种方式" />
         <el-step title="选择起始日期" description="可以是出生日期、项目开始日期、某个纪念日等" />
         <el-step title="选择目标日期" description="可以是今天、未来的节日、考试日期、截止日期等" />
         <el-step title="点击计算" description="一键获取两个日期之间的详细差值" />
@@ -19,7 +19,7 @@
       <div class="validation-rules">
         <h4 class="rules-title">
           <el-icon :size="16" color="#E6A23C"><Warning /></el-icon>
-          日期校验规则
+          日期校验规则 & 非法输入处理
         </h4>
         <el-row :gutter="16">
           <el-col :span="8">
@@ -27,7 +27,7 @@
               <el-icon :size="18" color="#67C23A"><CircleCheckFilled /></el-icon>
               <div class="rule-content">
                 <span class="rule-label">年份范围</span>
-                <span class="rule-desc">支持 1900 年 ~ 2100 年</span>
+                <span class="rule-desc">{{ MIN_YEAR }} 年 ~ {{ MAX_YEAR }} 年</span>
               </div>
             </div>
           </el-col>
@@ -44,25 +44,26 @@
             <div class="rule-item">
               <el-icon :size="18" color="#67C23A"><CircleCheckFilled /></el-icon>
               <div class="rule-content">
-                <span class="rule-label">日期合法性</span>
-                <span class="rule-desc">自动校验（含闰年2月、30/31天）</span>
+                <span class="rule-label">日期范围</span>
+                <span class="rule-desc">1日 ~ 该月实际天数（含闰年）</span>
               </div>
             </div>
           </el-col>
         </el-row>
         <el-alert
-          title="非法日期处理说明"
+          title="非法输入拦截机制"
           type="warning"
           :closable="false"
           show-icon
           class="rule-alert"
         >
           <template #default>
-            <p>当输入不合法日期时（如 2月30日、4月31日、非闰年2月29日）：</p>
+            <p>当输入不合法数值时（如 13月、2月30日、4月31日、非闰年2月29日）：</p>
             <ul class="alert-list">
-              <li>下拉模式：日期选项会根据年月动态调整，不会出现非法日期</li>
-              <li>计算前会进行二次校验，如发现问题将弹出错误提示</li>
-              <li>非法日期的输入框会标红显示，便于定位问题</li>
+              <li><strong>实时拦截：</strong>输入框立即标红显示，下方显示具体错误原因</li>
+              <li><strong>禁用计算：</strong>存在任何非法输入时，"开始计算"按钮自动禁用</li>
+              <li><strong>计算前校验：</strong>点击计算前会进行二次完整性校验</li>
+              <li><strong>智能提示：</strong>鼠标悬停错误图标可查看详细错误信息</li>
             </ul>
           </template>
         </el-alert>
@@ -120,8 +121,8 @@
         <span class="switch-label">输入方式：</span>
         <el-radio-group v-model="inputMode" size="default">
           <el-radio-button value="select">
-            <el-icon><Menu /></el-icon>
-            下拉选择（年/月/日）
+            <el-icon><Edit /></el-icon>
+            数字输入（年/月/日）
           </el-radio-button>
           <el-radio-button value="picker">
             <el-icon><Calendar /></el-icon>
@@ -134,58 +135,72 @@
         :model="form"
         label-width="100px"
         class="calculator-form"
-        :rules="rules"
         ref="formRef"
       >
         <el-row :gutter="24">
           <el-col :span="12">
-            <el-form-item label="起始日期" required>
+            <el-form-item label="起始日期" required class="date-form-item">
               <div class="form-item-with-help">
                 <el-tooltip content="计算的起始日期，如出生日期、项目开始日" placement="top">
                   <el-icon class="help-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
 
-                <div v-if="inputMode === 'select'" class="date-select-group">
-                  <el-select
-                    v-model="startDateParts.year"
-                    placeholder="年"
-                    class="date-select year-select"
-                    @change="onStartDateChange"
-                  >
-                    <el-option
-                      v-for="year in yearOptions"
-                      :key="year"
-                      :label="year + ' 年'"
-                      :value="year"
+                <div v-if="inputMode === 'select'" class="date-input-group">
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="startDateParts.year"
+                      :min="MIN_YEAR"
+                      :max="MAX_YEAR"
+                      placeholder="年"
+                      :class="['date-input', 'year-input', { 'has-error': !!validationErrors.startYear }]"
+                      :controls="false"
+                      @change="onStartYearChange"
                     />
-                  </el-select>
-                  <el-select
-                    v-model="startDateParts.month"
-                    placeholder="月"
-                    class="date-select month-select"
-                    @change="onStartDateChange"
-                  >
-                    <el-option
-                      v-for="month in 12"
-                      :key="month"
-                      :label="month + ' 月'"
-                      :value="month"
+                    <el-tooltip
+                      v-if="validationErrors.startYear"
+                      :content="validationErrors.startYear"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="startDateParts.month"
+                      :min="1"
+                      :max="12"
+                      placeholder="月"
+                      :class="['date-input', 'month-input', { 'has-error': !!validationErrors.startMonth }]"
+                      :controls="false"
+                      @change="onStartMonthChange"
                     />
-                  </el-select>
-                  <el-select
-                    v-model="startDateParts.day"
-                    placeholder="日"
-                    class="date-select day-select"
-                    :disabled="!startDateParts.year || !startDateParts.month"
-                    @change="onStartDateChange"
-                  >
-                    <el-option
-                      v-for="day in getDaysInMonth(startDateParts.year, startDateParts.month)"
-                      :key="day"
-                      :label="day + ' 日'"
-                      :value="day"
+                    <el-tooltip
+                      v-if="validationErrors.startMonth"
+                      :content="validationErrors.startMonth"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="startDateParts.day"
+                      :min="1"
+                      :max="getMaxDayForStart"
+                      placeholder="日"
+                      :class="['date-input', 'day-input', { 'has-error': !!validationErrors.startDay }]"
+                      :controls="false"
+                      :disabled="!startDateParts.year || !startDateParts.month"
+                      @change="onStartDayChange"
                     />
-                  </el-select>
+                    <el-tooltip
+                      v-if="validationErrors.startDay"
+                      :content="validationErrors.startDay"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
                 </div>
 
                 <el-date-picker
@@ -200,8 +215,22 @@
                   @change="onPickerStartChange"
                 />
               </div>
-              <div v-if="inputMode === 'select' && startDateParts.year && startDateParts.month" class="field-hint">
-                <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+              <div v-if="inputMode === 'select'" class="validation-errors">
+                <div v-if="validationErrors.startYear" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.startYear }}
+                </div>
+                <div v-if="validationErrors.startMonth" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.startMonth }}
+                </div>
+                <div v-if="validationErrors.startDay" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.startDay }}
+                </div>
+              </div>
+              <div v-if="inputMode === 'select' && !hasStartErrors && startDateParts.year && startDateParts.month" class="field-hint">
+                <el-icon size="12" color="#67C23A"><CircleCheckFilled /></el-icon>
                 <span>{{ startDateParts.year }} 年 {{ startDateParts.month }} 月共 {{ getDaysInMonth(startDateParts.year, startDateParts.month) }} 天
                   <span v-if="startDateParts.month === 2 && isLeapYear(startDateParts.year)">（闰年）</span>
                 </span>
@@ -216,53 +245,68 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="目标日期" required>
+            <el-form-item label="目标日期" required class="date-form-item">
               <div class="form-item-with-help">
                 <el-tooltip content="计算的目标日期，如今天、节日、截止日" placement="top">
                   <el-icon class="help-icon"><QuestionFilled /></el-icon>
                 </el-tooltip>
 
-                <div v-if="inputMode === 'select'" class="date-select-group">
-                  <el-select
-                    v-model="endDateParts.year"
-                    placeholder="年"
-                    class="date-select year-select"
-                    @change="onEndDateChange"
-                  >
-                    <el-option
-                      v-for="year in yearOptions"
-                      :key="year"
-                      :label="year + ' 年'"
-                      :value="year"
+                <div v-if="inputMode === 'select'" class="date-input-group">
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="endDateParts.year"
+                      :min="MIN_YEAR"
+                      :max="MAX_YEAR"
+                      placeholder="年"
+                      :class="['date-input', 'year-input', { 'has-error': !!validationErrors.endYear }]"
+                      :controls="false"
+                      @change="onEndYearChange"
                     />
-                  </el-select>
-                  <el-select
-                    v-model="endDateParts.month"
-                    placeholder="月"
-                    class="date-select month-select"
-                    @change="onEndDateChange"
-                  >
-                    <el-option
-                      v-for="month in 12"
-                      :key="month"
-                      :label="month + ' 月'"
-                      :value="month"
+                    <el-tooltip
+                      v-if="validationErrors.endYear"
+                      :content="validationErrors.endYear"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="endDateParts.month"
+                      :min="1"
+                      :max="12"
+                      placeholder="月"
+                      :class="['date-input', 'month-input', { 'has-error': !!validationErrors.endMonth }]"
+                      :controls="false"
+                      @change="onEndMonthChange"
                     />
-                  </el-select>
-                  <el-select
-                    v-model="endDateParts.day"
-                    placeholder="日"
-                    class="date-select day-select"
-                    :disabled="!endDateParts.year || !endDateParts.month"
-                    @change="onEndDateChange"
-                  >
-                    <el-option
-                      v-for="day in getDaysInMonth(endDateParts.year, endDateParts.month)"
-                      :key="day"
-                      :label="day + ' 日'"
-                      :value="day"
+                    <el-tooltip
+                      v-if="validationErrors.endMonth"
+                      :content="validationErrors.endMonth"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
+                  <div class="input-wrapper">
+                    <el-input-number
+                      v-model="endDateParts.day"
+                      :min="1"
+                      :max="getMaxDayForEnd"
+                      placeholder="日"
+                      :class="['date-input', 'day-input', { 'has-error': !!validationErrors.endDay }]"
+                      :controls="false"
+                      :disabled="!endDateParts.year || !endDateParts.month"
+                      @change="onEndDayChange"
                     />
-                  </el-select>
+                    <el-tooltip
+                      v-if="validationErrors.endDay"
+                      :content="validationErrors.endDay"
+                      placement="top"
+                    >
+                      <el-icon class="error-icon"><CircleCloseFilled /></el-icon>
+                    </el-tooltip>
+                  </div>
                 </div>
 
                 <el-date-picker
@@ -277,8 +321,22 @@
                   @change="onPickerEndChange"
                 />
               </div>
-              <div v-if="inputMode === 'select' && endDateParts.year && endDateParts.month" class="field-hint">
-                <el-icon size="12" color="#909399"><InfoFilled /></el-icon>
+              <div v-if="inputMode === 'select'" class="validation-errors">
+                <div v-if="validationErrors.endYear" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.endYear }}
+                </div>
+                <div v-if="validationErrors.endMonth" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.endMonth }}
+                </div>
+                <div v-if="validationErrors.endDay" class="error-text">
+                  <el-icon size="12"><WarningFilled /></el-icon>
+                  {{ validationErrors.endDay }}
+                </div>
+              </div>
+              <div v-if="inputMode === 'select' && !hasEndErrors && endDateParts.year && endDateParts.month" class="field-hint">
+                <el-icon size="12" color="#67C23A"><CircleCheckFilled /></el-icon>
                 <span>{{ endDateParts.year }} 年 {{ endDateParts.month }} 月共 {{ getDaysInMonth(endDateParts.year, endDateParts.month) }} 天
                   <span v-if="endDateParts.month === 2 && isLeapYear(endDateParts.year)">（闰年）</span>
                 </span>
@@ -299,8 +357,18 @@
           <el-checkbox v-model="form.includeEndDate">包含目标日期当天</el-checkbox>
         </el-form-item>
 
+        <div v-if="inputMode === 'select' && hasAnyErrors" class="global-error-bar">
+          <el-icon :size="16"><CircleCloseFilled /></el-icon>
+          <span>检测到 {{ errorCount }} 处错误，请修正后再进行计算</span>
+        </div>
+
         <div class="action-buttons">
-          <el-button type="primary" size="large" @click="calculate" :disabled="!canCalculate">
+          <el-button
+            type="primary"
+            size="large"
+            @click="calculate"
+            :disabled="!canCalculate || (inputMode === 'select' && hasAnyErrors)"
+          >
             <el-icon><Calculator /></el-icon>
             开始计算
           </el-button>
@@ -470,7 +538,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, type FormInstance } from 'element-plus'
 
 interface DateParts {
   year: number | null
@@ -483,6 +551,15 @@ interface FormData {
   endDate: string
   includeWeekends: boolean
   includeEndDate: boolean
+}
+
+interface ValidationErrors {
+  startYear: string
+  startMonth: string
+  startDay: string
+  endYear: string
+  endMonth: string
+  endDay: string
 }
 
 interface CalculationResult {
@@ -514,6 +591,9 @@ const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四
 const inputMode = ref<'select' | 'picker'>('select')
 const formRef = ref<FormInstance>()
 
+const MIN_YEAR = 1900
+const MAX_YEAR = 2100
+
 const form = reactive<FormData>({
   startDate: '',
   endDate: '',
@@ -533,27 +613,85 @@ const endDateParts = reactive<DateParts>({
   day: null
 })
 
-const result = ref<CalculationResult | null>(null)
-
-const MIN_YEAR = 1900
-const MAX_YEAR = 2100
-
-const yearOptions = computed(() => {
-  const years: number[] = []
-  for (let y = MAX_YEAR; y >= MIN_YEAR; y--) {
-    years.push(y)
-  }
-  return years
+const validationErrors = reactive<ValidationErrors>({
+  startYear: '',
+  startMonth: '',
+  startDay: '',
+  endYear: '',
+  endMonth: '',
+  endDay: ''
 })
 
-const rules: FormRules = {
-  startDate: [
-    { required: true, message: '请选择起始日期', trigger: 'change' }
-  ],
-  endDate: [
-    { required: true, message: '请选择目标日期', trigger: 'change' }
-  ]
+const result = ref<CalculationResult | null>(null)
+
+const validateYear = (year: number | null, label: string): string => {
+  if (year === null) return ''
+  if (isNaN(year)) return `${label}年份必须是数字`
+  if (!Number.isInteger(year)) return `${label}年份必须是整数`
+  if (year < MIN_YEAR || year > MAX_YEAR) return `${label}年份必须在 ${MIN_YEAR} ~ ${MAX_YEAR} 之间`
+  return ''
 }
+
+const validateMonth = (month: number | null, label: string): string => {
+  if (month === null) return ''
+  if (isNaN(month)) return `${label}月份必须是数字`
+  if (!Number.isInteger(month)) return `${label}月份必须是整数`
+  if (month < 1 || month > 12) return `${label}月份必须在 1 ~ 12 之间`
+  return ''
+}
+
+const validateDay = (year: number | null, month: number | null, day: number | null, label: string): string => {
+  if (day === null) return ''
+  if (year === null || month === null) return '请先选择年份和月份'
+  if (isNaN(day)) return `${label}日期必须是数字`
+  if (!Number.isInteger(day)) return `${label}日期必须是整数`
+  const maxDay = getDaysInMonth(year, month)
+  if (day < 1 || day > maxDay) {
+    const leapInfo = month === 2 ? (isLeapYear(year) ? '（闰年）' : '（非闰年）') : ''
+    return `${label}日期必须在 1 ~ ${maxDay} 之间（${year}年${month}月共${maxDay}天${leapInfo}）`
+  }
+  return ''
+}
+
+const validateAll = () => {
+  validationErrors.startYear = validateYear(startDateParts.year, '起始日期')
+  validationErrors.startMonth = validateMonth(startDateParts.month, '起始日期')
+  validationErrors.startDay = validateDay(startDateParts.year, startDateParts.month, startDateParts.day, '起始日期')
+  validationErrors.endYear = validateYear(endDateParts.year, '目标日期')
+  validationErrors.endMonth = validateMonth(endDateParts.month, '目标日期')
+  validationErrors.endDay = validateDay(endDateParts.year, endDateParts.month, endDateParts.day, '目标日期')
+}
+
+const hasStartErrors = computed(() => {
+  return !!(validationErrors.startYear || validationErrors.startMonth || validationErrors.startDay)
+})
+
+const hasEndErrors = computed(() => {
+  return !!(validationErrors.endYear || validationErrors.endMonth || validationErrors.endDay)
+})
+
+const hasAnyErrors = computed(() => {
+  return hasStartErrors.value || hasEndErrors.value
+})
+
+const errorCount = computed(() => {
+  return [
+    validationErrors.startYear,
+    validationErrors.startMonth,
+    validationErrors.startDay,
+    validationErrors.endYear,
+    validationErrors.endMonth,
+    validationErrors.endDay
+  ].filter(e => e).length
+})
+
+const getMaxDayForStart = computed(() => {
+  return getDaysInMonth(startDateParts.year, startDateParts.month)
+})
+
+const getMaxDayForEnd = computed(() => {
+  return getDaysInMonth(endDateParts.year, endDateParts.month)
+})
 
 const canCalculate = computed(() => {
   if (inputMode.value === 'select') {
@@ -630,25 +768,76 @@ const formatPartsToDate = (parts: DateParts): string => {
   return `${year}-${month}-${day}`
 }
 
-const validateAndAdjustDay = (parts: DateParts): void => {
-  if (parts.year !== null && parts.month !== null && parts.day !== null) {
-    const maxDay = getDaysInMonth(parts.year, parts.month)
-    if (parts.day > maxDay) {
-      parts.day = maxDay
-      ElMessage.warning(`日期已自动调整为 ${maxDay} 日（${parts.year}年${parts.month}月共${maxDay}天）`)
-    }
+const syncFormDateFromParts = () => {
+  if (!hasStartErrors.value) {
+    form.startDate = formatPartsToDate(startDateParts)
+  }
+  if (!hasEndErrors.value) {
+    form.endDate = formatPartsToDate(endDateParts)
   }
 }
 
-const onStartDateChange = () => {
-  validateAndAdjustDay(startDateParts)
-  form.startDate = formatPartsToDate(startDateParts)
+const onStartYearChange = () => {
+  validationErrors.startYear = validateYear(startDateParts.year, '起始日期')
+  if (startDateParts.year !== null && startDateParts.month !== null && startDateParts.day !== null) {
+    validationErrors.startDay = validateDay(startDateParts.year, startDateParts.month, startDateParts.day, '起始日期')
+    if (startDateParts.day > getDaysInMonth(startDateParts.year, startDateParts.month)) {
+      startDateParts.day = getDaysInMonth(startDateParts.year, startDateParts.month)
+      ElMessage.warning(`起始日期已自动调整为 ${startDateParts.day} 日`)
+    }
+  }
+  syncFormDateFromParts()
   if (result.value) result.value = null
 }
 
-const onEndDateChange = () => {
-  validateAndAdjustDay(endDateParts)
-  form.endDate = formatPartsToDate(endDateParts)
+const onStartMonthChange = () => {
+  validationErrors.startMonth = validateMonth(startDateParts.month, '起始日期')
+  if (startDateParts.year !== null && startDateParts.month !== null && startDateParts.day !== null) {
+    validationErrors.startDay = validateDay(startDateParts.year, startDateParts.month, startDateParts.day, '起始日期')
+    if (startDateParts.day > getDaysInMonth(startDateParts.year, startDateParts.month)) {
+      startDateParts.day = getDaysInMonth(startDateParts.year, startDateParts.month)
+      ElMessage.warning(`起始日期已自动调整为 ${startDateParts.day} 日`)
+    }
+  }
+  syncFormDateFromParts()
+  if (result.value) result.value = null
+}
+
+const onStartDayChange = () => {
+  validationErrors.startDay = validateDay(startDateParts.year, startDateParts.month, startDateParts.day, '起始日期')
+  syncFormDateFromParts()
+  if (result.value) result.value = null
+}
+
+const onEndYearChange = () => {
+  validationErrors.endYear = validateYear(endDateParts.year, '目标日期')
+  if (endDateParts.year !== null && endDateParts.month !== null && endDateParts.day !== null) {
+    validationErrors.endDay = validateDay(endDateParts.year, endDateParts.month, endDateParts.day, '目标日期')
+    if (endDateParts.day > getDaysInMonth(endDateParts.year, endDateParts.month)) {
+      endDateParts.day = getDaysInMonth(endDateParts.year, endDateParts.month)
+      ElMessage.warning(`目标日期已自动调整为 ${endDateParts.day} 日`)
+    }
+  }
+  syncFormDateFromParts()
+  if (result.value) result.value = null
+}
+
+const onEndMonthChange = () => {
+  validationErrors.endMonth = validateMonth(endDateParts.month, '目标日期')
+  if (endDateParts.year !== null && endDateParts.month !== null && endDateParts.day !== null) {
+    validationErrors.endDay = validateDay(endDateParts.year, endDateParts.month, endDateParts.day, '目标日期')
+    if (endDateParts.day > getDaysInMonth(endDateParts.year, endDateParts.month)) {
+      endDateParts.day = getDaysInMonth(endDateParts.year, endDateParts.month)
+      ElMessage.warning(`目标日期已自动调整为 ${endDateParts.day} 日`)
+    }
+  }
+  syncFormDateFromParts()
+  if (result.value) result.value = null
+}
+
+const onEndDayChange = () => {
+  validationErrors.endDay = validateDay(endDateParts.year, endDateParts.month, endDateParts.day, '目标日期')
+  syncFormDateFromParts()
   if (result.value) result.value = null
 }
 
@@ -658,10 +847,14 @@ const onPickerStartChange = (val: string | null) => {
     startDateParts.year = parts.year
     startDateParts.month = parts.month
     startDateParts.day = parts.day
+    validateAll()
   } else {
     startDateParts.year = null
     startDateParts.month = null
     startDateParts.day = null
+    validationErrors.startYear = ''
+    validationErrors.startMonth = ''
+    validationErrors.startDay = ''
   }
   if (result.value) result.value = null
 }
@@ -672,31 +865,23 @@ const onPickerEndChange = (val: string | null) => {
     endDateParts.year = parts.year
     endDateParts.month = parts.month
     endDateParts.day = parts.day
+    validateAll()
   } else {
     endDateParts.year = null
     endDateParts.month = null
     endDateParts.day = null
+    validationErrors.endYear = ''
+    validationErrors.endMonth = ''
+    validationErrors.endDay = ''
   }
   if (result.value) result.value = null
 }
 
 watch(inputMode, (newMode) => {
   if (newMode === 'picker') {
-    form.startDate = formatPartsToDate(startDateParts)
-    form.endDate = formatPartsToDate(endDateParts)
+    syncFormDateFromParts()
   } else {
-    if (form.startDate) {
-      const parts = parseDateToParts(form.startDate)
-      startDateParts.year = parts.year
-      startDateParts.month = parts.month
-      startDateParts.day = parts.day
-    }
-    if (form.endDate) {
-      const parts = parseDateToParts(form.endDate)
-      endDateParts.year = parts.year
-      endDateParts.month = parts.month
-      endDateParts.day = parts.day
-    }
+    validateAll()
   }
 })
 
@@ -711,11 +896,17 @@ const setDateFromParts = (target: 'start' | 'end', date: Date) => {
     startDateParts.month = month
     startDateParts.day = day
     form.startDate = dateStr
+    validationErrors.startYear = ''
+    validationErrors.startMonth = ''
+    validationErrors.startDay = ''
   } else {
     endDateParts.year = year
     endDateParts.month = month
     endDateParts.day = day
     form.endDate = dateStr
+    validationErrors.endYear = ''
+    validationErrors.endMonth = ''
+    validationErrors.endDay = ''
   }
 }
 
@@ -768,16 +959,25 @@ const swapDates = () => {
   const tempMonth = startDateParts.month
   const tempDay = startDateParts.day
   const tempStr = form.startDate
+  const tempYearErr = validationErrors.startYear
+  const tempMonthErr = validationErrors.startMonth
+  const tempDayErr = validationErrors.startDay
 
   startDateParts.year = endDateParts.year
   startDateParts.month = endDateParts.month
   startDateParts.day = endDateParts.day
   form.startDate = form.endDate
+  validationErrors.startYear = validationErrors.endYear
+  validationErrors.startMonth = validationErrors.endMonth
+  validationErrors.startDay = validationErrors.endDay
 
   endDateParts.year = tempYear
   endDateParts.month = tempMonth
   endDateParts.day = tempDay
   form.endDate = tempStr
+  validationErrors.endYear = tempYearErr
+  validationErrors.endMonth = tempMonthErr
+  validationErrors.endDay = tempDayErr
 
   if (result.value) calculate()
 }
@@ -793,6 +993,12 @@ const resetForm = () => {
   endDateParts.year = null
   endDateParts.month = null
   endDateParts.day = null
+  validationErrors.startYear = ''
+  validationErrors.startMonth = ''
+  validationErrors.startDay = ''
+  validationErrors.endYear = ''
+  validationErrors.endMonth = ''
+  validationErrors.endDay = ''
   result.value = null
   formRef.value?.resetFields()
 }
@@ -867,6 +1073,14 @@ const countWorkDays = (start: Date, end: Date): { workDays: number; weekendDays:
 }
 
 const calculate = () => {
+  if (inputMode.value === 'select') {
+    validateAll()
+    if (hasAnyErrors.value) {
+      ElMessage.error(`检测到 ${errorCount.value} 处输入错误，请先修正标红的字段`)
+      return
+    }
+  }
+
   if (!canCalculate.value) {
     ElMessage.warning('请先完整选择起始日期和目标日期')
     return
@@ -1148,6 +1362,10 @@ const calculate = () => {
     .calculator-form {
       margin-top: 20px;
 
+      .date-form-item {
+        align-items: flex-start;
+      }
+
       .form-item-with-help {
         display: flex;
         align-items: center;
@@ -1160,18 +1378,64 @@ const calculate = () => {
         }
       }
 
-      .date-select-group {
+      .date-input-group {
         display: flex;
         gap: 8px;
         flex: 1;
 
-        .date-select.year-select {
-          flex: 1.2;
-        }
-
-        .date-select.month-select,
-        .date-select.day-select {
+        .input-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
           flex: 1;
+
+          .date-input {
+            :deep(.el-input__wrapper) {
+              box-shadow: 0 0 0 1px var(--el-input-border-color, #dcdfe6) inset;
+            }
+
+            &.year-input {
+              :deep(.el-input-number) {
+                flex: 1.2;
+              }
+            }
+
+            &.month-input,
+            &.day-input {
+              :deep(.el-input-number) {
+                flex: 1;
+              }
+            }
+
+            &.has-error :deep(.el-input__wrapper) {
+              box-shadow: 0 0 0 1px var(--el-color-danger, #f56c6c) inset !important;
+            }
+          }
+
+          .error-icon {
+            position: absolute;
+            right: -22px;
+            color: #f56c6c;
+            font-size: 16px;
+            cursor: help;
+          }
+        }
+      }
+
+      .validation-errors {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding-left: 4px;
+
+        .error-text {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 12px;
+          color: #f56c6c;
+          line-height: 1.5;
         }
       }
 
@@ -1181,7 +1445,21 @@ const calculate = () => {
         align-items: center;
         gap: 4px;
         font-size: 12px;
-        color: #909399;
+        color: #67c23a;
+      }
+
+      .global-error-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 16px;
+        background: #fef0f0;
+        border: 1px solid #fde2e2;
+        border-radius: 6px;
+        color: #f56c6c;
+        font-weight: 500;
+        margin-bottom: 16px;
       }
 
       .quick-dates {
