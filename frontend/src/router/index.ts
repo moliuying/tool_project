@@ -225,6 +225,11 @@ const routes: RouteRecordRaw[] = [
         path: '/gif-resizer',
         name: 'GifResizer',
         component: () => import('@/views/GifResizer.vue')
+      },
+      {
+        path: '/date-difference',
+        name: 'DateDifferenceCalculator',
+        component: () => import('@/views/DateDifferenceCalculator.vue')
       }
     ]
   }
