@@ -255,6 +255,11 @@ const routes: RouteRecordRaw[] = [
         path: '/official-document',
         name: 'OfficialDocumentWriter',
         component: () => import('@/views/OfficialDocumentWriter.vue')
+      },
+      {
+        path: '/viral-copy',
+        name: 'ViralCopyGenerator',
+        component: () => import('@/views/ViralCopyGenerator.vue')
       }
     ]
   }
