@@ -406,6 +406,16 @@
               <el-tag size="small" type="success" class="header-tag">
                 共 {{ charCount }} 字 / {{ lineCount }} 行
               </el-tag>
+              <el-radio-group v-model="resultViewMode" size="small" class="view-toggle">
+                <el-radio-button value="processed">
+                  <el-icon><MagicStick /></el-icon>
+                  智能整理
+                </el-radio-button>
+                <el-radio-button value="raw">
+                  <el-icon><DocumentCopy /></el-icon>
+                  原始结果
+                </el-radio-button>
+              </el-radio-group>
               <div class="header-actions">
                 <el-button size="small" text @click="resetAll">
                   <el-icon><Refresh /></el-icon>
@@ -414,6 +424,20 @@
               </div>
             </div>
           </template>
+
+          <div class="postprocess-tip" v-if="hasMixedLanguage && resultViewMode === 'raw'">
+            <el-alert type="warning" :closable="false" show-icon>
+              <template #title>
+                <div class="tip-inner">
+                  <el-icon :size="14"><Warning /></el-icon>
+                  <span>检测到多语言内容，建议切换到「智能整理」视图，可自动修复中英文顺序错乱问题</span>
+                  <el-button type="primary" size="small" link @click="applySmartFormat">
+                    一键智能整理
+                  </el-button>
+                </div>
+              </template>
+            </el-alert>
+          </div>
 
           <div class="result-toolbar">
             <el-button size="small" @click="copyText" :disabled="!recognizedText">
@@ -428,16 +452,41 @@
               <el-icon><Delete /></el-icon>
               清空
             </el-button>
-            <el-tooltip content="去除多余空行" placement="top">
-              <el-button size="small" @click="trimEmptyLines">
-                <el-icon><Rank /></el-icon>
-                整理格式
+            <el-divider direction="vertical" />
+            <el-tooltip content="根据文字坐标重排顺序，修复中英文错乱" placement="top">
+              <el-button size="small" type="primary" plain @click="reorderByPosition" :disabled="!hasOcrData">
+                <el-icon><Sort /></el-icon>
+                按位置重排
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="修复中英文之间多余的空格和缺失的空格" placement="top">
+              <el-button size="small" @click="fixCnEnSpacing">
+                <el-icon><Edit /></el-icon>
+                修复空格
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="合并被错误拆分的短行" placement="top">
+              <el-button size="small" @click="mergeBrokenLines">
+                <el-icon><Connection /></el-icon>
+                合并断行
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="去除重复的行" placement="top">
+              <el-button size="small" @click="removeDuplicateLines">
+                <el-icon><CopyDocument /></el-icon>
+                去重
+              </el-button>
+            </el-tooltip>
+            <el-tooltip content="一键执行全部优化" placement="top">
+              <el-button size="small" type="success" @click="applySmartFormat">
+                <el-icon><MagicStick /></el-icon>
+                智能整理
               </el-button>
             </el-tooltip>
           </div>
 
           <el-input
-            v-model="recognizedText"
+            v-model="displayText"
             type="textarea"
             :rows="16"
             placeholder="识别结果将显示在这里..."
@@ -448,6 +497,10 @@
           <div class="result-stats">
             <el-tag size="small" v-for="stat in textStats" :key="stat.label" :type="stat.type">
               {{ stat.label }}: {{ stat.value }}
+            </el-tag>
+            <el-tag size="small" type="warning" v-if="processedTextChanged">
+              <el-icon :size="12"><Edit /></el-icon>
+              已手动编辑
             </el-tag>
           </div>
         </el-card>
@@ -470,6 +523,7 @@ import {
   Search,
   Loading,
   Document,
+  DocumentCopy,
   Refresh,
   CopyDocument,
   Download,
@@ -491,7 +545,10 @@ import {
   QuestionFilled,
   Medal,
   Bottom,
-  Grid
+  Grid,
+  Sort,
+  Edit,
+  Connection
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -533,6 +590,12 @@ const recognizedText = ref('')
 const recognizing = ref(false)
 const progressPercent = ref(0)
 const progressStatus = ref('准备中...')
+
+const rawRecognizedText = ref('')
+const processedRecognizedText = ref('')
+const resultViewMode = ref<'processed' | 'raw'>('processed')
+const processedTextChanged = ref(false)
+const ocrWordData = ref<Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; confidence: number }>>([])
 
 const languages = [
   { value: 'chi_sim', name: '简体中文', emoji: '🇨🇳' },
@@ -627,11 +690,38 @@ const bestPractices = [
   '识别后请仔细核对，尤其专业术语、数字等关键信息'
 ]
 
-const charCount = computed(() => recognizedText.value.replace(/\s/g, '').length)
-const lineCount = computed(() => recognizedText.value.split('\n').filter(l => l.trim()).length)
+const displayText = computed({
+  get: () => {
+    if (resultViewMode.value === 'raw') {
+      return rawRecognizedText.value
+    }
+    return processedRecognizedText.value || rawRecognizedText.value
+  },
+  set: (val: string) => {
+    if (resultViewMode.value === 'raw') {
+      rawRecognizedText.value = val
+    } else {
+      processedRecognizedText.value = val
+      processedTextChanged.value = true
+    }
+    recognizedText.value = val
+  }
+})
+
+const hasOcrData = computed(() => ocrWordData.value.length > 0)
+
+const hasMixedLanguage = computed(() => {
+  const text = rawRecognizedText.value
+  const hasChinese = /[\u4e00-\u9fa5]/.test(text)
+  const hasEnglish = /[a-zA-Z]/.test(text)
+  return hasChinese && hasEnglish
+})
+
+const charCount = computed(() => displayText.value.replace(/\s/g, '').length)
+const lineCount = computed(() => displayText.value.split('\n').filter(l => l.trim()).length)
 
 const textStats = computed(() => {
-  const text = recognizedText.value
+  const text = displayText.value
   const chinese = (text.match(/[\u4e00-\u9fa5]/g) || []).length
   const english = (text.match(/[a-zA-Z]/g) || []).length
   const numbers = (text.match(/[0-9]/g) || []).length
@@ -851,6 +941,10 @@ const startRecognize = async () => {
   progressPercent.value = 0
   progressStatus.value = '初始化识别引擎...'
   recognizedText.value = ''
+  rawRecognizedText.value = ''
+  processedRecognizedText.value = ''
+  processedTextChanged.value = false
+  ocrWordData.value = []
 
   try {
     const langCode = selectedLanguages.value.join('+')
@@ -872,11 +966,30 @@ const startRecognize = async () => {
       }
     })
 
-    recognizedText.value = result.data.text.trim()
+    rawRecognizedText.value = result.data.text.trim()
+    recognizedText.value = rawRecognizedText.value
+
+    if (result.data.words && result.data.words.length > 0) {
+      ocrWordData.value = result.data.words.map((w: any) => ({
+        text: w.text,
+        bbox: w.bbox,
+        confidence: w.confidence
+      }))
+    }
+
     currentStep.value = 4
 
-    if (recognizedText.value) {
-      ElMessage.success('文字识别完成！')
+    if (rawRecognizedText.value) {
+      applySmartFormat()
+      if (hasMixedLanguage.value) {
+        ElMessage({
+          message: '文字识别完成！检测到中英文混排内容，已自动进行智能整理',
+          type: 'success',
+          duration: 3000
+        })
+      } else {
+        ElMessage.success('文字识别完成！')
+      }
     } else {
       ElMessage.warning('未能识别到文字，请尝试调整预处理参数或更换语言设置后重试')
     }
@@ -888,13 +1001,175 @@ const startRecognize = async () => {
   }
 }
 
+const reorderByPosition = () => {
+  if (!ocrWordData.value || ocrWordData.value.length === 0) {
+    ElMessage.warning('没有可用的位置数据，无法按位置重排')
+    return
+  }
+
+  const words = [...ocrWordData.value]
+  const avgHeight = words.reduce((sum, w) => sum + (w.bbox.y1 - w.bbox.y0), 0) / words.length
+  const lineThreshold = avgHeight * 0.5
+
+  const lines: Array<Array<{ text: string; x0: number }>> = []
+  for (const word of words) {
+    const wordY = (word.bbox.y0 + word.bbox.y1) / 2
+    let assigned = false
+    for (const line of lines) {
+      const lineY = line._y as number
+      if (Math.abs(wordY - lineY) < lineThreshold) {
+        line.push({ text: word.text, x0: word.bbox.x0 })
+        assigned = true
+        break
+      }
+    }
+    if (!assigned) {
+      const newLine: any = [{ text: word.text, x0: word.bbox.x0 }]
+      newLine._y = wordY
+      lines.push(newLine)
+    }
+  }
+
+  lines.sort((a, b) => (a._y as number) - (b._y as number))
+  for (const line of lines) {
+    line.sort((a, b) => a.x0 - b.x0)
+  }
+
+  const result = lines
+    .map(line => line.map(w => w.text).join(' '))
+    .join('\n')
+
+  processedRecognizedText.value = result
+  processedTextChanged.value = true
+  resultViewMode.value = 'processed'
+  ElMessage.success('已按文字位置重新排序')
+}
+
+const fixCnEnSpacing = () => {
+  let text = displayText.value
+
+  text = text.replace(/([\u4e00-\u9fa5])([a-zA-Z])/g, '$1 $2')
+  text = text.replace(/([a-zA-Z])([\u4e00-\u9fa5])/g, '$1 $2')
+  text = text.replace(/([\u4e00-\u9fa5])(\d)/g, '$1 $2')
+  text = text.replace(/(\d)([\u4e00-\u9fa5])/g, '$1 $2')
+
+  text = text.replace(/([a-zA-Z])\s+([a-zA-Z])/g, (match, p1, p2) => {
+    if (/[.,!?;:]/.test(p2)) return match
+    return p1 + ' ' + p2
+  })
+
+  text = text.replace(/([\u4e00-\u9fa5])\s+(?=[，。！？；：、])/g, '$1')
+  text = text.replace(/\s{2,}/g, ' ')
+  text = text.replace(/^\s+|\s+$/gm, '')
+
+  processedRecognizedText.value = text
+  processedTextChanged.value = true
+  resultViewMode.value = 'processed'
+  ElMessage.success('已修复中英文空格')
+}
+
+const mergeBrokenLines = () => {
+  const lines = displayText.value.split('\n')
+  const merged: string[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const current = lines[i].trim()
+    if (!current) continue
+
+    if (merged.length === 0) {
+      merged.push(current)
+      continue
+    }
+
+    const prev = merged[merged.length - 1]
+    const prevEndsWithPunct = /[。！？!?；;：:」』）】》〉]$/.test(prev)
+    const prevEndsWithEnHyphen = /[a-zA-Z]-$/.test(prev)
+    const currentStartsWithLower = /^[a-z]/.test(current)
+    const prevTooShort = prev.length < 15
+    const currentTooShort = current.length < 15
+
+    const shouldMerge = (
+      (!prevEndsWithPunct && !prevEndsWithEnHyphen && currentStartsWithLower) ||
+      (prevTooShort && currentTooShort && !prevEndsWithPunct)
+    )
+
+    if (shouldMerge) {
+      if (prevEndsWithEnHyphen) {
+        merged[merged.length - 1] = prev.slice(0, -1) + current
+      } else {
+        const needsSpace = /[a-zA-Z0-9]$/.test(prev) && /^[a-zA-Z0-9]/.test(current)
+        merged[merged.length - 1] = prev + (needsSpace ? ' ' : '') + current
+      }
+    } else {
+      merged.push(current)
+    }
+  }
+
+  processedRecognizedText.value = merged.join('\n')
+  processedTextChanged.value = true
+  resultViewMode.value = 'processed'
+  ElMessage.success('已合并被拆分的行')
+}
+
+const removeDuplicateLines = () => {
+  const lines = displayText.value.split('\n')
+  const seen = new Set<string>()
+  const result: string[] = []
+
+  for (const line of lines) {
+    const key = line.trim()
+    if (!key) {
+      if (result[result.length - 1] !== '') result.push(line)
+      continue
+    }
+    if (!seen.has(key)) {
+      seen.add(key)
+      result.push(line)
+    }
+  }
+
+  processedRecognizedText.value = result.join('\n')
+  processedTextChanged.value = true
+  resultViewMode.value = 'processed'
+  ElMessage.success('已去除重复行')
+}
+
+const applySmartFormat = () => {
+  if (!rawRecognizedText.value) {
+    ElMessage.warning('没有可整理的内容')
+    return
+  }
+
+  processedRecognizedText.value = rawRecognizedText.value
+
+  if (ocrWordData.value.length > 0) {
+    reorderByPosition()
+  }
+
+  fixCnEnSpacing()
+  mergeBrokenLines()
+  removeDuplicateLines()
+
+  let text = processedRecognizedText.value
+  text = text
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .join('\n')
+  processedRecognizedText.value = text
+
+  processedTextChanged.value = true
+  resultViewMode.value = 'processed'
+  ElMessage.success('智能整理完成！')
+}
+
 const copyText = async () => {
   try {
-    await navigator.clipboard.writeText(recognizedText.value)
+    await navigator.clipboard.writeText(displayText.value)
     ElMessage.success('已复制到剪贴板')
   } catch (e) {
     const textarea = document.createElement('textarea')
-    textarea.value = recognizedText.value
+    textarea.value = displayText.value
     document.body.appendChild(textarea)
     textarea.select()
     document.execCommand('copy')
@@ -904,8 +1179,8 @@ const copyText = async () => {
 }
 
 const downloadText = () => {
-  if (!recognizedText.value) return
-  const blob = new Blob([recognizedText.value], { type: 'text/plain;charset=utf-8' })
+  if (!displayText.value) return
+  const blob = new Blob([displayText.value], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
@@ -917,16 +1192,25 @@ const downloadText = () => {
 
 const clearResult = () => {
   recognizedText.value = ''
+  rawRecognizedText.value = ''
+  processedRecognizedText.value = ''
+  processedTextChanged.value = false
   currentStep.value = 3
 }
 
 const trimEmptyLines = () => {
-  if (!recognizedText.value) return
-  recognizedText.value = recognizedText.value
+  if (!displayText.value) return
+  const text = displayText.value
     .split('\n')
     .map(line => line.trim())
     .filter(line => line.length > 0)
     .join('\n')
+  if (resultViewMode.value === 'raw') {
+    rawRecognizedText.value = text
+  } else {
+    processedRecognizedText.value = text
+    processedTextChanged.value = true
+  }
   ElMessage.success('格式已整理')
 }
 
@@ -937,6 +1221,11 @@ const resetAll = () => {
   imageHeight.value = 0
   fileSize.value = 0
   recognizedText.value = ''
+  rawRecognizedText.value = ''
+  processedRecognizedText.value = ''
+  processedTextChanged.value = false
+  ocrWordData.value = []
+  resultViewMode.value = 'processed'
   progressPercent.value = 0
   progressStatus.value = ''
   currentStep.value = 0
@@ -1491,5 +1780,46 @@ const resetAll = () => {
   .el-col {
     width: 100% !important;
   }
+}
+
+.view-toggle {
+  margin-left: 16px;
+}
+
+.view-toggle .el-radio-button__inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.postprocess-tip {
+  margin-bottom: 16px;
+}
+
+.tip-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.tip-inner .el-button {
+  margin-left: auto;
+  padding: 0;
+}
+
+.result-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.result-toolbar .el-divider {
+  margin: 0 4px;
+  height: 24px;
 }
 </style>
