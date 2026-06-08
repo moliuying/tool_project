@@ -177,6 +177,74 @@
             <div class="diff-col">自然流畅</div>
           </div>
         </div>
+        <el-divider />
+        <h4 class="expectation-title">🌍 英语变体标准差异说明</h4>
+        <p class="variant-note">
+          不同英语地区在拼写规则、惯用词汇、语法习惯上存在显著差异。本工具支持 5 种主流英语变体标准，润色时将严格遵循目标变体规范。
+        </p>
+        <div class="variant-diff-table">
+          <div class="vdiff-row vdiff-header">
+            <div class="vdiff-col">差异维度</div>
+            <div class="vdiff-col">🇺🇸 美式英语<br/><span class="vdiff-sub">American English</span></div>
+            <div class="vdiff-col">🇬🇧 英式英语<br/><span class="vdiff-sub">British English</span></div>
+            <div class="vdiff-col">🇦🇺 澳式英语<br/><span class="vdiff-sub">Australian English</span></div>
+            <div class="vdiff-col">🇨🇦 加式英语<br/><span class="vdiff-sub">Canadian English</span></div>
+            <div class="vdiff-col">🇳🇿 新式英语<br/><span class="vdiff-sub">New Zealand English</span></div>
+          </div>
+          <div class="vdiff-row">
+            <div class="vdiff-col vdiff-label">拼写风格</div>
+            <div class="vdiff-col">-or / -ize / -ense<br/>e.g. color, organize, defense</div>
+            <div class="vdiff-col">-our / -ise / -ense<br/>e.g. colour, organise, defence</div>
+            <div class="vdiff-col">-our / -ize / -ense<br/>e.g. colour, organize, defence</div>
+            <div class="vdiff-col">-our / -ize / -ense<br/>e.g. colour, organize, defence</div>
+            <div class="vdiff-col">-our / -ise / -ense<br/>e.g. colour, organise, defence</div>
+          </div>
+          <div class="vdiff-row">
+            <div class="vdiff-col vdiff-label">动词过去式</div>
+            <div class="vdiff-col">倾向 -ed<br/>learned, burned</div>
+            <div class="vdiff-col">倾向 -t<br/>learnt, burnt</div>
+            <div class="vdiff-col">两者均可<br/>learnt / learned</div>
+            <div class="vdiff-col">倾向 -t<br/>learnt, burnt</div>
+            <div class="vdiff-col">倾向 -t<br/>learnt, burnt</div>
+          </div>
+          <div class="vdiff-row">
+            <div class="vdiff-col vdiff-label">介词用法</div>
+            <div class="vdiff-col">on the weekend<br/>different than</div>
+            <div class="vdiff-col">at the weekend<br/>different from / to</div>
+            <div class="vdiff-col">on the weekend<br/>different to</div>
+            <div class="vdiff-col">on the weekend<br/>different from</div>
+            <div class="vdiff-col">at the weekend<br/>different from</div>
+          </div>
+          <div class="vdiff-row">
+            <div class="vdiff-col vdiff-label">日期格式</div>
+            <div class="vdiff-col">月/日/年<br/>MM/DD/YYYY</div>
+            <div class="vdiff-col">日/月/年<br/>DD/MM/YYYY</div>
+            <div class="vdiff-col">日/月/年<br/>DD/MM/YYYY</div>
+            <div class="vdiff-col">日/月/年<br/>YYYY-MM-DD</div>
+            <div class="vdiff-col">日/月/年<br/>DD/MM/YYYY</div>
+          </div>
+          <div class="vdiff-row">
+            <div class="vdiff-col vdiff-label">适用场景</div>
+            <div class="vdiff-col">北美市场、托福、美国院校申请</div>
+            <div class="vdiff-col">欧洲市场、雅思、英国院校申请</div>
+            <div class="vdiff-col">澳洲留学、移民、本地商务</div>
+            <div class="vdiff-col">加拿大留学、移民申请</div>
+            <div class="vdiff-col">新西兰留学、本地商务</div>
+          </div>
+        </div>
+        <div class="variant-examples">
+          <h5 class="ve-title">📝 常见词汇差异示例（美式 → 英式）</h5>
+          <div class="ve-grid">
+            <div class="ve-item"><span class="ve-before">apartment</span> → <span class="ve-after">flat</span><span class="ve-desc">公寓</span></div>
+            <div class="ve-item"><span class="ve-before">elevator</span> → <span class="ve-after">lift</span><span class="ve-desc">电梯</span></div>
+            <div class="ve-item"><span class="ve-before">gasoline</span> → <span class="ve-after">petrol</span><span class="ve-desc">汽油</span></div>
+            <div class="ve-item"><span class="ve-before">truck</span> → <span class="ve-after">lorry</span><span class="ve-desc">卡车</span></div>
+            <div class="ve-item"><span class="ve-before">fall</span> → <span class="ve-after">autumn</span><span class="ve-desc">秋天</span></div>
+            <div class="ve-item"><span class="ve-before">cookie</span> → <span class="ve-after">biscuit</span><span class="ve-desc">饼干</span></div>
+            <div class="ve-item"><span class="ve-before">subway</span> → <span class="ve-after">tube / underground</span><span class="ve-desc">地铁</span></div>
+            <div class="ve-item"><span class="ve-before">zip code</span> → <span class="ve-after">postcode</span><span class="ve-desc">邮编</span></div>
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -258,6 +326,31 @@ John"
         </div>
       </div>
 
+      <div class="variant-section">
+        <div class="section-title">
+          <el-icon><Location /></el-icon>
+          <span>英语变体标准</span>
+          <el-tag size="small" type="warning" class="hint-tag">
+            润色结果将严格遵循所选地区的拼写、词汇和语法规范
+          </el-tag>
+        </div>
+        <div class="variant-options">
+          <div
+            v-for="variant in englishVariants"
+            :key="variant.value"
+            class="variant-card"
+            :class="{ active: selectedVariant === variant.value, disabled: isGenerating }"
+            @click="!isGenerating && (selectedVariant = variant.value)"
+          >
+            <div class="variant-flag">{{ variant.flag }}</div>
+            <div class="variant-name">{{ variant.label }}</div>
+            <div class="variant-code">{{ variant.code }}</div>
+            <div class="variant-spelling">{{ variant.spellingExample }}</div>
+            <div class="variant-scene">{{ variant.scene }}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="two-col-section">
         <div class="input-section flex-1">
           <div class="section-title">
@@ -322,7 +415,7 @@ John"
           <template #loading>
             <span class="btn-loading-text">
               <el-icon class="is-loading"><Loading /></el-icon>
-              AI 正在进行 {{ getIntensityLabel(selectedIntensity) }} 润色（{{ getDocTypeLabel(selectedDocType) }}）…
+              AI 正在按 {{ getVariantLabel(selectedVariant) }} 标准进行 {{ getIntensityLabel(selectedIntensity) }} 润色…
             </span>
           </template>
           开始润色
@@ -356,11 +449,17 @@ John"
             <Finished />
           </el-icon>
           <span>润色结果</span>
+          <el-tag size="small" type="primary" effect="dark">
+            {{ getVariantLabel(selectedVariant) }}
+          </el-tag>
           <el-tag size="small" type="success">
             {{ getDocTypeLabel(selectedDocType) }}
           </el-tag>
           <el-tag size="small" type="warning">
             {{ getIntensityLabel(selectedIntensity) }}
+          </el-tag>
+          <el-tag size="small" type="info">
+            标准: {{ getVariantCode(selectedVariant) }}
           </el-tag>
           <div class="header-actions">
             <el-button size="small" :icon="RefreshRight" @click="polishText">
@@ -504,6 +603,7 @@ John"
         >
           <div class="history-time">{{ formatTime(item.time) }}</div>
           <div class="history-original">
+            <el-tag size="small" type="primary">{{ getVariantLabel(item.variant || 'american') }}</el-tag>
             <el-tag size="small" type="info">{{ getDocTypeLabel(item.docType) }}</el-tag>
             <el-tag size="small" type="warning">{{ getIntensityLabel(item.intensity) }}</el-tag>
             <span class="history-text">{{ truncateText(item.originalDraft, 60) }}</span>
@@ -539,7 +639,8 @@ import {
   User,
   WarningFilled,
   RefreshRight,
-  Brush
+  Brush,
+  Location
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -573,6 +674,7 @@ interface PolishResult {
 interface HistoryItem {
   originalDraft: string
   docType: string
+  variant: string
   intensity: string
   dimensions: string[]
   result: PolishResult
@@ -697,6 +799,140 @@ const docTypes = [
   }
 ]
 
+const englishVariants = [
+  {
+    value: 'american',
+    label: '美式英语',
+    flag: '🇺🇸',
+    code: 'en-US',
+    spellingExample: 'color, organize, defense',
+    scene: '北美市场 / 托福 / 美企',
+    spelling: 'or',
+    verbForm: 'ize',
+    nounForm: 'ense'
+  },
+  {
+    value: 'british',
+    label: '英式英语',
+    flag: '🇬🇧',
+    code: 'en-GB',
+    spellingExample: 'colour, organise, defence',
+    scene: '欧洲市场 / 雅思 / 英企',
+    spelling: 'our',
+    verbForm: 'ise',
+    nounForm: 'ence'
+  },
+  {
+    value: 'australian',
+    label: '澳式英语',
+    flag: '🇦🇺',
+    code: 'en-AU',
+    spellingExample: 'colour, organize, defence',
+    scene: '澳洲留学 / 移民 / 本地商务',
+    spelling: 'our',
+    verbForm: 'ize',
+    nounForm: 'ence'
+  },
+  {
+    value: 'canadian',
+    label: '加式英语',
+    flag: '🇨🇦',
+    code: 'en-CA',
+    spellingExample: 'colour, organize, defence',
+    scene: '加拿大留学 / 移民申请',
+    spelling: 'our',
+    verbForm: 'ize',
+    nounForm: 'ence'
+  },
+  {
+    value: 'newzealand',
+    label: '新式英语',
+    flag: '🇳🇿',
+    code: 'en-NZ',
+    spellingExample: 'colour, organise, defence',
+    scene: '新西兰留学 / 本地商务',
+    spelling: 'our',
+    verbForm: 'ise',
+    nounForm: 'ence'
+  }
+]
+
+const spellingVariants: Record<string, Array<{ us: string; uk: string; word: string }>> = {
+  or_our: [
+    { us: 'color', uk: 'colour', word: '颜色' },
+    { us: 'flavor', uk: 'flavour', word: '风味' },
+    { us: 'honor', uk: 'honour', word: '荣誉' },
+    { us: 'humor', uk: 'humour', word: '幽默' },
+    { us: 'behavior', uk: 'behaviour', word: '行为' },
+    { us: 'favorite', uk: 'favourite', word: '最爱的' },
+    { us: 'neighbor', uk: 'neighbour', word: '邻居' },
+    { us: 'labor', uk: 'labour', word: '劳动' },
+    { us: ' harbor', uk: 'harbour', word: '港口' },
+    { us: 'rumor', uk: 'rumour', word: '谣言' },
+    { us: 'vigor', uk: 'vigour', word: '活力' },
+    { us: 'savior', uk: 'saviour', word: '救世主' }
+  ],
+  ize_ise: [
+    { us: 'organize', uk: 'organise', word: '组织' },
+    { us: 'recognize', uk: 'recognise', word: '识别' },
+    { us: 'realize', uk: 'realise', word: '意识到' },
+    { us: 'optimize', uk: 'optimise', word: '优化' },
+    { us: 'customize', uk: 'customise', word: '定制' },
+    { us: 'maximize', uk: 'maximise', word: '最大化' },
+    { us: 'minimize', uk: 'minimise', word: '最小化' },
+    { us: 'prioritize', uk: 'prioritise', word: '优先排序' },
+    { us: 'utilize', uk: 'utilise', word: '利用' },
+    { us: 'analyze', uk: 'analyse', word: '分析' },
+    { us: 'criticize', uk: 'criticise', word: '批评' },
+    { us: 'emphasize', uk: 'emphasise', word: '强调' }
+  ],
+  ense_ence: [
+    { us: 'defense', uk: 'defence', word: '防御' },
+    { us: 'offense', uk: 'offence', word: '冒犯' },
+    { us: 'license', uk: 'licence', word: '执照（名）' },
+    { us: 'pretense', uk: 'pretence', word: '假装' }
+  ],
+  l_ll: [
+    { us: 'traveled', uk: 'travelled', word: '旅行（过去式）' },
+    { us: 'traveling', uk: 'travelling', word: '旅行（进行式）' },
+    { us: 'traveler', uk: 'traveller', word: '旅行者' },
+    { us: 'cancelled', uk: 'cancelled', word: '取消' },
+    { us: 'modeled', uk: 'modelled', word: '建模' },
+    { us: 'signaled', uk: 'signalled', word: '发信号' }
+  ]
+}
+
+const vocabularyVariants: Array<{ us: string; uk: string; meaning: string }> = [
+  { us: 'apartment', uk: 'flat', meaning: '公寓' },
+  { us: 'elevator', uk: 'lift', meaning: '电梯' },
+  { us: 'gasoline / gas', uk: 'petrol', meaning: '汽油' },
+  { us: 'truck', uk: 'lorry', meaning: '卡车' },
+  { us: 'fall', uk: 'autumn', meaning: '秋天' },
+  { us: 'cookie', uk: 'biscuit', meaning: '饼干' },
+  { us: 'subway', uk: 'underground / tube', meaning: '地铁' },
+  { us: 'zip code', uk: 'postcode', meaning: '邮编' },
+  { us: 'sidewalk', uk: 'pavement', meaning: '人行道' },
+  { us: 'pants', uk: 'trousers', meaning: '裤子' },
+  { us: 'sweater', uk: 'jumper', meaning: '毛衣' },
+  { us: 'soccer', uk: 'football', meaning: '足球' },
+  { us: 'vacation', uk: 'holiday', meaning: '假期' },
+  { us: 'drugstore / pharmacy', uk: 'chemist', meaning: '药店' },
+  { us: 'line', uk: 'queue', meaning: '排队' },
+  { us: 'mail', uk: 'post', meaning: '邮件' },
+  { us: 'parking lot', uk: 'car park', meaning: '停车场' },
+  { us: 'stove', uk: 'cooker', meaning: '炉灶' },
+  { us: 'diaper', uk: 'nappy', meaning: '尿布' },
+  { us: 'flashlight', uk: 'torch', meaning: '手电筒' },
+  { us: 'fries', uk: 'chips', meaning: '薯条' },
+  { us: 'chips', uk: 'crisps', meaning: '薯片' },
+  { us: 'cab', uk: 'taxi', meaning: '出租车' },
+  { us: 'eraser', uk: 'rubber', meaning: '橡皮擦' },
+  { us: 'highway', uk: 'motorway', meaning: '高速公路' },
+  { us: 'bill', uk: 'note', meaning: '纸币' },
+  { us: 'store', uk: 'shop', meaning: '商店' },
+  { us: 'realtor', uk: 'estate agent', meaning: '房产中介' }
+]
+
 const quickSamplesByType: Record<string, QuickSample[]> = {
   business: [
     {
@@ -772,6 +1008,7 @@ Mary`
 
 const originalDraft = ref('')
 const selectedDocType = ref('business')
+const selectedVariant = ref('american')
 const selectedIntensity = ref('standard')
 const selectedDimensions = ref<string[]>(['grammar', 'vocabulary', 'expression', 'logic'])
 const isGenerating = ref(false)
@@ -808,6 +1045,11 @@ const displayHistory = computed(() => {
 })
 
 const getDocTypeLabel = (v: string) => docTypes.find(d => d.value === v)?.label || v
+const getVariantLabel = (v: string) => {
+  const variant = englishVariants.find(e => e.value === v)
+  return variant ? `${variant.flag} ${variant.label}` : v
+}
+const getVariantCode = (v: string) => englishVariants.find(e => e.value === v)?.code || 'en-US'
 const getIntensityLabel = (v: string) => intensityLevels.find(i => i.value === v)?.label || v
 
 const getImprovementTypeLabel = (type: string) => {
@@ -849,6 +1091,209 @@ const toggleDimension = (value: string) => {
 const truncateText = (text: string, maxLen: number) => {
   if (text.length <= maxLen) return text
   return text.substring(0, maxLen) + '...'
+}
+
+const applyVariant = (text: string, variant: string): { converted: string; changes: Improvement[] } => {
+  const changes: Improvement[] = []
+  let result = text
+  const variantConfig = englishVariants.find(v => v.value === variant)
+
+  if (!variantConfig) return { converted: text, changes }
+
+  if (variantConfig.spelling === 'our') {
+    spellingVariants.or_our.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.us}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.uk.charAt(0).toUpperCase() + pair.uk.slice(1)
+          : pair.uk
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该词应使用 "-our" 后缀而非美式 "-or"。`
+          })
+        }
+        return target
+      })
+    })
+  } else {
+    spellingVariants.or_our.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.uk}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.us.charAt(0).toUpperCase() + pair.us.slice(1)
+          : pair.us
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该词应使用 "-or" 后缀。`
+          })
+        }
+        return target
+      })
+    })
+  }
+
+  if (variantConfig.verbForm === 'ise') {
+    spellingVariants.ize_ise.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.us}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.uk.charAt(0).toUpperCase() + pair.uk.slice(1)
+          : pair.uk
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该动词应使用 "-ise" 后缀而非美式 "-ize"。`
+          })
+        }
+        return target
+      })
+    })
+  } else {
+    spellingVariants.ize_ise.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.uk}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.us.charAt(0).toUpperCase() + pair.us.slice(1)
+          : pair.us
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该动词应使用 "-ize" 后缀。`
+          })
+        }
+        return target
+      })
+    })
+  }
+
+  if (variantConfig.nounForm === 'ence') {
+    spellingVariants.ense_ence.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.us}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.uk.charAt(0).toUpperCase() + pair.uk.slice(1)
+          : pair.uk
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该名词应使用 "-ence" 后缀而非美式 "-ense"。`
+          })
+        }
+        return target
+      })
+    })
+  } else {
+    spellingVariants.ense_ence.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.uk}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.us.charAt(0).toUpperCase() + pair.us.slice(1)
+          : pair.us
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该名词应使用 "-ense" 后缀。`
+          })
+        }
+        return target
+      })
+    })
+  }
+
+  if (variant === 'british' || variant === 'newzealand') {
+    spellingVariants.l_ll.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.us}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.uk.charAt(0).toUpperCase() + pair.uk.slice(1)
+          : pair.uk
+        if (match.toLowerCase() !== target.toLowerCase()) {
+          changes.push({
+            type: 'vocabulary',
+            title: `${getVariantLabel(variant)} 拼写规范`,
+            before: match,
+            after: target,
+            explanation: `根据 ${variantConfig.label} (${variantConfig.code}) 的拼写规范，该词在加后缀时应双写字母 "l"。`
+          })
+        }
+        return target
+      })
+    })
+  }
+
+  if (variant !== 'american' && selectedIntensity.value !== 'light') {
+    vocabularyVariants.forEach(pair => {
+      const usWords = pair.us.split(' / ')
+      usWords.forEach(usWord => {
+        const pattern = new RegExp(`\\b${usWord}\\b`, 'gi')
+        result = result.replace(pattern, (match) => {
+          const target = match[0] === match[0].toUpperCase()
+            ? pair.uk.charAt(0).toUpperCase() + pair.uk.slice(1)
+            : pair.uk
+          if (match.toLowerCase() !== pair.uk.toLowerCase() && match.toLowerCase() !== usWord.toLowerCase()) {
+            return match
+          }
+          if (match.toLowerCase() !== target.toLowerCase()) {
+            changes.push({
+              type: 'expression',
+              title: `${getVariantLabel(variant)} 惯用词汇`,
+              before: match,
+              after: target,
+              explanation: `"${pair.us}" 是美式英语常用表达，在 ${variantConfig.label} 中更常用 "${pair.uk}" 表示"${pair.meaning}"。`
+            })
+          }
+          return target
+        })
+      })
+    })
+  }
+
+  if (variant === 'american' && selectedIntensity.value !== 'light') {
+    vocabularyVariants.forEach(pair => {
+      const pattern = new RegExp(`\\b${pair.uk}\\b`, 'gi')
+      result = result.replace(pattern, (match) => {
+        const target = match[0] === match[0].toUpperCase()
+          ? pair.us.charAt(0).toUpperCase() + pair.us.slice(1)
+          : pair.us
+        const firstUsWord = pair.us.split(' / ')[0]
+        const displayTarget = match[0] === match[0].toUpperCase()
+          ? firstUsWord.charAt(0).toUpperCase() + firstUsWord.slice(1)
+          : firstUsWord
+        if (match.toLowerCase() !== firstUsWord.toLowerCase()) {
+          changes.push({
+            type: 'expression',
+            title: `${getVariantLabel(variant)} 惯用词汇`,
+            before: match,
+            after: displayTarget,
+            explanation: `"${pair.uk}" 是英式英语常用表达，在美式英语中更常用 "${pair.us}" 表示"${pair.meaning}"。`
+          })
+        }
+        return displayTarget
+      })
+    })
+  }
+
+  return { converted: result, changes }
 }
 
 const fixGrammar = (text: string): { corrected: string; changes: Improvement[] } => {
@@ -1408,7 +1853,7 @@ const polishText = async () => {
   polishedResult.value = null
   activeResultTab.value = 'polished'
 
-  await new Promise(resolve => setTimeout(resolve, 1200))
+  await new Promise(resolve => setTimeout(resolve, 1400))
 
   let result: PolishResult
   switch (selectedDocType.value) {
@@ -1431,6 +1876,10 @@ const polishText = async () => {
       result = polishGeneral(originalDraft.value, selectedIntensity.value)
   }
 
+  const variantOutput = applyVariant(result.polishedText, selectedVariant.value)
+  result.polishedText = variantOutput.converted
+  result.improvements = [...variantOutput.changes, ...result.improvements]
+
   if (!selectedDimensions.value.includes('grammar')) {
     result.improvements = result.improvements.filter(i => i.type !== 'grammar')
     result.stats.grammarCorrections = 0
@@ -1448,12 +1897,18 @@ const polishText = async () => {
     result.stats.flowImprovements = 0
   }
 
+  result.stats.wordImprovements += variantOutput.changes.filter(c => c.type === 'vocabulary').length
+  result.stats.expressionImprovements += variantOutput.changes.filter(c => c.type === 'expression').length
+  const variantBonus = variantOutput.changes.length * 2
+  result.stats.overallScore = Math.min(result.stats.overallScore + variantBonus, 99)
+
   polishedResult.value = result
   isGenerating.value = false
 
   history.value.push({
     originalDraft: originalDraft.value.trim(),
     docType: selectedDocType.value,
+    variant: selectedVariant.value,
     intensity: selectedIntensity.value,
     dimensions: [...selectedDimensions.value],
     result,
@@ -1461,10 +1916,11 @@ const polishText = async () => {
   })
   saveHistory()
 
+  const variantInfo = englishVariants.find(v => v.value === selectedVariant.value)
   ElMessage.success({
-    message: `✨ 润色完成！共优化 ${result.improvements.length} 处，综合提升指数 ${result.stats.overallScore}`,
+    message: `✨ 润色完成！基于 ${variantInfo?.flag} ${variantInfo?.label} (${variantInfo?.code}) 标准，共优化 ${result.improvements.length} 处，综合提升指数 ${result.stats.overallScore}`,
     type: 'success',
-    duration: 4000,
+    duration: 5000,
     showClose: true
   })
 }
@@ -1493,6 +1949,7 @@ const copyPolishedText = async () => {
 const resetAll = () => {
   originalDraft.value = ''
   selectedDocType.value = 'business'
+  selectedVariant.value = 'american'
   selectedIntensity.value = 'standard'
   selectedDimensions.value = ['grammar', 'vocabulary', 'expression', 'logic']
   polishedResult.value = null
@@ -1530,6 +1987,7 @@ const clearHistory = () => {
 const loadFromHistory = (item: HistoryItem) => {
   originalDraft.value = item.originalDraft
   selectedDocType.value = item.docType
+  selectedVariant.value = item.variant || 'american'
   selectedIntensity.value = item.intensity
   selectedDimensions.value = [...item.dimensions]
   polishedResult.value = item.result
@@ -2400,7 +2858,205 @@ onMounted(() => {
   margin-top: 12px;
 }
 
+.variant-note {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+  padding: 10px 14px;
+  background: #ecf5ff;
+  border-radius: 8px;
+  margin: 0 0 16px 0;
+}
+
+.variant-diff-table {
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.vdiff-row {
+  display: grid;
+  grid-template-columns: 1fr repeat(5, 1.1fr);
+}
+
+.vdiff-header {
+  background: linear-gradient(135deg, #722ed1 0%, #9254de 100%);
+  color: #fff;
+}
+
+.vdiff-header .vdiff-col {
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.5;
+}
+
+.vdiff-sub {
+  font-size: 11px;
+  font-weight: normal;
+  opacity: 0.85;
+}
+
+.vdiff-col {
+  padding: 12px 12px;
+  font-size: 12px;
+  color: #606266;
+  border-bottom: 1px solid #ebeef5;
+  border-right: 1px solid #ebeef5;
+  line-height: 1.6;
+}
+
+.vdiff-row:last-child .vdiff-col {
+  border-bottom: none;
+}
+
+.vdiff-col:last-child {
+  border-right: none;
+}
+
+.vdiff-label {
+  font-weight: 600;
+  color: #303133;
+  background: #f5f7fa;
+  font-size: 13px;
+}
+
+.variant-examples {
+  padding: 16px;
+  background: linear-gradient(135deg, #f9f0ff 0%, #f3e8ff 100%);
+  border-radius: 10px;
+}
+
+.ve-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin: 0 0 12px 0;
+}
+
+.ve-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.ve-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.ve-before {
+  color: #f56c6c;
+  font-weight: 500;
+  text-decoration: line-through;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.ve-after {
+  color: #67c23a;
+  font-weight: 600;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.ve-desc {
+  margin-left: auto;
+  color: #909399;
+  font-size: 12px;
+}
+
+.variant-section {
+  margin-bottom: 24px;
+}
+
+.variant-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.variant-card {
+  padding: 14px 12px;
+  border: 2px solid #ebeef5;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.25s;
+  text-align: center;
+  background: #fff;
+}
+
+.variant-card:hover:not(.disabled) {
+  border-color: #722ed1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(114, 46, 209, 0.12);
+}
+
+.variant-card.active {
+  border-color: #722ed1;
+  background: linear-gradient(135deg, #f9f0ff 0%, #f3e8ff 100%);
+}
+
+.variant-card.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.variant-flag {
+  font-size: 32px;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+.variant-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 2px;
+}
+
+.variant-code {
+  font-size: 11px;
+  color: #722ed1;
+  background: rgba(114, 46, 209, 0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 6px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-weight: 600;
+}
+
+.variant-spelling {
+  font-size: 12px;
+  color: #606266;
+  margin-bottom: 4px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.variant-scene {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.4;
+}
+
 @media (max-width: 768px) {
+  .variant-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .vdiff-row {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ve-grid {
+    grid-template-columns: 1fr;
+  }
+
   .expectation-grid {
     grid-template-columns: repeat(2, 1fr);
   }
