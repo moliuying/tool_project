@@ -240,6 +240,11 @@ const routes: RouteRecordRaw[] = [
         path: '/teaching-design',
         name: 'TeachingDesignGenerator',
         component: () => import('@/views/TeachingDesignGenerator.vue')
+      },
+      {
+        path: '/fab-marketing',
+        name: 'FabMarketingGenerator',
+        component: () => import('@/views/FabMarketingGenerator.vue')
       }
     ]
   }
