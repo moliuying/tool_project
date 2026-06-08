@@ -67,6 +67,62 @@
             <el-tag size="large" effect="plain">日常社交沟通</el-tag>
           </div>
         </div>
+        <div class="intro-section">
+          <h4 class="section-label">
+            <el-icon><Collection /></el-icon>
+            支持的 {{ copyTypes.length }} 种文案类型一览
+          </h4>
+          <div class="type-overview-grid">
+            <div
+              v-for="cat in typeCategories"
+              :key="cat.key"
+              class="type-overview-card"
+            >
+              <div class="toc-header">
+                <span class="toc-emoji">{{ cat.emoji }}</span>
+                <span class="toc-label">{{ cat.label }}</span>
+                <el-tag size="small" type="info" effect="plain">{{ cat.types.length }} 种</el-tag>
+              </div>
+              <div class="toc-desc">{{ cat.desc }}</div>
+              <div class="toc-list">
+                <div
+                  v-for="tval in cat.types"
+                  :key="tval"
+                  class="toc-item"
+                >
+                  <span class="toc-item-emoji">{{ getTypeEmoji(tval) }}</span>
+                  <span class="toc-item-name">{{ getTypeLabel(tval) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="intro-section custom-hint-section">
+          <div class="custom-hint-box">
+            <div class="ch-left">
+              <div class="ch-icon">💡</div>
+              <div class="ch-texts">
+                <div class="ch-title">没找到你想要的文案类型？</div>
+                <div class="ch-desc">
+                  遇到非常规需求时，请选择<strong>最接近的类型</strong>，然后在「补充要求」中详细描述你的具体场景和需求（例如：我需要一段婚礼祝酒词、我要写一封道歉信等），AI 会根据你的描述灵活调整输出内容。
+                </div>
+              </div>
+            </div>
+            <div class="ch-right">
+              <div class="ch-examples">
+                <span class="ch-example-label">可处理的非常规场景示例：</span>
+                <el-tag size="small" effect="plain">婚礼祝酒词</el-tag>
+                <el-tag size="small" effect="plain">道歉信</el-tag>
+                <el-tag size="small" effect="plain">感谢信</el-tag>
+                <el-tag size="small" effect="plain">辞职信</el-tag>
+                <el-tag size="small" effect="plain">请假条</el-tag>
+                <el-tag size="small" effect="plain">颁奖词</el-tag>
+                <el-tag size="small" effect="plain">毕业感言</el-tag>
+                <el-tag size="small" effect="plain">家长寄语</el-tag>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -141,9 +197,31 @@
             不同类型的结构、语气、字数都会自动适配
           </el-tag>
         </div>
+        <div class="type-filter-bar">
+          <div
+            class="filter-chip"
+            :class="{ active: activeCategory === 'all' }"
+            @click="activeCategory = 'all'"
+          >
+            <span>🎯</span>
+            <span>全部类型</span>
+            <el-tag size="small" type="info" effect="plain">{{ copyTypes.length }}</el-tag>
+          </div>
+          <div
+            v-for="cat in typeCategories"
+            :key="cat.key"
+            class="filter-chip"
+            :class="{ active: activeCategory === cat.key }"
+            @click="activeCategory = cat.key"
+          >
+            <span>{{ cat.emoji }}</span>
+            <span>{{ cat.label }}</span>
+            <el-tag size="small" type="info" effect="plain">{{ cat.types.length }}</el-tag>
+          </div>
+        </div>
         <div class="type-options">
           <div
-            v-for="type in copyTypes"
+            v-for="type in filteredTypes"
             :key="type.value"
             class="type-card"
             :class="{ active: selectedType === type.value, disabled: isGenerating }"
@@ -630,6 +708,54 @@ const copyTypes: CopyTypeConfig[] = [
   }
 ]
 
+interface TypeCategory {
+  key: string
+  label: string
+  emoji: string
+  desc: string
+  types: string[]
+}
+
+const typeCategories: TypeCategory[] = [
+  {
+    key: 'social_media',
+    label: '社交媒体营销',
+    emoji: '📱',
+    desc: '小红书、朋友圈、品牌推广',
+    types: ['xiaohongshu', 'moments', 'product', 'activity', 'slogan']
+  },
+  {
+    key: 'business',
+    label: '商务职场办公',
+    emoji: '💼',
+    desc: '汇报、邮件、演讲、求职',
+    types: ['report', 'email', 'speech', 'selfintro', 'job']
+  },
+  {
+    key: 'learning',
+    label: '学习成长写作',
+    emoji: '📚',
+    desc: '读书笔记、作文素材',
+    types: ['reading', 'composition']
+  },
+  {
+    key: 'life',
+    label: '生活社交日常',
+    emoji: '🎉',
+    desc: '节日问候、邀请函、社交文案',
+    types: ['greeting', 'invitation', 'social']
+  }
+]
+
+const activeCategory = ref<string>('all')
+
+const filteredTypes = computed(() => {
+  if (activeCategory.value === 'all') return copyTypes
+  const cat = typeCategories.find(c => c.key === activeCategory.value)
+  if (!cat) return copyTypes
+  return copyTypes.filter(t => cat.types.includes(t.value))
+})
+
 const allStyles = [
   { value: 'professional', label: '专业正式', emoji: '💼' },
   { value: 'warm', label: '温暖走心', emoji: '☀️' },
@@ -863,6 +989,7 @@ const displayHistory = computed(() => {
 })
 
 const getTypeLabel = (v: string) => copyTypes.find(t => t.value === v)?.label || v
+const getTypeEmoji = (v: string) => copyTypes.find(t => t.value === v)?.emoji || '📝'
 const getStyleLabel = (v: string) => allStyles.find(s => s.value === v)?.label || v
 
 const getVersionTagType = (idx: number): '' | 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
@@ -1770,6 +1897,197 @@ onMounted(() => {
   font-size: 13px;
 }
 
+.type-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.type-overview-card {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.toc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.toc-emoji {
+  font-size: 20px;
+}
+
+.toc-label {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.toc-header :deep(.el-tag) {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+}
+
+.toc-desc {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.toc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toc-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 12px;
+}
+
+.toc-item-emoji {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+}
+
+.toc-item-name {
+  flex: 1;
+}
+
+.custom-hint-section {
+  margin-top: 4px;
+}
+
+.custom-hint-box {
+  background: linear-gradient(135deg, rgba(255, 251, 230, 0.95) 0%, rgba(254, 240, 214, 0.95) 100%);
+  border: 1px solid rgba(230, 162, 60, 0.3);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.ch-left {
+  display: flex;
+  gap: 14px;
+  flex: 1;
+}
+
+.ch-icon {
+  font-size: 36px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.ch-texts {
+  flex: 1;
+}
+
+.ch-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #92601a;
+  margin-bottom: 6px;
+}
+
+.ch-desc {
+  font-size: 13px;
+  color: #7a5418;
+  line-height: 1.7;
+}
+
+.ch-desc strong {
+  color: #e6a23c;
+}
+
+.ch-right {
+  flex-shrink: 0;
+  max-width: 340px;
+}
+
+.ch-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.ch-example-label {
+  font-size: 12px;
+  color: #92601a;
+  font-weight: 500;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.ch-examples :deep(.el-tag) {
+  background: rgba(230, 162, 60, 0.15);
+  border: 1px solid rgba(230, 162, 60, 0.3);
+  color: #92601a;
+}
+
+.type-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #f5f7fa;
+  border-radius: 10px;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1.5px solid #e4e7ed;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  color: #606266;
+  user-select: none;
+}
+
+.filter-chip:hover {
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.filter-chip.active {
+  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  border-color: #409eff;
+  color: #fff;
+}
+
+.filter-chip.active :deep(.el-tag) {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: #fff;
+}
+
+.filter-chip :deep(.el-tag) {
+  font-size: 11px;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+}
+
 .guide-steps {
   margin-bottom: 8px;
 }
@@ -2236,6 +2554,39 @@ onMounted(() => {
   }
   .audience-tags {
     flex-direction: column;
+  }
+  .type-overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .custom-hint-box {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .ch-right {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .type-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .expectation-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .type-overview-grid {
+    grid-template-columns: repeat(1, 1fr);
+  }
+  .intro-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .intro-badges {
+    flex-wrap: wrap;
+  }
+  .filter-chip {
+    font-size: 12px;
+    padding: 5px 10px;
   }
 }
 </style>
