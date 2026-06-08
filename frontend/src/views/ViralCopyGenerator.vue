@@ -347,8 +347,23 @@
             <el-icon :size="18" color="#f56c6c"><HotWater /></el-icon>
             <span>热点话题接入</span>
             <el-tag size="small" type="danger" effect="light">蹭热点可以让传播力提升 3~10 倍</el-tag>
+            <el-tag size="small" type="warning" effect="plain">⚠️ 网络热梗时效性极强，建议自定义最新词汇</el-tag>
           </div>
         </template>
+
+        <el-alert
+          title="时效性提示"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="freshness-warning"
+        >
+          <template #default>
+            系统内置的"网络热梗"词汇库可能滞后于实际流行趋势。
+            <strong>强烈建议</strong>通过下方"自定义热点关键词"手动输入当下最火的词汇，以确保文案新鲜感。
+            热点词汇生命周期通常仅 1~3 个月，过时梗反而会降低传播力。
+          </template>
+        </el-alert>
 
         <div class="audience-row">
           <div class="audience-item flex-2">
@@ -358,11 +373,16 @@
                 v-for="opt in hotspotOptions"
                 :key="opt.value"
                 class="hotspot-card-item"
-                :class="{ active: audience.hotspots.includes(opt.value), disabled: isGenerating }"
+                :class="{ active: audience.hotspots.includes(opt.value), disabled: isGenerating, outdated: opt.outdated }"
                 @click="!isGenerating && toggleArrayItem(audience.hotspots, opt.value)"
               >
                 <div class="hotspot-emoji">{{ opt.emoji }}</div>
-                <div class="hotspot-name">{{ opt.label }}</div>
+                <div class="hotspot-name">
+                  {{ opt.label }}
+                  <el-tag v-if="opt.outdated" size="small" type="danger" effect="plain" class="outdated-tag">
+                    内置词可能过时
+                  </el-tag>
+                </div>
                 <div class="hotspot-desc">{{ opt.desc }}</div>
                 <div class="hotspot-example">{{ opt.example }}</div>
               </div>
@@ -372,17 +392,62 @@
 
         <div class="audience-row" v-if="audience.hotspots.length > 0">
           <div class="audience-item flex-2">
-            <div class="audience-label">✍️ 自定义热点关键词（可选，每行一个）</div>
+            <div class="audience-label">✍️ 自定义热点 / 最新流行语（推荐填写，每行一个）</div>
             <el-input
               v-model="customHotspots"
               type="textarea"
-              :rows="2"
-              placeholder="例如：&#10;618大促&#10;多巴胺穿搭&#10;citywalk"
+              :rows="3"
+              placeholder="填入当下最火的词汇，保证文案新鲜感。例如：&#10;AI原生工作流&#10;松弛感穿搭&#10;情绪价值拉满&#10;反向旅游"
               :disabled="isGenerating"
               resize="vertical"
             />
+            <div class="custom-tip">
+              <el-icon color="#e6a23c"><Warning /></el-icon>
+              <span>自定义词汇优先级高于系统内置，且不会过时。花 30 秒输入当下热词，传播效果提升明显。</span>
+            </div>
           </div>
         </div>
+      </el-card>
+
+      <el-card class="freshness-card" shadow="never">
+        <template #header>
+          <div class="card-header">
+            <el-icon :size="18" color="#67c23a"><Refresh /></el-icon>
+            <span>网络用语新鲜度控制</span>
+            <el-tag size="small" type="success" effect="light">决定文案能"保鲜"多久</el-tag>
+          </div>
+        </template>
+
+        <div class="audience-row">
+          <div class="audience-item flex-2">
+            <div class="audience-label">🎚 选择新鲜度档位</div>
+            <div class="freshness-options">
+              <div
+                v-for="opt in freshnessOptions"
+                :key="opt.value"
+                class="freshness-card-item"
+                :class="{ active: freshnessLevel === opt.value, disabled: isGenerating }"
+                @click="!isGenerating && (freshnessLevel = opt.value)"
+              >
+                <div class="freshness-emoji">{{ opt.emoji }}</div>
+                <div class="freshness-name">{{ opt.label }}</div>
+                <div class="freshness-shelf">保鲜期：{{ opt.shelfLife }}</div>
+                <div class="freshness-desc">{{ opt.desc }}</div>
+                <div class="freshness-example">示例：{{ opt.example }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <el-alert
+          :title="freshnessAlert.title"
+          :type="freshnessAlert.type"
+          :closable="false"
+          show-icon
+          class="freshness-alert"
+        >
+          <template #default>{{ freshnessAlert.detail }}</template>
+        </el-alert>
       </el-card>
 
       <div class="input-section">
@@ -660,7 +725,8 @@ import {
   EditPen,
   Avatar,
   Heart,
-  HotWater
+  HotWater,
+  Warning
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -695,6 +761,7 @@ interface HistoryItem {
   audience: AudienceProfile
   customHotspots: string
   emotionIntensity: number
+  freshnessLevel: string
   scene: string
   results: ViralCopyResult[]
   time: string
@@ -710,6 +777,62 @@ interface QuickSample {
 
 const STORAGE_KEY = 'viral_copy_history'
 
+const tieredVocabulary = {
+  classic: {
+    xiaohongshu: ['推荐', '分享', '亲测', '好用', '平价', '宝藏', '姐妹们', '学生党', '安利', '闭眼入'],
+    douyin: ['必看', '分享', '强烈推荐', '看完你就懂', '亲测有效', '不看后悔', '经验总结', '避坑指南'],
+    moments: ['推荐', '分享', '亲测', '真心', '自用', '身边人都在用', '不吹不黑', '说实话'],
+    ecommerce: ['热销', '爆款', '限量', '限时', '特惠', '直降', '包邮', '官方正品', '买一送一', '今日特价']
+  },
+  persistent: {
+    xiaohongshu: ['种草', '好物', '天花板', '仪式感', '氛围感', '沉浸式', '真的爱了', '闭眼冲', '懒人福音', '精致生活'],
+    douyin: ['绝了', '惊呆了', '硬核分享', '干货满满', '封神级别', '亲测有效', '高能预警', '建议收藏'],
+    moments: ['真心推荐', '宝藏分享', '用过才知道', '良心推荐', '真的好用', '亲测有效', '好物分享'],
+    ecommerce: ['热销爆品', '明星同款', '口碑之选', '断货王', '销量冠军', '好评如潮', '性价比之王']
+  },
+  meme: {
+    xiaohongshu: ['绝绝子', 'yyds', '谁懂啊', '一整个爱住', '家人们谁懂啊', '狠狠拿捏', '纯纯无语住了'],
+    douyin: ['太绝了', '谁敢信', '离谱', '破防了', '最后一个绝了', '直接封神', '我不允许还有人不知道'],
+    moments: ['真的绝了', '谁用谁知道', '我不允许', '狠狠推荐', '一整个惊艳住'],
+    ecommerce: ['全网都在抢', '手慢无', '闭眼冲就对了', '错过拍大腿']
+  }
+}
+
+const freshnessOptions = [
+  {
+    value: 'classic',
+    label: '经典通用',
+    emoji: '📚',
+    shelfLife: '≥ 2 年',
+    desc: '不用任何网络流行语，使用自然、持久、不易过时的表达。适合品牌型、长期使用的内容。',
+    example: '"真心推荐这款护肤品，温和又有效，用了两周皮肤状态明显变好"'
+  },
+  {
+    value: 'persistent',
+    label: '轻度网感',
+    emoji: '🌿',
+    shelfLife: '6 ~ 12 个月',
+    desc: '使用经过时间验证、生命力较长的表达（如：种草、天花板、沉浸式），有网感但不过火。',
+    example: '"真的被这款洁面种草了，清洁力拉满又不拔干，敏感肌天菜"'
+  },
+  {
+    value: 'meme',
+    label: '适度玩梗',
+    emoji: '🔥',
+    shelfLife: '1 ~ 3 个月',
+    desc: '适量融入近半年内的流行词与热梗，新鲜感强但可能较快过时。适合追热点、涨粉内容。',
+    example: '"家人们谁懂啊，这面膜真的一整个爱住，效果绝绝子！"'
+  },
+  {
+    value: 'heavy',
+    label: '高强度玩梗',
+    emoji: '🚀',
+    shelfLife: '≤ 1 个月',
+    desc: '大量使用最新流行语和热梗，传播爆发力强但极快过时。仅适合短期追热点活动。',
+    example: '"我不允许还有人不知道这个！直接封神！用完狠狠拿捏！谁懂啊真的yyds！"'
+  }
+]
+
 const scenes = [
   {
     value: 'xiaohongshu',
@@ -724,7 +847,6 @@ const scenes = [
       bodyMax: 800,
       emojiChance: 0.9,
       tone: 'friendly',
-      keywords: ['种草', '宝藏', '绝绝子', 'yyds', '姐妹们', '亲测', '安利', '闭眼入', '平价好物', '学生党'],
       channelEmojis: ['💕', '🌸', '✨', '💖', '🌿', '🎀', '🍀', '☀️', '💫', '🌟'],
       ctaTypes: ['评论互动', '收藏关注', '私信咨询', '链接购买']
     }
@@ -742,7 +864,6 @@ const scenes = [
       bodyMax: 200,
       emojiChance: 0.85,
       tone: 'dramatic',
-      keywords: ['绝了', '必看', '惊了', '看完', '太绝了', '谁敢信', '离谱', '破防了', '不看后悔', '最后一个'],
       channelEmojis: ['🔥', '😱', '💥', '👀', '⚠️', '✨', '💯', '🚀', '💪', '👇'],
       ctaTypes: ['点赞关注', '评论留言', '转发分享', '点击购物车']
     }
@@ -760,7 +881,6 @@ const scenes = [
       bodyMax: 300,
       emojiChance: 0.6,
       tone: 'heartfelt',
-      keywords: ['推荐', '分享', '亲测', '真心', '自用', '身边人都在用', '不吹不黑', '说实话'],
       channelEmojis: ['😊', '👍', '❤️', '🎉', '✨', '💯', '🙌', '☕️'],
       ctaTypes: ['私聊咨询', '点赞互动', '转发给好友', '扫码了解']
     }
@@ -778,7 +898,6 @@ const scenes = [
       bodyMax: 500,
       emojiChance: 0.5,
       tone: 'promotional',
-      keywords: ['热销', '爆款', '限量', '限时', '特惠', '直降', '包邮', '官方正品', '买一送一', '今日特价'],
       channelEmojis: ['🔥', '💰', '🎁', '⚡', '🏆', '💎', '✅', '🚚', '💝', '🎊'],
       ctaTypes: ['立即下单', '加入购物车', '领券购买', '限时抢购']
     }
@@ -894,12 +1013,12 @@ const emotionMarks: Record<number, { label: string; style?: Record<string, strin
 }
 
 const hotspotOptions = [
-  { value: 'seasonal', label: '时令节点', emoji: '🌸', desc: '结合当季/当月时间点', example: '例：618/双11/开学季/换季' },
-  { value: 'meme', label: '网络热梗', emoji: '🔥', desc: '融入近期流行语/梗', example: '例：多巴胺/显眼包/搭子/整顿职场' },
-  { value: 'trend', label: '行业趋势', emoji: '📈', desc: '绑定赛道风口概念', example: '例：AI/新能源/消费升级/懒人经济' },
-  { value: 'nostalgia', label: '怀旧风潮', emoji: '📼', desc: '唤醒集体记忆情感', example: '例：90后回忆/童年/复古回潮' },
-  { value: 'social', label: '社会议题', emoji: '💬', desc: '绑定大众关心的话题', example: '例：反内卷/躺平/女性力量/打工人' },
-  { value: 'festival', label: '节日氛围', emoji: '🎊', desc: '利用节日情绪和场景', example: '例：情人节/母亲节/春节/毕业季' }
+  { value: 'seasonal', label: '时令节点', emoji: '🌸', desc: '结合当季/当月时间点', example: '例：618/双11/开学季/换季', outdated: false },
+  { value: 'meme', label: '网络热梗', emoji: '🔥', desc: '融入近期流行语/梗（内置词汇可能已过时，强烈建议自定义）', example: '例：多巴胺/显眼包/搭子/整顿职场', outdated: true },
+  { value: 'trend', label: '行业趋势', emoji: '📈', desc: '绑定赛道风口概念', example: '例：AI/新能源/消费升级/懒人经济', outdated: false },
+  { value: 'nostalgia', label: '怀旧风潮', emoji: '📼', desc: '唤醒集体记忆情感', example: '例：90后回忆/童年/复古回潮', outdated: false },
+  { value: 'social', label: '社会议题', emoji: '💬', desc: '绑定大众关心的话题', example: '例：反内卷/躺平/女性力量/打工人', outdated: false },
+  { value: 'festival', label: '节日氛围', emoji: '🎊', desc: '利用节日情绪和场景', example: '例：情人节/母亲节/春节/毕业季', outdated: false }
 ]
 
 const quickSamples: QuickSample[] = [
@@ -984,7 +1103,34 @@ const selectedStyles = ref<string[]>([])
 const versionCount = ref(5)
 const emotionIntensity = ref(3)
 const customHotspots = ref('')
+const freshnessLevel = ref('persistent')
 const isGenerating = ref(false)
+
+const freshnessAlert = computed(() => {
+  const map: Record<string, { title: string; type: any; detail: string }> = {
+    classic: {
+      title: '✅ 经典通用模式',
+      type: 'success',
+      detail: '输出文案不使用任何网络流行语，表达自然、专业、持久。适合品牌官网、长期挂的详情页、对调性有要求的品牌。'
+    },
+    persistent: {
+      title: '🌿 轻度网感模式（推荐）',
+      type: 'success',
+      detail: '平衡新鲜度与持久度，使用"种草、天花板、沉浸式、氛围感"等生命力较长的词汇，既有网感又不易很快过时。适合大多数日常内容。'
+    },
+    meme: {
+      title: '⚠️ 适度玩梗模式',
+      type: 'warning',
+      detail: '会融入部分流行词和热梗。注意：内置热梗可能滞后，强烈建议在"热点话题接入"中通过"自定义关键词"填入当下最新流行语，以保证新鲜感。'
+    },
+    heavy: {
+      title: '🚨 高强度玩梗模式（慎用）',
+      type: 'error',
+      detail: '大量使用流行语和热梗，传播爆发力强但过时极快（通常1个月内失效）。仅适合短期追热点活动、快速涨粉内容。请务必在自定义关键词中填入最新词汇。'
+    }
+  }
+  return map[freshnessLevel.value] || map.persistent
+})
 const generatedResults = ref<ViralCopyResult[]>([])
 const activeVersion = ref(0)
 const history = ref<HistoryItem[]>([])
@@ -1078,6 +1224,26 @@ const buildAudienceDescription = (): string => {
   return parts.join('，')
 }
 
+const getActiveKeywords = (sceneValue: string): string[] => {
+  const scene = sceneValue as keyof typeof tieredVocabulary.classic
+  const classic = tieredVocabulary.classic[scene] || []
+  const persistent = tieredVocabulary.persistent[scene] || []
+  const meme = tieredVocabulary.meme[scene] || []
+
+  switch (freshnessLevel.value) {
+    case 'classic':
+      return [...classic]
+    case 'persistent':
+      return [...classic, ...persistent]
+    case 'meme':
+      return [...classic, ...persistent, ...meme]
+    case 'heavy':
+      return [...persistent, ...meme, ...meme]
+    default:
+      return [...classic, ...persistent]
+  }
+}
+
 const buildHotspotKeywords = (): string[] => {
   const keywords: string[] = []
   const month = new Date().getMonth() + 1
@@ -1100,7 +1266,14 @@ const buildHotspotKeywords = (): string[] => {
     keywords.push(...pickMany(dateMap[month] || [], 2))
   }
   if (audience.hotspots.includes('meme')) {
-    keywords.push(...pickMany(['显眼包', '搭子', '多巴胺', '整顿职场', '精神状态', '情绪价值', '松弛感', '反向消费', '特种兵式旅游', 'Citywalk'], 2))
+    if (freshnessLevel.value === 'classic') {
+      keywords.push(...pickMany(['新鲜事', '热门话题', '近期讨论度高'], 1))
+    } else if (freshnessLevel.value === 'persistent') {
+      keywords.push(...pickMany(['热议话题', '大家都在聊', '最近流行的'], 1))
+    } else {
+      const builtIn = ['显眼包', '搭子', '多巴胺', '整顿职场', '精神状态', '情绪价值', '松弛感', '反向消费', '特种兵式旅游', 'Citywalk']
+      keywords.push(...pickMany(builtIn, 2))
+    }
   }
   if (audience.hotspots.includes('trend')) {
     keywords.push(...pickMany(['AI赋能', '消费升级', '懒人经济', '悦己消费', '健康生活', '可持续', '智能化', '轻量化'], 2))
@@ -1109,7 +1282,10 @@ const buildHotspotKeywords = (): string[] => {
     keywords.push(...pickMany(['童年回忆', '90后', '复古回潮', '千禧风', '港风', '年代感', '怀旧经典'], 2))
   }
   if (audience.hotspots.includes('social')) {
-    keywords.push(...pickMany(['反内卷', '躺平', '女性力量', '打工人', '特种兵', '精神内耗', '职场PUA', '容貌焦虑', '身材自由', '搞钱'], 2))
+    const socialWords = freshnessLevel.value === 'classic'
+      ? ['社会关注', '大众讨论', '生活方式', '自我成长']
+      : ['反内卷', '躺平', '女性力量', '打工人', '特种兵', '精神内耗', '职场PUA', '容貌焦虑', '身材自由', '搞钱']
+    keywords.push(...pickMany(socialWords, 2))
   }
   if (audience.hotspots.includes('festival')) {
     keywords.push(...pickMany(['节日礼物', '节日氛围', '仪式感', '氛围感', '送礼攻略', '节日限定'], 2))
@@ -1340,9 +1516,10 @@ const getGenderContext = (): string => {
 
 const generateTitle = (style: string, scene: string, product: string, points: string[]): string => {
   const config = scenes.find(s => s.value === scene)?.config!
+  const activeKeywords = getActiveKeywords(scene)
   const pains = getStructuredPains()
   const mainPoint = points[0] || product
-  const kw = pickMany(config.keywords, 2)
+  const kw = pickMany(activeKeywords, 2)
   const hotspots = buildHotspotKeywords()
   const intensity = getEmotionIntensityModifier()
   const { moodWords } = getEmotionToneModifier()
@@ -1401,6 +1578,7 @@ const generateTitle = (style: string, scene: string, product: string, points: st
 const generateHook = (style: string, scene: string, product: string, points: string[]): string => {
   const pains = getStructuredPains()
   const config = scenes.find(s => s.value === scene)?.config!
+  const activeKeywords = getActiveKeywords(scene)
   const intensity = getEmotionIntensityModifier()
   const { moodWords, toneTemplates } = getEmotionToneModifier()
   const ageCtx = getAgeContext()
@@ -1421,7 +1599,7 @@ const generateHook = (style: string, scene: string, product: string, points: str
       `${pick(toneTemplates.anxiety || ['如果你也有'])}${pains.slice(0, Math.min(3, pains.length)).join('、')}这些困扰，那这篇你一定要看完${intensity.exclaim}`
     ],
     benefit: [
-      `${pick(intensity.prefixList)}今天给大家${pick(config.keywords)}一个好东西${intensity.exclaim}${product}——${points[0]}，${budgetCtx}，用过的都说${intensity.strongAdj[0]}～`,
+      `${pick(intensity.prefixList)}今天给大家${pick(activeKeywords)}一个好东西${intensity.exclaim}${product}——${points[0]}，${budgetCtx}，用过的都说${intensity.strongAdj[0]}～`,
       `${genderCtx}谁懂啊${intensity.exclaim}${product}真的太${pick(moodWords)}了${intensity.exclaim}${points[0]}这点我真的爱了❤️`,
       `${pick(toneTemplates.aspiration || ['你值得拥有更好的'])}${intensity.exclaim}${product}可以说是我今年${pick(['最满意', '最值', '最惊喜'])}的入手了${intensity.exclaim}`
     ],
@@ -1437,7 +1615,7 @@ const generateHook = (style: string, scene: string, product: string, points: str
     ],
     number: [
       `${pick(intensity.prefixList)}今天给大家盘点${product}的${pick([3, 4, 5, 6])}个${pick(['神仙', '宝藏', '惊喜'])}亮点，最后一个真的${intensity.strongAdj[0]}${intensity.exclaim}`,
-      `${pick([3, 5, 7])}个角度深度解析${product}，看完你就知道为什么${ageCtx}都${pick(config.keywords)}`,
+      `${pick([3, 5, 7])}个角度深度解析${product}，看完你就知道为什么${ageCtx}都${pick(activeKeywords)}`,
       `${pick(toneTemplates.curiosity || ['99%的人都不知道'])}关于${product}，这${pick([3, 4, 5])}点你一定要知道${intensity.exclaim}特别是第${pick([2, 3])}点${intensity.exclaim}`
     ]
   }
@@ -1451,6 +1629,7 @@ const generateHook = (style: string, scene: string, product: string, points: str
 
 const generateBody = (style: string, scene: string, product: string, points: string[]): string => {
   const config = scenes.find(s => s.value === scene)?.config!
+  const activeKeywords = getActiveKeywords(scene)
   const pains = getStructuredPains()
   const intensity = getEmotionIntensityModifier()
   const { moodWords, toneTemplates } = getEmotionToneModifier()
@@ -1483,7 +1662,7 @@ const generateBody = (style: string, scene: string, product: string, points: str
     lines.push(`📌总结一下：${product}——${budgetCtx}，${pick(['真的值得入手', '闭眼入不踩雷', '用过就回不去了', '性价比超高'])}${intensity.exclaim}`)
     lines.push(`${genderCtx}${pick(['冲就对了', '不买真的会后悔', '推荐给每一个需要的人', '我的年度爱用好物'])}${intensity.exclaim}`)
   } else if (scene === 'douyin') {
-    lines.push(`${pick(config.keywords)}${intensity.exclaim}${ageCtx}的${product}真的太${intensity.strongAdj[0]}了${intensity.exclaim}`)
+    lines.push(`${pick(activeKeywords)}${intensity.exclaim}${ageCtx}的${product}真的太${intensity.strongAdj[0]}了${intensity.exclaim}`)
     if (hotspots.length > 0) {
       lines.push(`最近${pick(hotspots)}好火，这个${product}真的${pick(moodWords)}${intensity.exclaim}`)
     }
@@ -1516,7 +1695,7 @@ const generateBody = (style: string, scene: string, product: string, points: str
       '把这份美好分享给身边的每一个人❤️'
     ]))
   } else {
-    lines.push(`🔥 ${pick(config.keywords)}${intensity.exclaim}${hotspots.length > 0 ? `【${pick(hotspots)}】` : ''}${product} 震撼上市${intensity.exclaim}`)
+    lines.push(`🔥 ${pick(activeKeywords)}${intensity.exclaim}${hotspots.length > 0 ? `【${pick(hotspots)}】` : ''}${product} 震撼上市${intensity.exclaim}`)
     lines.push('')
     lines.push(`🎯 ${ageCtx}为什么选择${product}？${decisionCtx}，${budgetCtx}${intensity.exclaim}`)
     points.forEach((p, i) => {
@@ -1685,6 +1864,7 @@ const generateCTA = (scene: string): string => {
 
 const generateHashtags = (scene: string, product: string, points: string[]): string => {
   const config = scenes.find(s => s.value === scene)?.config!
+  const activeKeywords = getActiveKeywords(scene)
   const tags: string[] = []
   const hotspots = buildHotspotKeywords()
   const interests = audience.interests.map(getInterestLabel).slice(0, 2)
@@ -1720,7 +1900,7 @@ const generateHashtags = (scene: string, product: string, points: string[]): str
     tags.push(pick(['#好物推荐', '#超值性价比', '#品质之选', '#居家必备']))
   }
 
-  tags.push('#' + pick(config.keywords))
+  tags.push('#' + pick(activeKeywords))
 
   return tags.join(' ')
 }
@@ -1780,6 +1960,7 @@ const generateCopy = async () => {
     audience: { ...audience },
     customHotspots: customHotspots.value,
     emotionIntensity: emotionIntensity.value,
+    freshnessLevel: freshnessLevel.value,
     scene: selectedScene.value,
     results: [...generatedResults.value],
     time: new Date().toISOString()
@@ -1843,6 +2024,7 @@ const resetAll = () => {
   versionCount.value = 5
   emotionIntensity.value = 3
   customHotspots.value = ''
+  freshnessLevel.value = 'persistent'
   Object.assign(audience, defaultAudience())
   generatedResults.value = []
 }
@@ -1888,6 +2070,9 @@ const loadFromHistory = (item: HistoryItem) => {
   }
   if (item.customHotspots !== undefined) {
     customHotspots.value = item.customHotspots
+  }
+  if (typeof item.freshnessLevel === 'string') {
+    freshnessLevel.value = item.freshnessLevel
   }
   ElMessage.info('已载入历史记录')
 }
@@ -2697,5 +2882,125 @@ onMounted(() => {
 
 .header-actions {
   margin-left: auto;
+}
+
+.freshness-warning {
+  margin-bottom: 20px;
+}
+
+.freshness-warning :deep(.el-alert__description) {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.outdated-tag {
+  margin-left: 8px;
+  font-size: 10px;
+}
+
+.hotspot-card-item.outdated {
+  border: 1px dashed #e6a23c;
+}
+
+.hotspot-card-item.outdated .hotspot-name {
+  color: #e6a23c;
+}
+
+.custom-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #b88230;
+  line-height: 1.6;
+}
+
+.freshness-card {
+  background: linear-gradient(180deg, #f0f9eb 0%, #ffffff 100%);
+  margin-bottom: 24px;
+}
+
+.freshness-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.freshness-card-item {
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #fff;
+  position: relative;
+}
+
+.freshness-card-item:hover {
+  border-color: #c2e7b0;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.15);
+}
+
+.freshness-card-item.active {
+  border-color: #67c23a;
+  background: linear-gradient(135deg, #f0f9eb 0%, #ffffff 100%);
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.2);
+}
+
+.freshness-card-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.freshness-emoji {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.freshness-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.freshness-shelf {
+  font-size: 12px;
+  color: #67c23a;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.freshness-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+
+.freshness-example {
+  font-size: 11px;
+  color: #909399;
+  padding: 6px 10px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+.freshness-alert {
+  margin-top: 8px;
+}
+
+.freshness-alert :deep(.el-alert__description) {
+  font-size: 13px;
+  line-height: 1.7;
 }
 </style>
