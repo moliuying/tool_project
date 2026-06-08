@@ -1081,12 +1081,19 @@ const pickMany = <T,>(arr: T[], n: number): T[] => {
   return shuffled.slice(0, Math.min(n, arr.length))
 }
 
+interface LengthTextSet {
+  short: string[]
+  medium: string[]
+  long: string[]
+}
+
 interface StoryTemplateConfig {
   titles: string[]
   chapters: string[]
-  openings: string[]
-  middles: string[]
-  endings: string[]
+  openings: LengthTextSet
+  middles: LengthTextSet
+  endings: LengthTextSet
+  detailParagraphs: LengthTextSet
   keyPointsPool: string[]
   extendedPool: string[]
   teachingTips: string[]
@@ -1102,22 +1109,76 @@ const storyTemplates: Record<string, StoryTemplateConfig> = {
       '{subject}：一场改写命运的惊天变局'
     ],
     chapters: ['第一章 · 山雨欲来', '第二章 · 烽火骤起', '第三章 · 惊心动魄', '第四章 · 尘埃落定'],
-    openings: [
-      '公元{year}年，历史的指针指向了一个非同寻常的时刻。{subject}——这个后来被无数人反复提及的名字，即将在时代的舞台上缓缓拉开帷幕。',
-      '在漫长的历史长河中，总有一些时刻如繁星般耀眼。{subject}，就是其中最璀璨的一颗。让我们穿越时空，回到那个风起云涌的年代。',
-      '历史的转折往往藏在看似不经意的瞬间。关于{subject}，史书上只有寥寥数语，但背后的惊心动魄，远超你我的想象。'
-    ],
-    middles: [
-      '就在这千钧一发之际，一个大胆的计划正在暗中酝酿。',
-      '然而，命运的齿轮已经开始转动，没有人能够阻止这场即将到来的风暴。',
-      '各方势力在此刻汇聚，矛盾与冲突如暗流涌动，一场大戏即将上演。',
-      '时间一分一秒地流逝，空气中弥漫着紧张的气息，每个人都在等待着那个决定性的瞬间。'
-    ],
-    endings: [
-      '如今，{subject}的硝烟早已散尽，但它留给后世的启示，却如黄钟大吕，振聋发聩。历史不是冰冷的数字，而是一个个鲜活的人、一次次勇敢的选择。',
-      '当我们回望{subject}，看到的不只是过去，更是映照当下的一面镜子。以史为鉴，可以知兴替——这正是我们不断回望历史的原因。',
-      '{subject}已经成为历史，但它所承载的精神与智慧，穿越千年时光，依然在今天闪耀着光芒。'
-    ],
+    openings: {
+      short: [
+        '{subject}，是历史上一场影响深远的重要事件。',
+        '说起{subject}，这是一段不能不了解的历史。',
+        '{subject}——短短三个字，背后是一个时代的转折。'
+      ],
+      medium: [
+        '公元{year}年，历史的指针指向了一个非同寻常的时刻。{subject}——这个后来被无数人反复提及的名字，即将在时代的舞台上缓缓拉开帷幕。',
+        '在漫长的历史长河中，总有一些时刻如繁星般耀眼。{subject}，就是其中最璀璨的一颗。让我们穿越时空，回到那个风起云涌的年代。',
+        '历史的转折往往藏在看似不经意的瞬间。关于{subject}，史书上只有寥寥数语，但背后的惊心动魄，远超你我的想象。'
+      ],
+      long: [
+        '公元{year}年，那是一个注定要被载入史册的年份。{subject}——这个后来被无数历史学家反复研究、被文人墨客反复吟咏的名字，即将在时代的舞台上缓缓拉开帷幕。当时的人们或许并未意识到，他们正站在历史的转折点上。',
+        '在中华五千年漫长的历史长河中，总有一些特殊的时刻如同夜空中最璀璨的繁星，照亮了整个时代的走向。{subject}，就是其中最耀眼、最不容错过的一颗。今天，就让我们拂去历史的尘埃，穿越千年时空，重新回到那个风起云涌、英雄辈出的峥嵘岁月。',
+        '历史的转折往往藏在看似不经意的一个个瞬间里。翻开厚重的史书，关于{subject}的记载或许只有寥寥数语，一行或两行。但当你真正深入那些散落在各处的史料笔记、方志族谱，你会发现，这寥寥数字背后，是何等的惊心动魄、波诡云谲，其复杂程度，远超你我的想象。'
+      ]
+    },
+    middles: {
+      short: [
+        '这场事件的核心，就在于关键时刻的关键抉择。',
+        '局势瞬息万变，主动权在几方之间来回易手。',
+        '正是这个转折，决定了最终的走向。'
+      ],
+      medium: [
+        '就在这千钧一发之际，一个大胆的计划正在暗中酝酿。',
+        '然而，命运的齿轮已经开始转动，没有人能够阻止这场即将到来的风暴。',
+        '各方势力在此刻汇聚，矛盾与冲突如暗流涌动，一场大戏即将上演。',
+        '时间一分一秒地流逝，空气中弥漫着紧张的气息，每个人都在等待着那个决定性的瞬间。'
+      ],
+      long: [
+        '就在这千钧一发之际，一个足以改变整个战局的大胆计划，正在极少数核心人物的密谈中悄然酝酿。这个计划如果成功，将彻底扭转局势；但一旦失败，后果将不堪设想。',
+        '然而，历史的齿轮一旦开始转动，就再也没有人能够让它停下。这场即将到来的风暴，早已注定要席卷每一个身处其中的人，无论你是主动参与还是被动卷入，没有人能够置身事外。',
+        '几乎就在同一时间，各方势力的核心人物都做出了各自的判断与选择。这些看似独立的决定，如同命运之线在看不见的地方交织缠绕，共同编织出了一场波澜壮阔、跌宕起伏的历史大戏，每一个细节都耐人寻味。',
+        '时间就在这种令人窒息的紧张氛围中一分一秒地流逝。空气中仿佛弥漫着硝烟的味道，每个人的脸上都写满了凝重与期待。所有人都在屏息凝神，等待着那个即将决定无数人命运的历史性瞬间。'
+      ]
+    },
+    endings: {
+      short: [
+        '这就是{subject}的故事，它永远改变了历史的走向。',
+        '{subject}虽已远去，但它留下的启示至今仍值得我们深思。',
+        '回望{subject}，以史为鉴，可以知兴替。'
+      ],
+      medium: [
+        '如今，{subject}的硝烟早已散尽，但它留给后世的启示，却如黄钟大吕，振聋发聩。历史不是冰冷的数字，而是一个个鲜活的人、一次次勇敢的选择。',
+        '当我们回望{subject}，看到的不只是过去，更是映照当下的一面镜子。以史为鉴，可以知兴替——这正是我们不断回望历史的原因。',
+        '{subject}已经成为历史，但它所承载的精神与智慧，穿越千年时光，依然在今天闪耀着光芒。'
+      ],
+      long: [
+        '斗转星移，岁月如梭。如今，{subject}的硝烟早已散尽，当年的鼓角争鸣也已消逝在历史的长河中。但这场事件留给后世的启示与思考，却如黄钟大吕，穿越千年时光依然振聋发聩。因为历史从来不是冰冷的年份和数字，它是一个个鲜活的生命、一次次艰难的抉择、一场场令人扼腕或振奋的悲喜剧。',
+        '当我们今天站在岁月的这一端，深情回望千百年前的{subject}，我们看到的不只是已经远去的过往，更是一面能够映照当下的明亮镜子。以史为鉴，可以知兴替——这，正是我们一代又一代人不断回望历史、讲述历史、铭记历史的最深层原因。',
+        '{subject}的故事已经写进了历史，成为了民族记忆中不可分割的一部分。但它所承载的那种精神、那种智慧、那种在关键时刻挺身而出的勇气，却从未真正远去。它们如同血液中的基因，静静流淌在每一个后来者的身体里，等待着被唤醒、被传承、被发扬光大。'
+      ]
+    },
+    detailParagraphs: {
+      short: [
+        '这正是历史的关键转折之处。',
+        '这个决定，直接影响了事件的结局。',
+        '事实证明，这一步走对了。'
+      ],
+      medium: [
+        '关于{subject}，最扣人心弦的莫过于那一连串出人意料的转折。史书上短短几行字，背后却是无数人的命运交织。',
+        '想象一下那个场景：旌旗猎猎，战马嘶鸣，空气中弥漫着紧张的气息。每一个决定，都可能改写整个战局。',
+        '就在所有人都以为大局已定的时候，一个意想不到的变数出现了——这正是历史最迷人的地方。'
+      ],
+      long: [
+        '关于{subject}，最扣人心弦、也最让后世历史学家们反复琢磨的，莫过于那一连串出人意料、却又在情理之中的戏剧性转折。你翻开官方的正史，看到的可能只是短短几行字的平铺直叙；但你如果去翻那些时人留下的笔记、书信、方志，就会发现，这寥寥数字的背后，是无数人的命运在大时代的浪潮中沉浮交织、相互碰撞。',
+        '让我们试着闭上眼睛，想象一下千百年前那个惊心动魄的场景：旌旗猎猎迎风招展，战马嘶鸣响彻云霄，空气中除了尘土的味道，还弥漫着一种令人窒息的紧张气息。在这样的氛围里，每一个微小的决定，都可能像蝴蝶扇动翅膀一样，在遥远的未来引发一场翻天覆地的飓风，改写整个战局乃至整个时代的走向。',
+        '就在所有人——无论是当时的亲历者还是后世的研究者——都以为大局已定、尘埃即将落定的时候，一个谁也没有预料到的变数，如同石破天惊一般出现在了历史的舞台上。而这，恰恰是历史最迷人也最让人欲罢不能的地方：它从不按剧本走，永远在你以为猜到结局的时候，给你一个意料之外、却又情理之中的答案。'
+      ]
+    },
     keyPointsPool: [
       '事件发生的具体时间与时代背景',
       '事件爆发的深层原因与导火索',
@@ -1152,22 +1213,76 @@ const storyTemplates: Record<string, StoryTemplateConfig> = {
       '{subject}：命运沉浮中的坚守与抉择'
     ],
     chapters: ['序章 · 少年意气', '第一章 · 崭露头角', '第二章 · 风云际会', '第三章 · 峥嵘岁月', '终章 · 青史留名'],
-    openings: [
-      '在华夏五千年的历史星空中，有这样一个名字——{subject}。他/她的一生，如同一部波澜壮阔的史诗，写满了传奇与荣耀，也藏着不为人知的挣扎与坚守。',
-      '有人说，时势造英雄；也有人说，英雄造时势。{subject}的一生，正是对这句话最好的诠释。让我们翻开泛黄的史册，走进这位传奇人物的内心世界。',
-      '千年之后，当我们说起{subject}，心中浮现的不只是一个名字，更是一种精神、一份情怀。但真正的他/她，远比你想象的更加复杂，也更加动人。'
-    ],
-    middles: [
-      '然而，命运并没有给他/她太多喘息的机会。更大的考验，还在前方等待着。',
-      '就在人生的十字路口，{subject}做出了一个让所有人都意想不到的决定。',
-      '才华与抱负在胸中激荡，但现实的枷锁却如此沉重。该何去何从？',
-      '多年的蛰伏与积累，终于在这一刻迎来了绽放的机会。'
-    ],
-    endings: [
-      '如今，{subject}的故事已经成为历史，但他/她留下的精神遗产，却从未远去。每一个心怀理想的人，都能从他/她的故事中汲取前行的力量。',
-      '盖棺定论，{subject}的功过是非，也许永远没有标准答案。但正是这种复杂性，让历史如此迷人，也让我们如此着迷。',
-      '伟人之所以伟大，不在于从不跌倒，而在于每次跌倒后都能重新站起来。{subject}的一生，正是对这句话最好的注脚。'
-    ],
+    openings: {
+      short: [
+        '{subject}，是中国历史上一位举足轻重的人物。',
+        '说起{subject}，这是一个家喻户晓的名字。',
+        '{subject}——这个名字，代表着一段传奇。'
+      ],
+      medium: [
+        '在华夏五千年的历史星空中，有这样一个名字——{subject}。他/她的一生，如同一部波澜壮阔的史诗，写满了传奇与荣耀，也藏着不为人知的挣扎与坚守。',
+        '有人说，时势造英雄；也有人说，英雄造时势。{subject}的一生，正是对这句话最好的诠释。让我们翻开泛黄的史册，走进这位传奇人物的内心世界。',
+        '千年之后，当我们说起{subject}，心中浮现的不只是一个名字，更是一种精神、一份情怀。但真正的他/她，远比你想象的更加复杂，也更加动人。'
+      ],
+      long: [
+        '在华夏五千年波澜壮阔的历史星空中，总有一些名字如同恒星一般永恒闪耀，无论时光如何流转，都无法磨灭他们的光辉。而{subject}，无疑就是其中最璀璨、最独特、最让人扼腕叹息也最让人肃然起敬的那一颗。他/她的一生，如同一部情节跌宕、波澜壮阔的长篇史诗，写满了常人难以企及的传奇与荣耀，也藏着无数不为人知的挣扎、坚守与痛苦。',
+        '古往今来，关于{subject}的传说与故事数不胜数。有人说，时势造英雄；也有人说，英雄造时势。而{subject}的一生，恰恰是对这两句话最好、最深刻的诠释。今天，就让我们拂去岁月的尘埃，翻开那一卷卷泛黄的史册，带着敬畏与好奇，真正走进这位传奇人物的内心世界，去感受他/她的喜怒哀乐、悲欢离合。',
+        '千年岁月弹指一挥间。当今天的我们说起{subject}这个名字，大多数人心中浮现的或许只是课本上一个干巴巴的名词、或者影视剧里一个被演绎过的形象。但真正的他/她，远非三言两语可以概括。那是一个立体的、复杂的、有血有肉的、充满了矛盾却又无比真实的人，远比你想象的更加丰满、更加深刻，也更加令人动容。'
+      ]
+    },
+    middles: {
+      short: [
+        '人生的关键，在于几个重要的选择。',
+        '机遇总是垂青有准备的人。',
+        '正是这一步，成就了后来的传奇。'
+      ],
+      medium: [
+        '然而，命运并没有给他/她太多喘息的机会。更大的考验，还在前方等待着。',
+        '就在人生的十字路口，{subject}做出了一个让所有人都意想不到的决定。',
+        '才华与抱负在胸中激荡，但现实的枷锁却如此沉重。该何去何从？',
+        '多年的蛰伏与积累，终于在这一刻迎来了绽放的机会。'
+      ],
+      long: [
+        '然而，造化弄人，命运似乎从来不会让伟大的灵魂过得太轻松。它并没有给{subject}太多喘息的机会和休整的时间，一个又一个更大、更严峻、更考验智慧与意志的考验，如同排山倒海一般接踵而至，在前方静静地等待着他/她。',
+        '就在这样一个人生最重要的十字路口，所有人都在屏息凝神地观望——认识的、不认识的、支持的、反对的——{subject}却在经过了无数个辗转难眠的深夜和痛苦的内心挣扎之后，最终做出了一个让当时几乎所有人都意想不到、却让后世无数人拍案叫绝的重大决定。',
+        '才华与理想如同熊熊烈火一般在胸中激荡燃烧，想要挣脱一切束缚去实现自己的人生抱负；但现实的枷锁却又如此沉重而冰冷，如同千斤巨石压在肩头。在这样激烈的内心矛盾与冲突中，{subject}到底该何去何从？这个问题，没有人能够替他/她回答。',
+        '古人云：十年磨一剑，未曾试锋芒。{subject}用了整整多年的时间，在寂寞中蛰伏、在困苦中积累、在孤独中思考，所有的努力、所有的汗水、所有的忍耐，终于在这一刻，迎来了一个厚积薄发、一鸣惊人的机会。'
+      ]
+    },
+    endings: {
+      short: [
+        '这就是{subject}的一生，一个流传千古的传奇。',
+        '{subject}的故事虽已远去，但其精神至今仍激励着后人。',
+        '金无足赤，人无完人，但{subject}的一生值得我们铭记。'
+      ],
+      medium: [
+        '如今，{subject}的故事已经成为历史，但他/她留下的精神遗产，却从未远去。每一个心怀理想的人，都能从他/她的故事中汲取前行的力量。',
+        '盖棺定论，{subject}的功过是非，也许永远没有标准答案。但正是这种复杂性，让历史如此迷人，也让我们如此着迷。',
+        '伟人之所以伟大，不在于从不跌倒，而在于每次跌倒后都能重新站起来。{subject}的一生，正是对这句话最好的注脚。'
+      ],
+      long: [
+        '岁月悠悠，时光如白驹过隙。千百年后的今天，{subject}的故事早已经写进了历史、写进了教科书、写进了一代代人的集体记忆之中。但他/她用一生去坚守和践行的那种精神、那种气节、那种理想主义光芒，却从未真正远去。直到今天，每一个心怀理想、不甘平庸的普通人，依然能够从他/她的人生故事中，汲取到源源不断的、温暖而坚定的前行力量。',
+        '古人说：盖棺定论。意思是一个人的功过是非，只有到生命终结那一刻才能真正做出评判。但对于{subject}这样一位深刻影响了历史走向的传奇人物而言，这个定论也许永远不会有真正统一的答案。有人推崇备至，有人颇有微词，有人为他/她扼腕叹息。而恰恰是这种众说纷纭、莫衷一是的复杂性，才让历史变得如此迷人、如此深邃，也让我们如此着迷。',
+        '什么是真正的伟人？有人认为是从不犯错、高高在上的完人；但也有人认为，伟人之所以伟大，从来不在于他们从不跌倒——而在于，每一次跌倒之后，他们都能够凭借着超乎常人的意志和信念，重新站立起来，并且站得比以前更高、更稳、更坚定。而{subject}跌宕起伏、百折不挠的一生，正是对这句话最深刻、最动人、也最有说服力的诠释。'
+      ]
+    },
+    detailParagraphs: {
+      short: [
+        '这份品质，成就了他/她的一生。',
+        '关键时刻，方能看出一个人的本色。',
+        '这正是他/她与常人的不同之处。'
+      ],
+      medium: [
+        `{subject}曾经说过："志当存高远。"这句话不仅是他/她的人生座右铭，更是激励了后世无数仁人志士。`,
+        '许多人只看到了{subject}表面的风光，却不知道他/她背后付出了怎样的艰辛与努力。',
+        '在那个等级森严的时代，{subject}能够脱颖而出，靠的不仅是才华，更是远超常人的毅力与胆识。'
+      ],
+      long: [
+        '{subject}曾经在一篇流传千古的文章中这样写道："志当存高远。"这句话虽然简短，却字字千钧，不仅是他/她自己一生矢志不渝的人生座右铭，更是穿越了千年时光，成为激励后世无数仁人志士奋勇前行的精神灯塔。',
+        '芸芸众生，大多数人只看到了{subject}表面的无限风光——人前的鲜花着锦、烈火烹油，史书上的浓墨重彩、赫赫声名，却很少有人真正愿意去了解，在这些光鲜亮丽的背后，他/她到底付出了怎样常人难以想象的艰辛、忍耐与努力。',
+        '在那个等级制度森严、出身决定一切的时代，{subject}能够冲破重重阻碍，从无数人之中脱颖而出，最终成就一番载入史册的大业，靠的从来不只是虚无缥缈的运气，更不仅仅是令人艳羡的才华——真正支撑他/她走下去的，是那种远超常人的坚定意志、过人胆识与百折不挠的精神。'
+      ]
+    },
     keyPointsPool: [
       '人物所处的时代背景与社会环境',
       '早年经历对性格与志向的塑造',
@@ -1202,22 +1317,76 @@ const storyTemplates: Record<string, StoryTemplateConfig> = {
       '{subject}：当历史遇见传奇'
     ],
     chapters: ['开篇 · 时代序幕', '上篇 · 气象万千', '中篇 · 风华绝代', '下篇 · 源远流长', '尾声 · 千年回响'],
-    openings: [
-      '如果可以穿越回古代，你最想去哪个朝代？很多人的答案会是——{subject}。那是一个怎样的时代？让我们推开厚重的历史之门，一探究竟。',
-      '每个时代都有自己独特的气质。{subject}的气质，是诗歌里的豪情万丈，是壁画上的流光溢彩，是流传千年仍让人怦然心动的绝代风华。',
-      '在历史的长河中，{subject}时期无疑是最璀璨的篇章之一。那是一个大师辈出、群星闪耀的年代，每一个角落都在演绎着精彩的故事。'
-    ],
-    middles: [
-      '在这样的时代背景下，文化艺术迎来了空前的繁荣。',
-      '社会的开放与包容，催生了无数令人惊叹的创造。',
-      '经济的繁荣为文化的发展奠定了坚实的基础。',
-      '正是在这样的土壤中，一颗颗明星相继升起，照亮了整个时代。'
-    ],
-    endings: [
-      '如今，{subject}的繁华已成过往，但那种文化的基因、精神的气度，早已融入我们民族的血脉，成为每一个中国人心中最深沉的骄傲。',
-      '回望{subject}，我们看到的不只是一个远去的时代，更是中华民族精神长河中一段最动人的旋律。它从未消失，只是在静静等待，等待与你的相遇。',
-      '每一个伟大的时代，都为后世留下了珍贵的遗产。{subject}留下的，不仅是精美的文物和不朽的诗篇，更是一种自信开放、兼容并包的精神。'
-    ],
+    openings: {
+      short: [
+        '{subject}，是中国历史上一个辉煌的时代。',
+        '说起{subject}，总能让人联想到无数美好的词汇。',
+        '{subject}时期，是中华文明的一个高峰。'
+      ],
+      medium: [
+        '如果可以穿越回古代，你最想去哪个朝代？很多人的答案会是——{subject}。那是一个怎样的时代？让我们推开厚重的历史之门，一探究竟。',
+        '每个时代都有自己独特的气质。{subject}的气质，是诗歌里的豪情万丈，是壁画上的流光溢彩，是流传千年仍让人怦然心动的绝代风华。',
+        '在历史的长河中，{subject}时期无疑是最璀璨的篇章之一。那是一个大师辈出、群星闪耀的年代，每一个角落都在演绎着精彩的故事。'
+      ],
+      long: [
+        '如果上天能够给每一个中国人一次穿越时光的机会，让他回到古代去亲身感受一下，我相信，{subject}一定是被选择最多的答案之一。那到底是一个怎样迷人的时代？为什么千百年来，它让无数人心向往之、魂牵梦萦？今天，就让我们一起推开那扇厚重的历史之门，真正走进去，一探究竟。',
+        '如果说每一个时代都如同一个人，有着自己独特的性格、气质与精神面貌的话，那么{subject}的气质，一定是诗歌里那种"仰天大笑出门去"的豪情万丈，是壁画上那种衣袂飘飘、流光溢彩的绝代风华，是流传了千年时光，直到今天被人提起时，仍然会让人心头一热、怦然心动的独特魅力。',
+        '在中华五千年延绵不绝的历史长河中，{subject}时期毫无疑问是其中最璀璨、最耀眼、最值得我们骄傲和回望的篇章之一。那是一个真正意义上大师辈出、群星闪耀的时代，是一个思想空前解放、创造力无比旺盛的时代，无论是庙堂之高还是江湖之远，每一个角落似乎都在演绎着精彩绝伦、流传千古的故事。'
+      ]
+    },
+    middles: {
+      short: [
+        '经济的繁荣，孕育了文化的昌盛。',
+        '开放包容的风气，造就了这个时代的独特魅力。',
+        '正是这种自信，成就了一个伟大的时代。'
+      ],
+      medium: [
+        '在这样的时代背景下，文化艺术迎来了空前的繁荣。',
+        '社会的开放与包容，催生了无数令人惊叹的创造。',
+        '经济的繁荣为文化的发展奠定了坚实的基础。',
+        '正是在这样的土壤中，一颗颗明星相继升起，照亮了整个时代。'
+      ],
+      long: [
+        '就在这样一个千载难逢的时代背景之下，在这样一片肥沃而自由的文化土壤之中，文学、艺术、音乐、舞蹈、宗教、科技……几乎所有你能够想到的领域，都迎来了一次空前的、井喷式的大发展、大繁荣，其成就之辉煌，足以让后世的每一个时代都为之赞叹。',
+        '如果要用一个词来形容{subject}时期最核心的社会特质，那一定是——"开放"。整个社会从上到下，从皇帝到平民，从达官贵人到文人墨客，都弥漫着一种前所未有的自信、包容与大度的风气。正是这种海纳百川的胸怀，催生了无数让后人惊叹不已的伟大创造。',
+        '文化的繁荣从来不是空中楼阁，它必然建立在坚实的物质基础之上。{subject}时期之所以能够在文化艺术上取得如此登峰造极的成就，最根本的原因就在于，那个时代拥有高度发达的农业、手工业和商业经济，整个社会的物质财富积累达到了一个前所未有的历史高度，为精神文明的腾飞奠定了无比坚实的基础。',
+        '正所谓"时势造英雄"，反过来，英雄也成就了时势。正是在{subject}这样一片自由、肥沃、充满活力的文化土壤之中，一位位名垂青史的文学巨匠、艺术大师、科学泰斗相继如新星般升起，用他们无与伦比的才华和创造力，共同照亮了整个时代的文化天空。'
+      ]
+    },
+    endings: {
+      short: [
+        '这就是{subject}，一个让人魂牵梦萦的时代。',
+        '{subject}虽已远去，但它的精神依然活在我们的文化里。',
+        '回望{subject}，让我们更加珍惜和自信。'
+      ],
+      medium: [
+        '如今，{subject}的繁华已成过往，但那种文化的基因、精神的气度，早已融入我们民族的血脉，成为每一个中国人心中最深沉的骄傲。',
+        '回望{subject}，我们看到的不只是一个远去的时代，更是中华民族精神长河中一段最动人的旋律。它从未消失，只是在静静等待，等待与你的相遇。',
+        '每一个伟大的时代，都为后世留下了珍贵的遗产。{subject}留下的，不仅是精美的文物和不朽的诗篇，更是一种自信开放、兼容并包的精神。'
+      ],
+      long: [
+        '繁华事散逐香尘，流水无情草自春。千百年后的今天，{subject}当年的那些楼台殿阁、歌舞升平，那些街头巷尾的喧闹繁华、觥筹交错，早已经随时光的流逝而烟消云散，成为了过眼云烟。但是，那个时代所孕育出来的文化基因、所彰显出来的精神气度、所达到的文明高度，早已经深深地融入了我们整个民族的血脉之中，成为了每一个中国人心中最深沉、最温暖、最值得骄傲的文化记忆。',
+        '今天，当我们满怀着敬意和憧憬去深情回望千百年前的{subject}，我们看到的绝对不只是一个在时间上已经远去的、和我们无关的古老时代。我们看到的，是中华民族几千年精神长河中，最激昂澎湃、最悦耳动听、最风华绝代的一段动人旋律。它从来就没有真正消失过，它只是静静地流淌在我们每一个人的文化基因里，等待着一个合适的契机，等待着与你的一次相遇和共鸣。',
+        '有人说，历史是一种无用的学问，因为它不能当饭吃、不能当衣穿。但是，每一个真正伟大的时代，都会为后世留下一笔无比珍贵的、永远也花不完的精神遗产。{subject}留给我们这些后人的，绝不仅仅是博物馆里那些精美的文物、或者语文课本上那些不朽的诗篇——它留给我们最宝贵的东西，是一种深入骨髓的民族自信，一种海纳百川的开放胸怀，一种敢为天下先的创新精神。'
+      ]
+    },
+    detailParagraphs: {
+      short: [
+        '这就是那个时代最迷人的特征。',
+        '正是这种氛围，催生了无数传世之作。',
+        '生活在那个时代的人，是幸福的。'
+      ],
+      medium: [
+        '{subject}时期的人们，过着怎样的生活？清晨的集市上，小贩的叫卖声此起彼伏；酒肆茶楼里，文人墨客吟诗作对——那是一幅鲜活生动的历史画卷。',
+        '在那个时代，诗歌是最流行的社交方式。朋友聚会要写诗，迎来送往要写诗，甚至连金榜题名时，也要在大雁塔上题诗留念。',
+        '经济的繁荣带来了文化的昌盛。据史料记载，当时的长安城是世界上最大的城市，人口超过百万，来自世界各地的商人、学者、僧侣汇聚于此。'
+      ],
+      long: [
+        '如果可以真正穿越回去，你觉得{subject}时期的普通老百姓，每天过的是一种怎样的生活？让我们试着想象一下：天蒙蒙亮，东市西市的早市就已经开张了，挑着担子的小贩们此起彼伏地高声叫卖着各种时令小吃和新鲜果蔬；而城中最有名的那几家酒肆茶楼，文人雅士们已经早早地占据了靠窗的好位置，一边品着新茶一边吟诗作对——这，就是一幅多么鲜活生动、令人神往的历史生活画卷啊。',
+        '你能想象吗？在{subject}时期，写诗绝对不是文人墨客的专利，而是一种整个社会都趋之若鹜的、最时髦、最高雅的全民社交方式。朋友相聚要写诗助兴，送别亲友要写诗赠别，金榜题名时要写诗庆祝，甚至就连遇到不开心的事，也要写一首诗来抒发情怀。诗歌，就是那个时代的"朋友圈"。',
+        '文化的繁荣从来都建立在经济的繁荣之上，这一点在{subject}时期体现得淋漓尽致。根据可靠的史料记载，当时这个王朝的首都——长安城，毫无疑问是整个世界上规模最大、最繁华、最国际化的超级大都市。全城人口超过百万，来自世界各地的商人、学者、僧侣、留学生、艺术家，如同潮水一般汇聚于此，各种语言、各种宗教、各种文化在这里碰撞交融，共同谱写了一曲人类文明交流史上最动人的乐章。'
+      ]
+    },
     keyPointsPool: [
       '该时期的起止时间与整体脉络',
       '政治制度与社会结构特点',
@@ -1245,10 +1414,14 @@ const storyTemplates: Record<string, StoryTemplateConfig> = {
   }
 }
 
-const styleAdjustments: Record<string, (text: string) => string> = {
-  dramatic: (t) => t + '\n\n（剧情如有虚构，历史以正史为准）',
-  humorous: (t) => t.replace(/。/g, '～').replace(/！/g, '！😏'),
-  cinematic: (t) => '【镜头缓缓拉开...】\n\n' + t + '\n\n【画面淡出，字幕滚动...】',
+const styleAdjustments: Record<string, (text: string, length: string) => string> = {
+  dramatic: (t, len) => len === 'short' ? t : t + '\n\n（剧情如有虚构，历史以正史为准）',
+  humorous: (t, len) => len === 'short' ? t : t.replace(/。/g, '～').replace(/！/g, '！😏'),
+  cinematic: (t, len) => {
+    if (len === 'short') return t
+    if (len === 'medium') return '【开场...】\n\n' + t + '\n\n【落幕】'
+    return '【镜头缓缓拉开...】\n\n' + t + '\n\n【画面淡出，字幕滚动...】'
+  },
   epic: (t) => t,
   educational: (t) => t,
   biography: (t) => t,
@@ -1263,67 +1436,66 @@ const generateSingleStory = (forceStyle?: string): StoryResult => {
   const subjectText = subject.value
   const focusPoints = focusPointsList.value
   const notes = additionalNotes.value
-  const lengthConfig = lengthOptions.find(l => l.value === selectedLength.value) || lengthOptions[1]
+  const length = selectedLength.value
 
   const yearMatch = subjectText.match(/(\d{3,4})/)
   const yearText = yearMatch ? yearMatch[1] : 'XXXX'
 
   const title = pick(templates.titles).replace(/\{subject\}/g, subjectText)
 
-  const chapters = selectedLength.value === 'short'
-    ? templates.chapters.slice(0, 2)
-    : selectedLength.value === 'long'
-      ? templates.chapters
-      : templates.chapters.slice(0, 3)
+  const useChapters = length !== 'short'
+  const chapterCount = length === 'short' ? 0 : length === 'long' ? templates.chapters.length : 3
+  const middleCount = length === 'short' ? 0 : length === 'long' ? 3 : 2
 
   const paragraphs: StoryParagraph[] = []
+
+  const openingText = pick(templates.openings[length])
+    .replace(/\{subject\}/g, subjectText)
+    .replace(/\{year\}/g, yearText)
   paragraphs.push({
-    chapter: chapters[0],
-    text: pick(templates.openings).replace(/\{subject\}/g, subjectText).replace(/\{year\}/g, yearText)
+    chapter: useChapters ? templates.chapters[0] : undefined,
+    text: openingText
   })
 
-  const middleCount = selectedLength.value === 'short' ? 1 : selectedLength.value === 'long' ? 3 : 2
   for (let i = 0; i < middleCount; i++) {
-    let middleText = pick(templates.middles)
-    if (focusPoints.length > 0) {
-      const fp = focusPoints[i % focusPoints.length]
+    let middleText = pick(templates.middles[length])
+    const fp = focusPoints[i % (focusPoints.length || 1)]
+    if (focusPoints.length > 0 && length !== 'short') {
       middleText = `说到「${fp}」，${middleText}`
     }
-    if (i + 1 < chapters.length) {
-      paragraphs.push({
-        chapter: chapters[i + 1],
-        text: middleText + generateDetailParagraph(selectedInputType.value, subjectText, fp, style, i)
-      })
-    } else {
-      paragraphs.push({
-        text: middleText + generateDetailParagraph(selectedInputType.value, subjectText, fp, style, i)
-      })
-    }
+    const detail = generateDetailParagraph(selectedInputType.value, subjectText, fp, style, length, i)
+    const chapterIndex = i + 1
+    paragraphs.push({
+      chapter: useChapters && chapterIndex < chapterCount ? templates.chapters[chapterIndex] : undefined,
+      text: middleText + detail
+    })
   }
 
-  let endingText = pick(templates.endings).replace(/\{subject\}/g, subjectText)
-  if (notes.trim()) {
+  let endingText = pick(templates.endings[length]).replace(/\{subject\}/g, subjectText)
+  if (notes.trim() && length !== 'short') {
     endingText += `\n\n补充说明：${notes}`
   }
   paragraphs.push({
-    chapter: chapters[chapters.length - 1] || '尾声',
+    chapter: useChapters ? (templates.chapters[Math.min(chapterCount - 1, templates.chapters.length - 1)] || '尾声') : undefined,
     text: endingText
   })
 
   const adjustFn = styleAdjustments[style] || styleAdjustments.default
-  const allText = paragraphs.map(p => (p.chapter ? `【${p.chapter}】\n` : '') + p.text).join('\n\n')
-  const adjustedText = adjustFn(allText)
+  const allText = paragraphs
+    .map(p => (p.chapter ? `【${p.chapter}】\n` : '') + p.text)
+    .join('\n\n')
+  const adjustedText = adjustFn(allText, length)
 
-  const keyPointsCount = selectedLength.value === 'short' ? 3 : selectedLength.value === 'long' ? 6 : 4
+  const keyPointsCount = length === 'short' ? 2 : length === 'long' ? 6 : 4
   const keyPoints = pickMany(templates.keyPointsPool, keyPointsCount)
-  if (focusPoints.length > 0) {
+  if (focusPoints.length > 0 && length !== 'short') {
     keyPoints.unshift(...focusPoints.slice(0, 2).map(fp => `关注要点：${fp}`))
   }
 
-  const extendedCount = selectedLength.value === 'short' ? 2 : 3
+  const extendedCount = length === 'short' ? 1 : 3
   const extendedReading = pickMany(templates.extendedPool, extendedCount)
 
-  const teachingTip = pick(templates.teachingTips)
+  const teachingTip = length === 'short' ? undefined : pick(templates.teachingTips)
 
   return {
     title,
@@ -1342,41 +1514,52 @@ const generateDetailParagraph = (
   subject: string,
   focusPoint: string,
   style: string,
+  length: string,
   seed: number
 ): string => {
-  const eventDetails = [
-    `关于${subject}，最扣人心弦的莫过于那一连串出人意料的转折。史书上短短几行字，背后却是无数人的命运交织。`,
-    `想象一下那个场景：旌旗猎猎，战马嘶鸣，空气中弥漫着紧张的气息。每一个决定，都可能改写整个战局。`,
-    `就在所有人都以为大局已定的时候，一个意想不到的变数出现了——这正是历史最迷人的地方。`
-  ]
-  const figureDetails = [
-    `${subject}曾经说过："志当存高远。"这句话不仅是他/她的人生座右铭，更是激励了后世无数仁人志士。`,
-    `许多人只看到了${subject}表面的风光，却不知道他/她背后付出了怎样的艰辛与努力。`,
-    `在那个等级森严的时代，${subject}能够脱颖而出，靠的不仅是才华，更是远超常人的毅力与胆识。`
-  ]
-  const periodDetails = [
-    `${subject}时期的人们，过着怎样的生活？清晨的集市上，小贩的叫卖声此起彼伏；酒肆茶楼里，文人墨客吟诗作对——那是一幅鲜活生动的历史画卷。`,
-    `在那个时代，诗歌是最流行的社交方式。朋友聚会要写诗，迎来送往要写诗，甚至连金榜题名时，也要在大雁塔上题诗留念。`,
-    `经济的繁荣带来了文化的昌盛。据史料记载，当时的长安城是世界上最大的城市，人口超过百万，来自世界各地的商人、学者、僧侣汇聚于此。`
-  ]
+  const templates = storyTemplates[type] || storyTemplates.event
+  const pool = templates.detailParagraphs[length]
+  let detail = pool[seed % pool.length].replace(/\{subject\}/g, subject)
 
-  const details = type === 'event' ? eventDetails : type === 'figure' ? figureDetails : periodDetails
-  let detail = details[seed % details.length]
-
-  if (focusPoint) {
+  if (focusPoint && length !== 'short') {
     detail = detail.replace(/关于.*，/, `关于「${focusPoint}」，`)
   }
 
-  const styleFlair: Record<string, string[]> = {
-    dramatic: ['这一切，都在那个命运攸关的夜晚达到了高潮。', '历史的舞台，从来不缺精彩的戏码。'],
-    humorous: ['（是不是听起来就很刺激？😏）', '（要是拍电影，这段得是名场面。）'],
-    cinematic: ['【特写镜头：人物眼中闪过一丝坚毅】', '【背景音乐渐强，画面推进...】'],
-    epic: ['这，就是一个时代的缩影。', '千载之下，依然令人心潮澎湃。'],
-    educational: ['这一点在考试中经常出现，请同学们注意掌握。', '我们可以从以下几个方面来理解这个问题。'],
-    biography: ['多年以后，回忆起这段岁月，他/她依然感慨万千。', '这正是他/她人格魅力的最好体现。'],
-    default: ['', '']
+  if (length === 'short') {
+    return detail
   }
-  const flair = (styleFlair[style] || styleFlair.default)[seed % 2]
+
+  const styleFlair: Record<string, { medium: string[]; long: string[] }> = {
+    dramatic: {
+      medium: ['这一切，在那一刻达到了高潮。'],
+      long: ['这一切，都在那个命运攸关的夜晚达到了高潮。', '历史的舞台，从来不缺精彩的戏码。']
+    },
+    humorous: {
+      medium: ['（是不是听起来就很有意思？😏）'],
+      long: ['（是不是听起来就很刺激？😏）', '（要是拍电影，这段得是名场面。）']
+    },
+    cinematic: {
+      medium: ['【镜头推进...】'],
+      long: ['【特写镜头：人物眼中闪过一丝坚毅】', '【背景音乐渐强，画面推进...】']
+    },
+    epic: {
+      medium: ['这，就是一个时代的剪影。'],
+      long: ['这，就是一个时代的缩影。', '千载之下，依然令人心潮澎湃。']
+    },
+    educational: {
+      medium: ['这一点请同学们注意理解。'],
+      long: ['这一点在考试中经常出现，请同学们注意掌握。', '我们可以从以下几个方面来理解这个问题。']
+    },
+    biography: {
+      medium: ['这正是他人格魅力的体现。'],
+      long: ['多年以后，回忆起这段岁月，他/她依然感慨万千。', '这正是他/她人格魅力的最好体现。']
+    },
+    default: { medium: [''], long: [''] }
+  }
+
+  const flairConfig = styleFlair[style] || styleFlair.default
+  const flairPool = length === 'long' ? flairConfig.long : flairConfig.medium
+  const flair = flairPool[seed % flairPool.length]
 
   return detail + (flair ? '\n\n' + flair : '')
 }
