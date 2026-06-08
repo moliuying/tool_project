@@ -19,6 +19,7 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^3.11.174",
     "pinia": "^2.1.6",
+    "tesseract.js": "^7.0.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4",
     "vuedraggable": "^4.1.0"

@@ -245,6 +245,11 @@ const routes: RouteRecordRaw[] = [
         path: '/fab-marketing',
         name: 'FabMarketingGenerator',
         component: () => import('@/views/FabMarketingGenerator.vue')
+      },
+      {
+        path: '/image-ocr',
+        name: 'ImageOCR',
+        component: () => import('@/views/ImageOCR.vue')
       }
     ]
   }
