@@ -100,30 +100,53 @@
         </div>
       </div>
 
-      <div class="two-col-section">
-        <div class="setup-section flex-1">
-          <div class="section-title">
-            <el-icon><Brush /></el-icon>
-            <span>AI 外教人设</span>
-          </div>
-          <div class="teacher-options">
-            <div
-              v-for="teacher in teacherPersonas"
-              :key="teacher.value"
-              class="teacher-card"
-              :class="{ active: selectedTeacher === teacher.value }"
-              @click="selectedTeacher = teacher.value"
-            >
-              <div class="teacher-avatar">{{ teacher.avatar }}</div>
-              <div class="teacher-info">
+      <div class="setup-section">
+        <div class="section-title">
+          <el-icon><Brush /></el-icon>
+          <span>AI 外教人设</span>
+          <el-tag size="small" type="info" class="hint-tag">
+            点击卡片查看外教的教学风格和纠错方式详情
+          </el-tag>
+        </div>
+        <div class="teacher-options">
+          <div
+            v-for="teacher in teacherPersonas"
+            :key="teacher.value"
+            class="teacher-card"
+            :class="{ active: selectedTeacher === teacher.value }"
+            @click="selectedTeacher = teacher.value"
+          >
+            <div class="teacher-avatar">{{ teacher.avatar }}</div>
+            <div class="teacher-info">
+              <div class="teacher-row">
                 <div class="teacher-name">{{ teacher.name }}</div>
-                <div class="teacher-title">{{ teacher.title }}</div>
-                <div class="teacher-style">{{ teacher.style }}</div>
+                <el-tag size="small" type="primary" effect="light">{{ teacher.title }}</el-tag>
+              </div>
+              <div class="teacher-style">{{ teacher.style }}</div>
+            </div>
+            <el-icon class="teacher-expand-icon"><ArrowDown /></el-icon>
+            <div v-if="selectedTeacher === teacher.value" class="teacher-detail">
+              <el-divider />
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <div class="detail-label">🎓 教学风格</div>
+                  <div class="detail-content">{{ teacher.teachingStyle }}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">✏️ 纠错方式</div>
+                  <div class="detail-content">{{ teacher.correctionMethod }}</div>
+                </div>
+                <div class="detail-item">
+                  <div class="detail-label">👥 适合人群</div>
+                  <div class="detail-content">{{ teacher.suitableFor }}</div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
+      <div class="two-col-section">
         <div class="setup-section flex-1">
           <div class="section-title">
             <el-icon><TrendCharts /></el-icon>
@@ -148,6 +171,41 @@
               <div class="level-name">{{ level.label }}</div>
               <div class="level-desc">{{ level.desc }}</div>
               <div class="level-cefr">{{ level.cefr }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-section flex-1">
+          <div class="section-title">
+            <el-icon><Clock /></el-icon>
+            <span>纠错时机</span>
+            <el-tag size="small" type="warning" class="hint-tag">
+              选择你希望的错误反馈方式
+            </el-tag>
+          </div>
+          <div class="timing-options">
+            <div
+              v-for="opt in correctionTimingOptions"
+              :key="opt.value"
+              class="timing-card"
+              :class="{ active: correctionTiming === opt.value }"
+              @click="correctionTiming = opt.value"
+            >
+              <div class="timing-header">
+                <span class="timing-emoji">{{ opt.emoji }}</span>
+                <span class="timing-name">{{ opt.label }}</span>
+              </div>
+              <div class="timing-desc">{{ opt.desc }}</div>
+              <div class="timing-pros-cons">
+                <div class="pros-row">
+                  <el-icon color="#67c23a"><CircleCheckFilled /></el-icon>
+                  <span>{{ opt.advantage }}</span>
+                </div>
+                <div class="cons-row">
+                  <el-icon color="#e6a23c"><WarningFilled /></el-icon>
+                  <span>{{ opt.disadvantage }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -390,19 +448,75 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="showEndConfirm" title="结束对话" width="420px">
+    <el-dialog v-model="showEndConfirm" :title="correctionTiming === 'summary' && collectedCorrections.length > 0 ? '对话总结报告' : '结束对话'" :width="correctionTiming === 'summary' && collectedCorrections.length > 0 ? '640px' : '420px'">
       <div class="end-dialog-content">
-        <p>确定要结束本次对话练习吗？</p>
-        <div class="end-stats" v-if="messages.length > 1">
+        <p v-if="correctionTiming !== 'summary' || collectedCorrections.length === 0">确定要结束本次对话练习吗？</p>
+        <div class="end-stats">
           <div class="stat-row">
             <span>对话轮次：</span>
             <el-tag type="primary">{{ Math.floor(messages.length / 2) }} 轮</el-tag>
           </div>
+          <div v-if="correctionTiming === 'summary'" class="stat-row">
+            <span>纠错模式：</span>
+            <el-tag type="warning">{{ correctionTiming === 'summary' ? '对话结束后总结' : '即时纠错' }}</el-tag>
+          </div>
+          <div v-if="correctionTiming === 'summary' && collectedCorrections.length > 0" class="stat-row">
+            <span>发现问题：</span>
+            <el-tag type="danger">{{ collectedCorrections.length }} 处需要改进</el-tag>
+          </div>
+        </div>
+
+        <div v-if="correctionTiming === 'summary' && collectedCorrections.length > 0" class="correction-summary">
+          <el-divider content-position="left">
+            <span class="summary-title">📝 本次对话纠错汇总</span>
+          </el-divider>
+          <div
+            v-for="(group, gIdx) in collectedCorrections"
+            :key="gIdx"
+            class="summary-group"
+          >
+            <div class="group-header">
+              <el-icon color="#165DFF"><ChatDotRound /></el-icon>
+              <span class="group-user-msg">「{{ group.message }}」</span>
+              <span class="group-time">{{ formatTime(group.timestamp) }}</span>
+            </div>
+            <div
+              v-for="(corr, cIdx) in group.corrections"
+              :key="cIdx"
+              class="summary-correction-item"
+            >
+              <div class="corr-pair">
+                <span class="corr-before">❌ {{ corr.before }}</span>
+                <el-icon color="#909399"><Right /></el-icon>
+                <span class="corr-after">✅ {{ corr.after }}</span>
+                <el-tag size="small" :type="getCorrectionTagType(corr.type)">{{ getCorrectionTypeLabel(corr.type) }}</el-tag>
+              </div>
+              <div class="corr-explain">
+                <el-icon color="#e6a23c"><Bulb /></el-icon>
+                <span>{{ corr.explanation }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="correctionTiming === 'summary' && collectedCorrections.length === 0" class="no-correction-note">
+          <el-alert
+            title="🎉 太棒了！本次对话没有发现明显错误"
+            type="success"
+            :closable="false"
+            show-icon
+          >
+            <template #default>
+              继续保持！你可以尝试更复杂的话题和表达方式来进一步挑战自己。
+            </template>
+          </el-alert>
         </div>
       </div>
       <template #footer>
         <el-button @click="showEndConfirm = false">取消</el-button>
-        <el-button type="primary" @click="endChat">结束并保存</el-button>
+        <el-button type="primary" @click="endChat">
+          {{ correctionTiming === 'summary' && collectedCorrections.length > 0 ? '保存总结并结束' : '结束并保存' }}
+        </el-button>
       </template>
     </el-dialog>
 
@@ -459,7 +573,10 @@ import {
   CopyDocument,
   Microphone,
   Promotion,
-  Clock
+  Clock,
+  ArrowDown,
+  CircleCheckFilled,
+  Right
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -553,12 +670,26 @@ const practiceScenes = [
 
 const teacherPersonas = [
   {
+    value: 'owen',
+    name: 'Owen',
+    avatar: '🧑‍🏫',
+    title: '热情开放的英语外教',
+    style: '热情开放 · 鼓励式教学',
+    personality: 'Passionate and open-minded English foreign teacher from London. Believes in creating a relaxed, pressure-free learning environment where students feel confident to express themselves. Encourages students to speak freely without fear of making mistakes.',
+    teachingStyle: '鼓励式教学，注重培养学生的开口自信心。善于发现学生的闪光点，每次对话都会先给予积极肯定，再温和地提出改进建议。课堂氛围轻松愉快，话题涉猎广泛，从流行文化到深度话题都能聊。',
+    correctionMethod: '温和渐进式纠错。对话过程中不会频繁打断，而是记录下典型错误，在每轮对话回复的末尾以友好的方式指出1-2个最值得改进的地方，并用"Great job!"、"Almost perfect!"等鼓励性语言开头。对于不影响理解的小错误会选择性忽略，优先保证流利度。',
+    suitableFor: '适合害羞不敢开口的学习者、想要建立口语自信心的初学者、喜欢轻松学习氛围的用户'
+  },
+  {
     value: 'emma',
     name: 'Emma',
     avatar: '👩‍🏫',
     title: '剑桥认证考官',
     style: '严谨专业 · 学术导向',
-    personality: 'Experienced IELTS examiner from Cambridge. Focuses on grammar accuracy, vocabulary range, and pronunciation. Provides detailed correction and band score estimation.'
+    personality: 'Experienced IELTS examiner from Cambridge with over 10 years of teaching and examining experience. Has a sharp eye for grammatical accuracy, vocabulary sophistication, and pronunciation nuances.',
+    teachingStyle: '学院派严谨风格，注重细节和规范性。会按照雅思口语评分标准（流利度、词汇、语法、发音）四个维度进行系统性教学和反馈。讲解清晰有条理，善于帮助学生发现自己的盲区。',
+    correctionMethod: '即时精准纠错。对话过程中会在每轮回复后立即指出语法、用词、发音等方面的所有问题，并按照雅思评分标准给出具体改进建议。每条错误都会提供修改前后对比和详细的语法规则解释，帮助学生从根源上理解问题。',
+    suitableFor: '雅思考生、备考托福的学生、想要系统提升语法准确性的学习者'
   },
   {
     value: 'james',
@@ -566,7 +697,10 @@ const teacherPersonas = [
     avatar: '👨‍💼',
     title: '商务英语专家',
     style: '职场干练 · 实用导向',
-    personality: 'Former Fortune 500 executive with 15 years of international business experience. Teaches business etiquette, professional vocabulary, and negotiation strategies.'
+    personality: 'Former Fortune 500 executive with 15 years of international business experience across the US, UK, and Singapore. Has led cross-cultural teams and negotiated multi-million dollar deals.',
+    teachingStyle: '实战派、结果导向。教学内容全部来自真实商务场景，注重沟通效率和专业度。会教授商务邮件写作、会议主持、谈判技巧、汇报演示等实用技能，并分享外企文化和职场潜规则。',
+    correctionMethod: '场景化纠错。重点纠正商务场景中的表达不地道、用词不够专业、语气不恰当等问题。对于日常语法小错误会选择性忽略，重点提升"职场沟通效果"。会给出不同场景下的多种表达方案，并解释分别适用的场合。',
+    suitableFor: '外贸从业者、外企员工、需要进行国际商务沟通的职场人士'
   },
   {
     value: 'lily',
@@ -574,7 +708,10 @@ const teacherPersonas = [
     avatar: '👩‍🎓',
     title: '口语陪练达人',
     style: '轻松活泼 · 话题广泛',
-    personality: 'Friendly and energetic tutor from New York. Specializes in conversational English, idioms, slang, and natural expression. Makes learning fun and engaging.'
+    personality: 'Friendly and energetic tutor from New York, currently living in Shanghai. Passionate about cultural exchange and helping Chinese students overcome the "silent English" problem.',
+    teachingStyle: '朋友式聊天教学。话题超级广泛：美剧、综艺、美食、旅游、星座、情感、职场八卦……她就像一个外国闺蜜，和你聊各种有趣的话题。擅长用简单的语言解释地道俚语和文化梗。',
+    correctionMethod: '自然融入式纠错。不会生硬地指出错误，而是在对话中自然地重复正确的表达方式，比如你说"I go to the park yesterday"，她会回应"Oh really? You WENT to the park yesterday? That sounds fun!"通过重音和语气暗示正确形式，让你在潜移默化中习得正确表达。',
+    suitableFor: '想要练习日常对话的学习者、美剧爱好者、对西方文化感兴趣的年轻人'
   },
   {
     value: 'michael',
@@ -582,7 +719,10 @@ const teacherPersonas = [
     avatar: '👨‍💻',
     title: '模拟面试官',
     style: '严肃正式 · 压力面试',
-    personality: 'Senior HR director at a global tech company. Conducts realistic mock interviews, provides feedback on delivery and content, and helps craft compelling answers.'
+    personality: 'Senior HR director at a global tech company (FAANG level). Has interviewed over 2000 candidates across entry-level to executive positions. Knows exactly what hiring managers look for.',
+    teachingStyle: '高压模拟面试风格。会完全按照真实英文面试的流程和节奏进行，包括自我介绍、行为面试（STAR法则）、技术问答、案例分析、反问环节等。会刻意制造压力情境，训练你的临场反应能力。',
+    correctionMethod: '面试维度纠错。从三个层面进行反馈：1) 语言层面（语法、用词、发音）；2) 内容层面（回答是否有逻辑、是否具体、是否展示了能力）；3) 表现层面（语速、语气、自信心、眼神交流等）。会逐字逐句分析你的回答，并提供"满分回答"参考版本。',
+    suitableFor: '正在准备英文求职面试的求职者、需要参加海外院校面试的申请者'
   }
 ]
 
@@ -615,6 +755,25 @@ const assistantFeatures = [
   { value: 'vocabulary', label: '词汇拓展', emoji: '📚' },
   { value: 'tips', label: '地道表达', emoji: '💡' },
   { value: 'translation', label: '中文翻译', emoji: '🌐' }
+]
+
+const correctionTimingOptions = [
+  {
+    value: 'instant',
+    label: '即时纠错',
+    emoji: '⚡',
+    desc: '对话过程中每轮回复后立即指出问题，适合想要快速提升准确性的学习者',
+    advantage: '及时发现问题，印象更深刻',
+    disadvantage: '可能会打断对话流畅感'
+  },
+  {
+    value: 'summary',
+    label: '对话结束后总结',
+    emoji: '📋',
+    desc: '先专注于交流，对话结束后统一展示所有错误和改进建议，适合想要先练习流利度的学习者',
+    advantage: '不打断思路，保持对话自然流畅',
+    disadvantage: '错误发现可能不够及时'
+  }
 ]
 
 const sceneOpenings: Record<string, string[]> = {
@@ -682,8 +841,9 @@ const expressionTips: ExpressionTip[] = [
 
 const chatStarted = ref(false)
 const selectedScene = ref('daily')
-const selectedTeacher = ref('lily')
+const selectedTeacher = ref('owen')
 const selectedLevel = ref('intermediate')
+const correctionTiming = ref('instant')
 const enabledFeatures = ref<string[]>(['correction', 'vocabulary', 'tips', 'translation'])
 const showTranslation = ref(false)
 const autoSpeak = ref(true)
@@ -693,6 +853,7 @@ const inputText = ref('')
 const isGenerating = ref(false)
 const isTyping = ref(false)
 const quickSuggestions = ref<string[]>([])
+const collectedCorrections = ref<{ message: string; corrections: Correction[]; timestamp: number }[]>([])
 
 const isListening = ref(false)
 const interimTranscript = ref('')
@@ -738,6 +899,7 @@ const toggleFeature = (value: string) => {
 const startChat = () => {
   chatStarted.value = true
   messages.value = []
+  collectedCorrections.value = []
   generateOpening()
 }
 
@@ -787,11 +949,21 @@ const sendMessage = async () => {
   
   const aiResponse = generateAIResponse(text)
   
+  if (correctionTiming.value === 'summary' && aiResponse.corrections.length > 0) {
+    collectedCorrections.value.push({
+      message: text,
+      corrections: aiResponse.corrections,
+      timestamp: Date.now()
+    })
+  }
+  
+  const displayCorrections = correctionTiming.value === 'instant' ? aiResponse.corrections : []
+  
   const assistantMsg: ChatMessage = {
     role: 'assistant',
     content: aiResponse.reply,
     translation: aiResponse.translation,
-    corrections: aiResponse.corrections,
+    corrections: displayCorrections,
     vocabulary: aiResponse.vocabulary,
     tips: aiResponse.tips,
     timestamp: Date.now()
@@ -1145,6 +1317,26 @@ const loadHistoryFromStorage = () => {
 
 const getSceneLabel = (v: string) => practiceScenes.find(s => s.value === v)?.label || v
 const getLevelLabel = (v: string) => proficiencyLevels.find(l => l.value === v)?.label || v
+
+const getCorrectionTypeLabel = (type: string) => {
+  const map: Record<string, string> = {
+    grammar: '语法',
+    vocabulary: '词汇',
+    pronunciation: '发音',
+    style: '表达风格'
+  }
+  return map[type] || type
+}
+
+const getCorrectionTagType = (type: string): '' | 'success' | 'warning' | 'info' | 'primary' | 'danger' => {
+  const map: Record<string, '' | 'success' | 'warning' | 'info' | 'primary' | 'danger'> = {
+    grammar: 'danger',
+    vocabulary: 'warning',
+    pronunciation: 'primary',
+    style: 'info'
+  }
+  return map[type] || 'info'
+}
 
 const getHistoryPreview = (item: HistorySession) => {
   const userMessages = item.messages.filter(m => m.role === 'user')
@@ -1953,6 +2145,222 @@ const getHistoryPreview = (item: HistorySession) => {
   font-size: 13px;
   color: #606266;
   line-height: 1.5;
+}
+
+.teacher-card {
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.teacher-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.teacher-expand-icon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #c0c4cc;
+  transition: transform 0.3s ease;
+}
+
+.teacher-card.active .teacher-expand-icon {
+  transform: translateY(-50%) rotate(180deg);
+  color: #165DFF;
+}
+
+.teacher-detail {
+  width: 100%;
+  margin-top: 4px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #303133;
+}
+
+.detail-content {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+}
+
+.timing-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timing-card {
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.timing-card:hover {
+  border-color: #c0c4cc;
+}
+
+.timing-card.active {
+  border-color: #165DFF;
+  background: #f0f5ff;
+}
+
+.timing-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.timing-emoji {
+  font-size: 20px;
+}
+
+.timing-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #303133;
+}
+
+.timing-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.timing-pros-cons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pros-row,
+.cons-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.correction-summary {
+  margin-top: 16px;
+}
+
+.summary-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.summary-group {
+  background: #fafbfc;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.group-user-msg {
+  color: #303133;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.group-time {
+  margin-left: auto;
+  font-size: 12px;
+  color: #909399;
+}
+
+.summary-correction-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.corr-pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.corr-before {
+  color: #f56c6c;
+  text-decoration: line-through;
+}
+
+.corr-after {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.corr-explain {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+  padding-top: 6px;
+  border-top: 1px dashed #ebeef5;
+}
+
+.no-correction-note {
+  margin-top: 16px;
+}
+
+.end-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 @media (max-width: 768px) {
