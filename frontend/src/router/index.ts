@@ -285,6 +285,11 @@ const routes: RouteRecordRaw[] = [
         path: '/word-guess-game',
         name: 'WordGuessGame',
         component: () => import('@/views/WordGuessGame.vue')
+      },
+      {
+        path: '/english-speaking',
+        name: 'EnglishSpeakingPractice',
+        component: () => import('@/views/EnglishSpeakingPractice.vue')
       }
     ]
   }
