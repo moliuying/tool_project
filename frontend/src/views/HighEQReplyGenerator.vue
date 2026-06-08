@@ -1,5 +1,75 @@
 <template>
   <div class="high-eq-reply-generator">
+    <el-card class="intro-card">
+      <div class="intro-header">
+        <div class="intro-left">
+          <div class="intro-icon">💬</div>
+          <div class="intro-text">
+            <h2 class="intro-title">高情商回复生成器</h2>
+            <p class="intro-subtitle">
+              聊天时不知道怎么回复？我来帮你~ 粘贴或描述当前聊天场景和对方的消息，AI 为你生成多个情商高、表达得体的回复方案
+            </p>
+          </div>
+        </div>
+        <div class="intro-badges">
+          <el-tag type="primary" effect="dark" size="large">🤝 全关系覆盖</el-tag>
+          <el-tag type="success" effect="dark" size="large">🎯 场景深度适配</el-tag>
+        </div>
+      </div>
+      <el-divider />
+      <div class="intro-sections">
+        <div class="intro-section">
+          <h4 class="section-label">
+            <el-icon><User /></el-icon>
+            适用聊天对象
+          </h4>
+          <div class="relation-tags">
+            <div class="relation-tag">
+              <span class="rt-emoji">👥</span>
+              <span class="rt-name">朋友</span>
+              <span class="rt-desc">闺蜜、兄弟、好友</span>
+            </div>
+            <div class="relation-tag">
+              <span class="rt-emoji">💼</span>
+              <span class="rt-name">职场</span>
+              <span class="rt-desc">同事、领导、工作伙伴</span>
+            </div>
+            <div class="relation-tag">
+              <span class="rt-emoji">🤝</span>
+              <span class="rt-name">客户</span>
+              <span class="rt-desc">客户、合作方、商务伙伴</span>
+            </div>
+            <div class="relation-tag">
+              <span class="rt-emoji">👴</span>
+              <span class="rt-name">长辈</span>
+              <span class="rt-desc">父母、亲戚、老师</span>
+            </div>
+            <div class="relation-tag">
+              <span class="rt-emoji">💕</span>
+              <span class="rt-name">恋人</span>
+              <span class="rt-desc">对象、伴侣、暧昧对象</span>
+            </div>
+          </div>
+        </div>
+        <div class="intro-section">
+          <h4 class="section-label">
+            <el-icon><WarningFilled /></el-icon>
+            典型适用场景
+          </h4>
+          <div class="scene-tags">
+            <el-tag size="large" effect="plain">被催婚/催生</el-tag>
+            <el-tag size="large" effect="plain">同事甩锅/请帮忙</el-tag>
+            <el-tag size="large" effect="plain">客户砍价/催进度</el-tag>
+            <el-tag size="large" effect="plain">朋友借钱/吐槽</el-tag>
+            <el-tag size="large" effect="plain">对象生气/送命题</el-tag>
+            <el-tag size="large" effect="plain">长辈安排/关心</el-tag>
+            <el-tag size="large" effect="plain">不会接话冷场</el-tag>
+            <el-tag size="large" effect="plain">怕说错话得罪人</el-tag>
+          </div>
+        </div>
+      </div>
+    </el-card>
+
     <el-card class="guide-card">
       <template #header>
         <div class="card-header">
@@ -408,7 +478,8 @@ import {
   DataLine,
   Document,
   RefreshRight,
-  House
+  House,
+  WarningFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -1312,6 +1383,151 @@ onMounted(() => {
   margin: 0 auto;
 }
 
+.intro-card {
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #fafcff 50%, #f0fdf4 100%);
+  border: 1px solid #c6e2ff;
+}
+
+.intro-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.intro-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+  min-width: 300px;
+}
+
+.intro-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #165DFF 0%, #409eff 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  box-shadow: 0 4px 12px rgba(22, 93, 255, 0.25);
+  flex-shrink: 0;
+}
+
+.intro-text {
+  flex: 1;
+}
+
+.intro-title {
+  margin: 0 0 6px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d4ed8;
+}
+
+.intro-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+.intro-badges {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.intro-badges :deep(.el-tag) {
+  font-size: 14px;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+.intro-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+}
+
+.relation-tags {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.relation-tag {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 10px;
+  background: #fff;
+  border: 1.5px solid #e0f2fe;
+  border-radius: 12px;
+  transition: all 0.25s;
+  cursor: default;
+}
+
+.relation-tag:hover {
+  transform: translateY(-2px);
+  border-color: #7dd3fc;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+  background: #f0f9ff;
+}
+
+.rt-emoji {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.rt-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+  margin-bottom: 2px;
+}
+
+.rt-desc {
+  font-size: 11px;
+  color: #64748b;
+  text-align: center;
+}
+
+.scene-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.scene-tags :deep(.el-tag) {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: default;
+  transition: all 0.2s;
+}
+
+.scene-tags :deep(.el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 .guide-card {
   margin-bottom: 24px;
 }
@@ -1923,6 +2139,29 @@ onMounted(() => {
 
   .diff-row {
     grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .relation-tags {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .intro-header {
+    flex-direction: column;
+  }
+
+  .intro-icon {
+    width: 52px;
+    height: 52px;
+    font-size: 28px;
+    border-radius: 12px;
+  }
+
+  .intro-title {
+    font-size: 18px;
+  }
+
+  .intro-subtitle {
+    font-size: 13px;
   }
 }
 </style>
