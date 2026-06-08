@@ -280,6 +280,11 @@ const routes: RouteRecordRaw[] = [
         path: '/historical-storyteller',
         name: 'HistoricalStoryteller',
         component: () => import('@/views/HistoricalStoryteller.vue')
+      },
+      {
+        path: '/word-guess-game',
+        name: 'WordGuessGame',
+        component: () => import('@/views/WordGuessGame.vue')
       }
     ]
   }
