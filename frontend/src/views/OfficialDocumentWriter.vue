@@ -280,7 +280,8 @@
                   placeholder="选择日期，默认今天"
                   :disabled="isGenerating"
                   style="width: 100%"
-                  value-format="YYYY年MM月DD日"
+                  format="YYYY年M月D日"
+                  value-format="YYYY年M月D日"
                 />
               </el-form-item>
             </el-col>
@@ -444,8 +445,7 @@
           </div>
 
           <div v-if="generatedDoc.content.attachment" class="doc-attachment">
-            <span class="attachment-label">附件：</span>
-            <span>{{ generatedDoc.content.attachment }}</span>
+            附件：{{ generatedDoc.content.attachment }}
           </div>
 
           <div class="doc-sign-area">
@@ -458,8 +458,7 @@
           </div>
 
           <div v-if="generatedDoc.content.ccUnit" class="doc-cc">
-            <span class="cc-label">抄送：</span>
-            <span>{{ generatedDoc.content.ccUnit }}</span>
+            抄送：{{ generatedDoc.content.ccUnit }}
           </div>
         </div>
       </div>
@@ -807,7 +806,8 @@ const applySample = (sample: QuickSample) => {
   formData.value.issuingUnit = sample.issuingUnit
   formData.value.recipientUnit = sample.recipientUnit
   formData.value.keyPoints = sample.keyPoints.join('\n')
-  formData.value.issueDate = new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/\/(\d{2})$/, '月$1日')
+  const d = new Date()
+  formData.value.issueDate = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 const getKeyPointsArray = (): string[] => {
@@ -819,19 +819,34 @@ const getKeyPointsArray = (): string[] => {
 
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
-const generateTitle = (docType: string, topic: string): string => {
-  if (topic.startsWith('关于') || topic.endsWith('的' + getDocTypeLabel(docType))) {
+const generateTitle = (docType: string, topic: string, issuingUnit: string): string => {
+  const label = getDocTypeLabel(docType)
+
+  if (docType === 'summary') {
+    if (issuingUnit && !topic.startsWith(issuingUnit)) {
+      return `${issuingUnit}${topic}`
+    }
     return topic
   }
 
-  const label = getDocTypeLabel(docType)
-  if (docType === 'summary') {
+  if (topic.startsWith('关于') && topic.endsWith('的' + label)) {
+    if (issuingUnit && !topic.startsWith(issuingUnit)) {
+      return `${issuingUnit}${topic}`
+    }
     return topic
   }
-  if (!topic.includes('关于')) {
-    return `关于${topic}的${label}`
+
+  let result = topic
+  if (!result.includes('关于')) {
+    result = `关于${result}`
   }
-  return topic
+  if (!result.endsWith('的' + label)) {
+    result = `${result}的${label}`
+  }
+  if (issuingUnit && !result.startsWith(issuingUnit)) {
+    result = `${issuingUnit}${result}`
+  }
+  return result
 }
 
 const generateBodyParagraphs = (
@@ -978,47 +993,43 @@ const generateBodyParagraphs = (
 
   keyPoints.forEach((point, index) => {
     let formattedPoint = point
-    if (!/^[一二三四五六七八九十]+[、.]/.test(point) && !/^\d+[、.)]/.test(point)) {
-      if (isDetailed) {
-        const numerals = ['一、', '二、', '三、', '四、', '五、', '六、', '七、', '八、', '九、', '十、']
-        formattedPoint = `${numerals[index] || (index + 1) + '、'}${point}`
-      } else if (!isBrief) {
-        formattedPoint = `${index + 1}. ${point}`
-      }
+    if (!/^[一二三四五六七八九十]+[、.]/.test(point) && !/^\d+[、.)]/.test(point) && !/^[（(][一二三四五六七八九十\d]+[）)]/.test(point)) {
+      const numerals = ['一、', '二、', '三、', '四、', '五、', '六、', '七、', '八、', '九、', '十、', '十一、', '十二、', '十三、', '十四、', '十五、']
+      formattedPoint = `${numerals[index] || (index + 1) + '、'}${point}`
     }
 
     if (isDetailed) {
       const expansions: Record<string, string[]> = {
         notice: [
-          `${formattedPoint}。各单位要高度重视，明确专人负责，确保各项要求落到实处。`,
-          `${formattedPoint}。相关部门要加强协调配合，形成工作合力，共同推动工作开展。`,
-          `${formattedPoint}。工作过程中如遇重大问题，请及时向主管部门报告。`
+          `${formattedPoint}各单位要高度重视，明确专人负责，确保各项要求落到实处。`,
+          `${formattedPoint}相关部门要加强协调配合，形成工作合力，共同推动工作开展。`,
+          `${formattedPoint}工作过程中如遇重大问题，请及时向主管部门报告。`
         ],
         report: [
-          `${formattedPoint}。该项工作整体进展顺利，取得了阶段性成果，但仍存在一些困难和问题需要研究解决。`,
-          `${formattedPoint}。具体数据和详细情况已在相关附表中列明，供领导参阅。`,
-          `${formattedPoint}。我们将继续加大工作力度，确保完成既定目标任务。`
+          `${formattedPoint}该项工作整体进展顺利，取得了阶段性成果，但仍存在一些困难和问题需要研究解决。`,
+          `${formattedPoint}具体数据和详细情况已在相关附表中列明，供领导参阅。`,
+          `${formattedPoint}我们将继续加大工作力度，确保完成既定目标任务。`
         ],
         request: [
-          `${formattedPoint}。相关方案和预算明细已作为附件一并报送，请予以审核批准。`,
-          `${formattedPoint}。我们将严格按照相关规定和程序办理，确保资金使用规范、高效。`,
-          `${formattedPoint}。如能得到批准，我们将立即组织实施，确保按期完成任务。`
+          `${formattedPoint}相关方案和预算明细已作为附件一并报送，请予以审核批准。`,
+          `${formattedPoint}我们将严格按照相关规定和程序办理，确保资金使用规范、高效。`,
+          `${formattedPoint}如能得到批准，我们将立即组织实施，确保按期完成任务。`
         ],
         letter: [
-          `${formattedPoint}。详细方案可在双方进一步沟通后共同商定。`,
-          `${formattedPoint}。我们相信，通过双方的真诚合作，一定能够实现互利共赢。`,
-          `${formattedPoint}。期待贵方的回复，如有任何疑问，请随时与我们联系。`
+          `${formattedPoint}详细方案可在双方进一步沟通后共同商定。`,
+          `${formattedPoint}我们相信，通过双方的真诚合作，一定能够实现互利共赢。`,
+          `${formattedPoint}期待贵方的回复，如有任何疑问，请随时与我们联系。`
         ],
         default: [
-          `${formattedPoint}。`,
-          `${formattedPoint}。相关工作正在有序推进中。`,
-          `${formattedPoint}。各相关方要认真落实，确保取得实效。`
+          `${formattedPoint}`,
+          `${formattedPoint}相关工作正在有序推进中。`,
+          `${formattedPoint}各相关方要认真落实，确保取得实效。`
         ]
       }
       const docKey = docType in expansions ? docType : 'default'
       paragraphs.push(pick(expansions[docKey]))
     } else if (!isBrief) {
-      paragraphs.push(formattedPoint + '。')
+      paragraphs.push(formattedPoint)
     } else {
       paragraphs.push(formattedPoint)
     }
@@ -1053,17 +1064,14 @@ const generateDocument = async () => {
   await new Promise(resolve => setTimeout(resolve, 800))
 
   const keyPointsArr = getKeyPointsArray()
-  const today = new Date().toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).replace(/\//g, '年').replace(/\/(\d{2})$/, '月$1日')
+  const d = new Date()
+  const today = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`
 
   const issueDate = formData.value.issueDate || today
 
   const content: DocContent = {
     docNumber: formData.value.docNumber,
-    title: generateTitle(formData.value.docType, formData.value.topic),
+    title: generateTitle(formData.value.docType, formData.value.topic, formData.value.issuingUnit),
     recipientUnit: formData.value.recipientUnit,
     body: generateBodyParagraphs(
       formData.value.docType,
@@ -1134,11 +1142,11 @@ const documentToText = (): string => {
   if (c.docNumber) lines.push(c.docNumber + '\n')
   lines.push(c.title + '\n')
   if (c.recipientUnit) lines.push(c.recipientUnit + '：\n')
-  c.body.forEach(p => lines.push('    ' + p + '\n'))
+  c.body.forEach(p => lines.push('　　' + p + '\n'))
   if (c.attachment) lines.push('\n附件：' + c.attachment + '\n')
   lines.push('\n')
-  lines.push('                                        ' + c.issuingUnit + '\n')
-  lines.push('                                        ' + c.issueDate + '\n')
+  lines.push('　　　　' + c.issuingUnit + '\n')
+  lines.push('　　　　' + c.issueDate + '\n')
   if (c.ccUnit) lines.push('\n抄送：' + c.ccUnit + '\n')
 
   return lines.join('\n')
@@ -1638,33 +1646,37 @@ onMounted(() => {
   background: #fff;
   border: 1px solid #dcdfe6;
   border-radius: 6px;
-  padding: 60px 80px;
-  min-height: 400px;
-  font-family: 'SimSun', '宋体', 'FangSong', '仿宋', serif;
-  line-height: 2;
+  padding: 74px 66px 70px 56px;
+  min-height: 594px;
+  font-family: 'FangSong', '仿宋', 'SimSun', '宋体', 'FangSong_GB2312', serif;
+  font-size: 16px;
+  line-height: 1.875;
   color: #000;
+  text-align: justify;
 }
 
 .doc-number {
   text-align: center;
-  font-size: 14px;
-  margin-bottom: 30px;
-  color: #303133;
+  font-size: 16px;
+  margin-bottom: 52px;
+  color: #000;
 }
 
 .doc-title {
   text-align: center;
+  font-family: 'STZhongsong', 'SimHei', '华文中宋', 'SimSun', '宋体', serif;
   font-size: 22px;
   font-weight: bold;
-  margin-bottom: 30px;
-  line-height: 1.6;
+  margin-bottom: 40px;
+  line-height: 1.5;
   letter-spacing: 1px;
 }
 
 .doc-recipient {
   font-size: 16px;
-  margin-bottom: 16px;
-  font-weight: 500;
+  margin-bottom: 12px;
+  text-indent: 0;
+  text-align: left;
 }
 
 .doc-body {
@@ -1674,43 +1686,39 @@ onMounted(() => {
 .doc-paragraph {
   font-size: 16px;
   text-indent: 2em;
-  margin: 0 0 12px 0;
-  line-height: 2;
+  margin: 0 0 10px 0;
+  line-height: 1.875;
 }
 
 .doc-attachment {
-  font-size: 14px;
-  margin-top: 20px;
+  font-size: 16px;
+  margin-top: 10px;
   text-indent: 2em;
 }
 
-.attachment-label {
-  font-weight: 500;
-}
-
 .doc-sign-area {
-  margin-top: 60px;
+  margin-top: 80px;
   text-align: right;
+  padding-right: 4em;
 }
 
 .doc-signing-unit {
   font-size: 16px;
   margin-bottom: 10px;
+  line-height: 1.875;
 }
 
 .doc-signing-date {
   font-size: 16px;
+  line-height: 1.875;
 }
 
 .doc-cc {
-  font-size: 14px;
-  margin-top: 30px;
-  padding-top: 15px;
-  border-top: 1px solid #ebeef5;
-}
-
-.cc-label {
-  font-weight: 500;
+  font-size: 16px;
+  margin-top: 40px;
+  padding-top: 12px;
+  border-top: 1px solid #000;
+  text-indent: 0;
 }
 
 .result-meta {
@@ -1777,7 +1785,8 @@ onMounted(() => {
   }
 
   .doc-paper {
-    padding: 30px 24px;
+    padding: 37px 28px 35px 28px;
+    min-height: auto;
   }
 
   .standard-content {
