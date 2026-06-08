@@ -191,7 +191,7 @@
               <span>AI 描述</span>
             </div>
             <div class="desc-content">
-              <p v-for="(hint, idx) in currentWord.hints" :key="idx" class="hint-item">
+              <p v-for="(hint, idx) in currentHints" :key="idx" class="hint-item">
                 <span class="hint-bullet">{{ idx + 1 }}.</span>
                 {{ hint }}
               </p>
@@ -338,7 +338,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import {
   MagicStick,
   QuestionFilled,
@@ -363,6 +363,7 @@ interface WordItem {
   difficulty: 'easy' | 'medium' | 'hard'
   hints: string[]
   example?: string
+  alternateHints?: string[][]
 }
 
 interface HistoryRecord {
@@ -383,7 +384,11 @@ const categories = [
   { label: '🚗 交通出行', value: 'transport' },
   { label: '💼 职业工具', value: 'tool' },
   { label: '🎨 艺术娱乐', value: 'entertainment' },
-  { label: '⚽ 体育运动', value: 'sports' }
+  { label: '⚽ 体育运动', value: 'sports' },
+  { label: '👤 人体衣着', value: 'body' },
+  { label: '🏫 学习办公', value: 'study' },
+  { label: '🌤️ 天气地理', value: 'weather' },
+  { label: '👨‍👩‍👧 情感人际', value: 'social' }
 ]
 
 const wordDatabase: WordItem[] = [
@@ -396,6 +401,18 @@ const wordDatabase: WordItem[] = [
       '这是一个日常生活中常用的物品，通常在下雨天使用。',
       '它的形状像一个可以撑开的大蘑菇，有金属骨架和防水布料。',
       '不用的时候可以折叠起来放进包里，使用时撑开可以遮挡雨水或阳光。'
+    ],
+    alternateHints: [
+      [
+        '出门看天气预报说有雨的话，一定要记得带上它。',
+        '它的手柄通常是弯钩形的，方便手拎着，有些是直柄的可以立在地上。',
+        '除了挡雨，晴朗的夏天女生也常用它来遮阳防晒。'
+      ],
+      [
+        'Mary Poppins 阿姨就是乘着它飞起来的，不过现实中它不能当降落伞用。',
+        '如果风太大的话它会被吹翻成"开花"的样子，需要重新收拢再撑开。',
+        '高档的它有自动开关按钮，一按就能自动撑开非常方便。'
+      ]
     ],
     example: 'It is raining outside, you should take an umbrella with you.'
   },
@@ -433,6 +450,18 @@ const wordDatabase: WordItem[] = [
       '它通常有封面、目录、章节和页码，内容可以是故事、知识或图片。',
       '图书馆里有很多它，人们通过阅读它来获取知识和乐趣。'
     ],
+    alternateHints: [
+      [
+        'Kindle 和 iPad 可以阅读它的电子版，但很多人还是喜欢翻阅纸质的它。',
+        '它是知识的载体，古人说"读万卷它，行万里路"。',
+        '读完后可以把它借给朋友，或者捐赠给需要的人继续传递价值。'
+      ],
+      [
+        '精装版的它封面硬壳、纸张好，适合收藏；平装版轻便便宜，适合日常阅读。',
+        '书店里陈列着成千上万本它，按小说、历史、科技等分类摆放。',
+        '"不要以封面判断它"是一句英文谚语，意思是不要以貌取人。'
+      ]
+    ],
     example: 'Reading a good book is a wonderful way to spend the evening.'
   },
   {
@@ -444,6 +473,18 @@ const wordDatabase: WordItem[] = [
       '这是一种电子设备，可以处理数据、运行程序和连接互联网。',
       '它通常有显示器、键盘、鼠标和主机，现代的有笔记本和平板等多种形态。',
       '它改变了人们的工作和生活方式，是信息时代的标志性工具。'
+    ],
+    alternateHints: [
+      [
+        '程序员每天的工作离不开它，用它来写代码、调试程序和测试软件。',
+        '它的核心是CPU，相当于人的大脑负责运算，还有内存和硬盘存储数据。',
+        '病毒和木马是专门破坏它的恶意程序，所以需要安装杀毒软件防护。'
+      ],
+      [
+        'Apple 的 Mac 和普通 PC 是它的两大阵营，各自有不同的操作系统和用户群体。',
+        '游戏玩家会为它配置高性能显卡和大内存，以流畅运行3A游戏大作。',
+        '长时间使用它需要注意用眼健康，每隔一小时应该休息一下看看远方。'
+      ]
     ],
     example: 'I use my computer to work and browse the internet every day.'
   },
@@ -457,6 +498,18 @@ const wordDatabase: WordItem[] = [
       '它有车架、车轮、脚踏板、链条和刹车，骑行时需要保持平衡。',
       '它是很多学生上学的代步工具，也是一种流行的运动器材。'
     ],
+    alternateHints: [
+      [
+        '中国曾被称为"它的王国"，上世纪八九十年代大街小巷到处都是它的身影。',
+        '共享单车让它重新流行起来，扫码解锁、随停随放非常方便。',
+        '专业的公路赛车它重量很轻，速度可以达到每小时四五十公里。'
+      ],
+      [
+        '骑行它时一定要佩戴头盔保护头部，夜晚最好装警示灯提高可见性。',
+        '环法是世界上最著名的它的赛事，选手需要连续骑行三周翻越山脉。',
+        '小孩子学习骑它时通常先装辅助轮，熟练后再拆掉学会保持平衡。'
+      ]
+    ],
     example: 'He rides his bicycle to school every day to save money and stay fit.'
   },
   {
@@ -468,6 +521,13 @@ const wordDatabase: WordItem[] = [
       '这是一种水果，名字和它的颜色是同一个英文单词。',
       '它的外皮是橙色的，内部是多汁的瓣状果肉，富含维生素C。',
       '它常被用来榨汁，是一种很受欢迎的健康水果。'
+    ],
+    alternateHints: [
+      [
+        '剥开它的果皮时会散发出清新的香气，它的皮晒干后也可以用来泡茶。',
+        '它和橘子、柚子、柠檬是亲戚，都属于柑橘类水果。',
+        '佛罗里达和加利福尼亚是美国最著名的它的产地。'
+      ]
     ],
     example: 'I drink a glass of orange juice every morning for breakfast.'
   },
@@ -481,6 +541,13 @@ const wordDatabase: WordItem[] = [
       '它有黑白相间的琴键，通过敲击琴弦发声，音域非常宽广。',
       '贝多芬、肖邦、莫扎特等音乐大师都为它创作了无数经典作品。'
     ],
+    alternateHints: [
+      [
+        '它的名字在意大利语中是"强弱"的意思，因为它可以演奏出从极弱到极强的音量变化。',
+        '它有88个琴键，其中52个白键和36个黑键，按十二平均律排列。',
+        '立式它占用空间小适合家庭，三角它声音更好常用于音乐厅演奏。'
+      ]
+    ],
     example: 'She has been playing the piano since she was five years old.'
   },
   {
@@ -492,6 +559,13 @@ const wordDatabase: WordItem[] = [
       '这是一个公共场所，人们生病或受伤时会去那里看病。',
       '里面有医生、护士、病床和各种医疗设备，通常有白色的标志和十字符号。',
       '它是保障人们健康的重要基础设施，急诊部门24小时营业。'
+    ],
+    alternateHints: [
+      [
+        '去它那里看病通常先挂号，然后去对应科室门诊就诊，严重的需要住院治疗。',
+        '它的消毒水味道很有辨识度，很多人小时候都害怕去那里打针。',
+        '它里住院的病人需要家属陪护，探视时间通常有严格规定。'
+      ]
     ],
     example: 'If you feel very sick, you should go to the hospital immediately.'
   },
@@ -505,6 +579,13 @@ const wordDatabase: WordItem[] = [
       '它有机翼、引擎、机身和尾翼，可以搭载大量乘客和货物。',
       '莱特兄弟是它的发明者，它让长途旅行变得快捷方便。'
     ],
+    alternateHints: [
+      [
+        '乘坐它出行需要提前去机场值机、过安检、候机，然后登机。',
+        '起飞和降落时耳朵会感到不适，咀嚼口香糖可以缓解这种气压变化带来的耳鸣。',
+        '黑匣子是它上最重要的记录设备，事故后可以通过它分析原因。'
+      ]
+    ],
     example: 'We are going to take an airplane to visit our grandparents next week.'
   },
   {
@@ -516,6 +597,13 @@ const wordDatabase: WordItem[] = [
       '这是一种甜食，通常是棕色的，由可可豆制成。',
       '它有很多形态：块状、液态、粉状，可以做成糖果、蛋糕、饮料等。',
       '情人节时它是很受欢迎的礼物，据说吃了它会让人心情变好。'
+    ],
+    alternateHints: [
+      [
+        '它按可可含量分为黑它、牛奶它、白它，可可含量越高越苦也越健康。',
+        '瑞士和比利时是世界上最有名的它的生产国，它的工艺精湛品质顶级。',
+        '热它是冬天很受欢迎的饮品，加热牛奶冲调后喝下去全身都暖暖的。'
+      ]
     ],
     example: 'My favorite dessert is chocolate cake with vanilla ice cream.'
   },
@@ -1070,6 +1158,966 @@ const wordDatabase: WordItem[] = [
       '霸王龙、三角龙、梁龙都是著名的这种动物，它们的化石在世界各地都有发现。'
     ],
     example: 'Children are fascinated by dinosaurs and love to visit museums to see their fossils.'
+  },
+  {
+    word: 'shoulder',
+    meaning: '肩膀',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是人体的一部分，位于脖子和手臂之间，连接躯干和上肢。',
+      '它是人体最灵活的关节之一，可以做大幅度旋转运动，背书包时书包带会放在上面。',
+      '人们难过时会拍拍这个部位给予安慰，扛重物也常用到它。'
+    ],
+    example: 'He put his arm around her shoulder to comfort her.'
+  },
+  {
+    word: 'finger',
+    meaning: '手指',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是人体手部的五个细长部分，每只手有五个。',
+      '它们可以灵活弯曲，用来抓握东西、打字、弹钢琴等，指甲长在它们的末端。',
+      '大拇指是其中最特别的一个，可以和其他四个对握。'
+    ],
+    example: 'She cut her finger while chopping vegetables in the kitchen.'
+  },
+  {
+    word: 'eyebrow',
+    meaning: '眉毛',
+    category: 'body',
+    difficulty: 'medium',
+    hints: [
+      '这是长在眼睛上方的一道弧形毛发。',
+      '它可以阻挡汗水和灰尘流入眼睛，也是面部表情的重要组成部分。',
+      '人们会修它、画它，惊讶时会抬高它，疑惑时会皱起它。'
+    ],
+    example: 'She raised an eyebrow when she heard the surprising news.'
+  },
+  {
+    word: 'tongue',
+    meaning: '舌头',
+    category: 'body',
+    difficulty: 'medium',
+    hints: [
+      '这是口腔内的肌肉器官，对说话和品尝味道非常重要。',
+      '它可以感受甜、酸、苦、辣、咸五种味道，也能帮助搅拌食物和发音。',
+      '医生看病时常让你伸出它来看看，它也是人体最强壮的肌肉之一。'
+    ],
+    example: 'The doctor asked the patient to stick out his tongue.'
+  },
+  {
+    word: 'wrist',
+    meaning: '手腕',
+    category: 'body',
+    difficulty: 'medium',
+    hints: [
+      '这是连接手掌和前臂的关节部位。',
+      '手表通常戴在这个部位，手链和手镯也戴在这里。',
+      '扭伤它会影响手的活动，长时间打字可能导致这个部位酸痛。'
+    ],
+    example: 'He wears an expensive watch on his left wrist.'
+  },
+  {
+    word: 'jacket',
+    meaning: '夹克',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是一种穿在上身的外套，通常有长袖和前开扣。',
+      '它比外套轻薄，适合春秋季节穿着，有牛仔、皮、运动等多种款式。',
+      '上学、上班、休闲场合都可以穿，是衣橱必备单品。'
+    ],
+    example: 'It\'s getting cold, you should put on a jacket before going out.'
+  },
+  {
+    word: 'necklace',
+    meaning: '项链',
+    category: 'body',
+    difficulty: 'medium',
+    hints: [
+      '这是一种戴在脖子上的首饰。',
+      '它通常由链条和吊坠组成，材质可以是金、银、珍珠、宝石等。',
+      '赠送它是表达爱意的常见方式，婚纱搭配钻石它非常华丽。'
+    ],
+    example: 'He gave her a diamond necklace for their wedding anniversary.'
+  },
+  {
+    word: 'sneakers',
+    meaning: '运动鞋',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是一种专为运动设计的鞋子，也常日常穿着。',
+      '它的鞋底柔软有弹性，能缓冲跑步时对膝盖的冲击，鞋面通常透气舒适。',
+      '年轻人很喜欢收集限量版的它，Nike、Adidas是知名品牌。'
+    ],
+    example: 'I need to buy a new pair of sneakers for my morning runs.'
+  },
+  {
+    word: 'pocket',
+    meaning: '口袋',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是衣服上缝制的小袋子，可以用来装东西。',
+      '裤子、外套、衬衫上都可能有它，手机、钱包、钥匙常放在里面。',
+      '伸手掏它找东西是很常见的动作，小偷也会偷别人它里的东西。'
+    ],
+    example: 'He reached into his pocket and pulled out a coin.'
+  },
+  {
+    word: 'gloves',
+    meaning: '手套',
+    category: 'body',
+    difficulty: 'easy',
+    hints: [
+      '这是戴在手上的物品，用来保暖、保护或装饰。',
+      '冬天出门会戴它保暖，医生做手术会戴无菌它，拳击手也戴特制的它。',
+      '它有五个指头分开的款式，也有只有拇指分开的连指款式。'
+    ],
+    example: 'You should wear gloves when it\'s snowing outside.'
+  },
+  {
+    word: 'textbook',
+    meaning: '教科书',
+    category: 'study',
+    difficulty: 'easy',
+    hints: [
+      '这是学生上课使用的正式书籍，按教学大纲编写。',
+      '每门课程通常对应一本，上面有知识点、例题和练习题。',
+      '开学时学校会发放或要求购买，毕业时很多它被二手卖掉或捐赠。'
+    ],
+    example: 'Please open your textbooks to page 45 for today\'s lesson.'
+  },
+  {
+    word: 'notebook',
+    meaning: '笔记本',
+    category: 'study',
+    difficulty: 'easy',
+    hints: [
+      '这是由多张纸装订在一起组成的本子，用来写字记录。',
+      '学生上课用它记笔记，上班族开会用它写纪要，作家也用它记录灵感。',
+      '它有不同的尺寸和封面设计，横线、空白、网格内页可供选择。'
+    ],
+    example: 'She always carries a small notebook to jot down ideas.'
+  },
+  {
+    word: 'eraser',
+    meaning: '橡皮',
+    category: 'study',
+    difficulty: 'easy',
+    hints: [
+      '这是用来擦除铅笔字迹的文具。',
+      '它通常是长方形的小块，由橡胶制成，有各种颜色和香味。',
+      '学生考试时必备它，绘图时也需要它来修正错误。'
+    ],
+    example: 'I need an eraser to correct this mistake on my drawing.'
+  },
+  {
+    word: 'chalk',
+    meaning: '粉笔',
+    category: 'study',
+    difficulty: 'easy',
+    hints: [
+      '这是老师在黑板上写字用的工具。',
+      '它通常是白色长条形，也有彩色的，由石灰石或石膏制成。',
+      '书写时会产生灰尘，现在很多教室改用白板和马克笔代替它和黑板。'
+    ],
+    example: 'The teacher picked up a piece of chalk and wrote on the blackboard.'
+  },
+  {
+    word: 'stapler',
+    meaning: '订书机',
+    category: 'study',
+    difficulty: 'medium',
+    hints: [
+      '这是一种办公文具，用来把多张纸固定在一起。',
+      '它使用U形的订书钉，按压即可穿透并弯折钉住纸张，是文件整理的好帮手。',
+      '办公室里它是必备品，学生装订作业报告也会用到。'
+    ],
+    example: 'Could you pass me the stapler? I need to fasten these documents together.'
+  },
+  {
+    word: 'calculator',
+    meaning: '计算器',
+    category: 'study',
+    difficulty: 'medium',
+    hints: [
+      '这是一种进行数学运算的电子设备。',
+      '它可以做加减乘除、开方、百分比等运算，学生考试时允许使用科学型的它。',
+      '现在手机里都内置了它的功能，但独立设备在课堂和财务工作中仍常用。'
+    ],
+    example: 'Use a calculator to solve these complex math problems.'
+  },
+  {
+    word: 'diploma',
+    meaning: '毕业证书',
+    category: 'study',
+    difficulty: 'hard',
+    hints: [
+      '这是学生完成学业后学校颁发的正式证明文件。',
+      '上面印有学校名称、学生姓名、专业和毕业时间，通常有校长签名和公章。',
+      '找工作时常需要出示它的复印件，它是学历的官方凭证。'
+    ],
+    example: 'She proudly displayed her university diploma on the wall.'
+  },
+  {
+    word: 'scholarship',
+    meaning: '奖学金',
+    category: 'study',
+    difficulty: 'hard',
+    hints: [
+      '这是学校或机构为优秀学生提供的经济资助。',
+      '它通常基于学业成绩、特长或经济需要发放，可以覆盖部分或全部学费。',
+      '获得它是一种荣誉，很多学生努力学习来争取它。'
+    ],
+    example: 'He was awarded a full scholarship to study at Harvard University.'
+  },
+  {
+    word: 'printer',
+    meaning: '打印机',
+    category: 'study',
+    difficulty: 'medium',
+    hints: [
+      '这是一种把电脑中的文字和图像输出到纸张上的设备。',
+      '它有喷墨和激光两种常见类型，可以打印黑白或彩色文件。',
+      '办公室和学生宿舍常见它，打印作业、合同、照片都需要它。'
+    ],
+    example: 'The printer is out of paper, could you refill it please?'
+  },
+  {
+    word: 'semester',
+    meaning: '学期',
+    category: 'study',
+    difficulty: 'medium',
+    hints: [
+      '这是学校划分的教学时间段。',
+      '一学年通常分为两个，每个大约15-20周，结束时有期末考试。',
+      '秋季和春季各有一个，有些学校还有夏季短的它。'
+    ],
+    example: 'This semester I\'m taking five courses, including English and math.'
+  },
+  {
+    word: 'lightning',
+    meaning: '闪电',
+    category: 'weather',
+    difficulty: 'medium',
+    hints: [
+      '这是雷雨天出现的强烈放电现象，会发出耀眼的光。',
+      '它的温度比太阳表面还高，出现后很快会听到雷声，因为光比声音传播快。',
+      '看到它时应该待在室内，避免在树下或空旷处停留，很危险。'
+    ],
+    example: 'A flash of lightning lit up the dark sky during the storm.'
+  },
+  {
+    word: 'thunder',
+    meaning: '雷声',
+    category: 'weather',
+    difficulty: 'easy',
+    hints: [
+      '这是闪电过后听到的巨大轰鸣声。',
+      '它由闪电加热空气迅速膨胀产生，距离越远听起来越沉闷。',
+      '小孩子常害怕它的声音，会捂住耳朵躲进被窝。'
+    ],
+    example: 'The loud thunder scared the little dog and it hid under the bed.'
+  },
+  {
+    word: 'blizzard',
+    meaning: '暴风雪',
+    category: 'weather',
+    difficulty: 'hard',
+    hints: [
+      '这是一种极端恶劣的冬季天气，伴有强风、大雪和低温。',
+      '它发生时能见度极低，交通会瘫痪，政府通常会发布预警让人们待在家中。',
+      '北美和俄罗斯的冬天偶尔会遭受它的袭击。'
+    ],
+    example: 'The blizzard closed all highways and left thousands without electricity.'
+  },
+  {
+    word: 'drought',
+    meaning: '干旱',
+    category: 'weather',
+    difficulty: 'hard',
+    hints: [
+      '这是长期缺乏降雨导致的自然灾害。',
+      '它会使土地干裂、农作物枯死、水源枯竭，严重影响农业和生活用水。',
+      '非洲之角地区经常遭受它的影响，导致饥荒和移民。'
+    ],
+    example: 'The severe drought has caused widespread crop failures in the region.'
+  },
+  {
+    word: 'rainbow',
+    meaning: '彩虹',
+    category: 'weather',
+    difficulty: 'easy',
+    hints: [
+      '这是雨后天空中出现的一种光学现象，由七种颜色组成弧形。',
+      '它的颜色顺序是红橙黄绿蓝靛紫，是阳光经过水滴折射和反射形成的。',
+      '在神话和童话中，它的尽头藏着宝藏，是希望和美好的象征。'
+    ],
+    example: 'After the storm, a beautiful rainbow appeared across the sky.'
+  },
+  {
+    word: 'latitude',
+    meaning: '纬度',
+    category: 'weather',
+    difficulty: 'hard',
+    hints: [
+      '这是地球表面某点距离赤道南北的度数，与经度对应。',
+      '赤道是0度，南北极是90度，它决定了一个地区的气候带。',
+      '高它的地区更寒冷，低它的地区更炎热，地图上的横线就是它。'
+    ],
+    example: 'Beijing is located at approximately 40 degrees north latitude.'
+  },
+  {
+    word: 'equator',
+    meaning: '赤道',
+    category: 'weather',
+    difficulty: 'medium',
+    hints: [
+      '这是地球表面最长的纬线，把地球分为南北两个半球。',
+      '它的纬度是0度，穿过非洲、南美洲和东南亚，这里全年高温多雨。',
+      '在它线上的国家没有四季变化，只有旱季和雨季之分。'
+    ],
+    example: 'Countries near the equator have tropical climates with warm weather year-round.'
+  },
+  {
+    word: 'tsunami',
+    meaning: '海啸',
+    category: 'weather',
+    difficulty: 'hard',
+    hints: [
+      '这是海底地震或火山喷发引发的巨大海浪。',
+      '它在深海时速度极快但不明显，到达浅水区时浪高可达数十米，极具破坏力。',
+      '2004年印度洋的它造成了数十万人死亡，是近代最严重的自然灾害之一。'
+    ],
+    example: 'The earthquake triggered a massive tsunami that devastated coastal towns.'
+  },
+  {
+    word: 'friendship',
+    meaning: '友谊',
+    category: 'social',
+    difficulty: 'easy',
+    hints: [
+      '这是朋友之间真诚的情感和关系。',
+      '它建立在信任、尊重和互相帮助的基础上，真正的它能经受时间和距离的考验。',
+      '人生中拥有它是一件幸福的事，朋友会在你困难时伸出援手。'
+    ],
+    example: 'Their friendship has lasted for over twenty years since childhood.'
+  },
+  {
+    word: 'apology',
+    meaning: '道歉',
+    category: 'social',
+    difficulty: 'medium',
+    hints: [
+      '这是承认自己的错误并请求对方原谅的行为或话语。',
+      '真诚的它应该包含承认错误、表达悔意和承诺不再犯，有助于修复关系。',
+      '吵架后需要有人先主动说它，关系才能和好。'
+    ],
+    example: 'He offered a sincere apology for being late to the important meeting.'
+  },
+  {
+    word: 'gratitude',
+    meaning: '感激',
+    category: 'social',
+    difficulty: 'hard',
+    hints: [
+      '这是对他人帮助或恩惠的真诚感谢之情。',
+      '表达它可以说谢谢、写感谢信或回报对方，心理学研究显示经常感受它的人更幸福。',
+      '收到礼物时应该向赠送者表达你的它。'
+    ],
+    example: 'She expressed her deep gratitude to everyone who helped her during the crisis.'
+  },
+  {
+    word: 'courage',
+    meaning: '勇气',
+    category: 'social',
+    difficulty: 'medium',
+    hints: [
+      '这是面对困难、危险或恐惧时仍然敢于行动的品质。',
+      '它不是不害怕，而是虽然害怕仍然坚持做正确的事，消防员救人就需要它。',
+      '说出真相、承认错误也都需要它。'
+    ],
+    example: 'It takes great courage to stand up for what you believe in.'
+  },
+  {
+    word: 'compassion',
+    meaning: '同情',
+    category: 'social',
+    difficulty: 'hard',
+    hints: [
+      '这是对他人痛苦的深切关怀，并希望帮助减轻的情感。',
+      '它是许多慈善事业的出发点，志愿者帮助弱势群体就源于这种情感。',
+      '医生和护士对病人需要有它，才能更好地照顾患者。'
+    ],
+    example: 'She showed great compassion for the homeless people living on the streets.'
+  },
+  {
+    word: 'honesty',
+    meaning: '诚实',
+    category: 'social',
+    difficulty: 'easy',
+    hints: [
+      '这是不说谎、不欺骗、真诚待人的品质。',
+      '它是信任的基础，说谎被发现后会破坏别人对你的信任。',
+      '收银员多找了你钱还回去就是它的表现。'
+    ],
+    example: 'Honesty is one of the most important qualities in a person.'
+  },
+  {
+    word: 'jealousy',
+    meaning: '嫉妒',
+    category: 'social',
+    difficulty: 'hard',
+    hints: [
+      '这是因为别人拥有自己想要的东西而产生的不快情绪。',
+      '它可能出现在爱情、友情、事业等方面，过度的它会伤害自己和他人的关系。',
+      '它是"七宗罪"之一，需要通过自我调节来克服。'
+    ],
+    example: 'His jealousy over his colleague\'s promotion affected their working relationship.'
+  },
+  {
+    word: 'invitation',
+    meaning: '邀请',
+    category: 'social',
+    difficulty: 'medium',
+    hints: [
+      '这是请别人参加活动、聚会或访问的行为或文件。',
+      '婚礼、生日派对会发放正式的它，上面写有时间地点和着装要求。',
+      '收到它后通常需要回复是否参加，叫做RSVP。'
+    ],
+    example: 'We received an invitation to their wedding ceremony next month.'
+  },
+  {
+    word: 'celebration',
+    meaning: '庆祝',
+    category: 'social',
+    difficulty: 'medium',
+    hints: [
+      '这是为了纪念特殊日子或成就而举办的欢乐活动。',
+      '生日、毕业、结婚、节日都值得它，通常会有美食、音乐和亲朋好友相聚。',
+      '新年倒计时是全球共同的它活动。'
+    ],
+    example: 'The whole city joined in the celebration after their team won the championship.'
+  },
+  {
+    word: 'neighbor',
+    meaning: '邻居',
+    category: 'social',
+    difficulty: 'easy',
+    hints: [
+      '这是住在你家附近的人。',
+      '中国有句古话"远亲不如近邻"，说的就是好的它比远方的亲戚更有用。',
+      '平时互相打招呼，过年互相送点好吃的，都是和它相处的好方式。'
+    ],
+    example: 'Our neighbors helped us water the plants while we were on vacation.'
+  },
+  {
+    word: 'acquaintance',
+    meaning: '熟人',
+    category: 'social',
+    difficulty: 'hard',
+    hints: [
+      '这是你认识但关系不深的人，介于陌生人和朋友之间。',
+      '同事、同学的朋友、常见面的邻居都可能属于这个范畴。',
+      '在社交场合你可能和他们聊天气、工作，但不会分享内心秘密。'
+    ],
+    example: 'He\'s not really a friend, just a business acquaintance I met at conferences.'
+  },
+  {
+    word: 'mosquito',
+    meaning: '蚊子',
+    category: 'nature',
+    difficulty: 'easy',
+    hints: [
+      '这是一种会飞的小型昆虫，雌性会吸血。',
+      '它叮咬后皮肤会起包发痒，夏天夜晚最常见，还可能传播疾病。',
+      '人们用蚊香、蚊帐、花露水来防止它的叮咬。'
+    ],
+    example: 'I got bitten by a mosquito last night and my arm is very itchy.'
+  },
+  {
+    word: 'squirrel',
+    meaning: '松鼠',
+    category: 'nature',
+    difficulty: 'medium',
+    hints: [
+      '这是一种生活在树上的小型哺乳动物，有一条毛茸茸的大尾巴。',
+      '它喜欢吃坚果，冬天前会把食物藏在多个地方，有时会忘记藏在哪里。',
+      '在公园的树上经常能看到它跑来跑去，它的尾巴可以保持平衡和保暖。'
+    ],
+    example: 'The squirrel was busy collecting acorns for the coming winter.'
+  },
+  {
+    word: 'owl',
+    meaning: '猫头鹰',
+    category: 'nature',
+    difficulty: 'medium',
+    hints: [
+      '这是一种夜间活动的鸟类，头可以旋转270度。',
+      '它有一双大眼睛，视力和听力极佳，能在黑暗中捕捉老鼠。',
+      '在西方文化中它象征智慧，希腊神话中雅典娜女神的圣鸟就是它。'
+    ],
+    example: 'An owl hooted in the forest as we walked through it at night.'
+  },
+  {
+    word: 'bamboo',
+    meaning: '竹子',
+    category: 'nature',
+    difficulty: 'easy',
+    hints: [
+      '这是一种高大的草本植物，茎干中空有节，生长迅速。',
+      '大熊猫最喜欢吃它，在中国传统文化中它象征气节和坚韧。',
+      '它可以用来做建筑材料、纸张、筷子、家具，用途非常广泛。'
+    ],
+    example: 'Giant pandas feed almost exclusively on bamboo shoots and leaves.'
+  },
+  {
+    word: 'mushroom',
+    meaning: '蘑菇',
+    category: 'nature',
+    difficulty: 'easy',
+    hints: [
+      '这是一种菌类，有像小伞一样的形状。',
+      '它的种类很多，有的可以食用味道鲜美，有的却有毒不能吃，野外的它不要随便采。',
+      '它喜欢生长在潮湿阴暗的地方，雨后树林里最容易找到。'
+    ],
+    example: 'We picked some fresh mushrooms from the forest for dinner.'
+  },
+  {
+    word: 'cactus',
+    meaning: '仙人掌',
+    category: 'nature',
+    difficulty: 'medium',
+    hints: [
+      '这是一种生长在沙漠等干旱地区的植物，全身长满尖刺。',
+      '它的刺是由叶子演变而来，可以减少水分蒸发，也防止被动物吃掉。',
+      '它很耐旱，是很受欢迎的室内盆栽，不用经常浇水也能活。'
+    ],
+    example: 'The cactus can survive in extremely dry desert conditions.'
+  },
+  {
+    word: 'whale',
+    meaning: '鲸鱼',
+    category: 'nature',
+    difficulty: 'medium',
+    hints: [
+      '这是生活在海洋中的巨型哺乳动物，不是鱼类。',
+      '蓝鲸是有史以来最大的它，也是地球上存在过的最大动物，它用肺呼吸需要浮出水面换气。',
+      '它会发出独特的歌声在水中交流，座头鲸的歌声尤其著名。'
+    ],
+    example: 'We went on a boat trip and saw a huge whale breaching the surface.'
+  },
+  {
+    word: 'eagle',
+    meaning: '鹰',
+    category: 'nature',
+    difficulty: 'medium',
+    hints: [
+      '这是一种大型猛禽，视力极佳可以从高空发现猎物。',
+      '它是力量和自由的象征，美国的国徽上就有它的图案。',
+      '它建巢在悬崖或高树上，以小动物为食，在食物链顶端。'
+    ],
+    example: 'The eagle soared high above the mountains searching for prey.'
+  },
+  {
+    word: 'subway',
+    meaning: '地铁',
+    category: 'transport',
+    difficulty: 'easy',
+    hints: [
+      '这是一种在地下隧道运行的城市公共交通系统。',
+      '它速度快、运量大、不堵车，是大城市上班族最常用的通勤方式。',
+      '北京、上海、东京、伦敦的它系统非常发达，线路众多覆盖全城。'
+    ],
+    example: 'I take the subway to work every day to avoid traffic jams.'
+  },
+  {
+    word: 'yacht',
+    meaning: '游艇',
+    category: 'transport',
+    difficulty: 'hard',
+    hints: [
+      '这是一种用于休闲娱乐的豪华船只。',
+      '它通常配备卧室、厨房、客厅，可以出海度假、钓鱼或举办派对，是财富的象征。',
+      '富人喜欢在摩纳哥、地中海等地驾驶它度假。'
+    ],
+    example: 'They spent their summer vacation sailing around the Greek islands on a private yacht.'
+  },
+  {
+    word: 'tram',
+    meaning: '有轨电车',
+    category: 'transport',
+    difficulty: 'hard',
+    hints: [
+      '这是一种在城市街道轨道上运行的公共交通工具。',
+      '它靠电力驱动，车顶有电线连接，欧洲很多古老城市保留了它作为城市特色。',
+      '它比公共汽车更平稳环保，和无轨电车的区别是它有轨道。'
+    ],
+    example: 'The city\'s historic tram system is a popular tourist attraction.'
+  },
+  {
+    word: 'trolley',
+    meaning: '手推车',
+    category: 'transport',
+    difficulty: 'medium',
+    hints: [
+      '这是一种带轮子的小推车，用来搬运物品。',
+      '超市购物时推的购物车就是一种它，机场搬运行李也用它。',
+      '它有很多尺寸和款式，家里也可以用它来收纳和移动东西。'
+    ],
+    example: 'She pushed a shopping trolley through the supermarket aisles.'
+  },
+  {
+    word: 'motorcycle',
+    meaning: '摩托车',
+    category: 'transport',
+    difficulty: 'medium',
+    hints: [
+      '这是一种两轮机动车，比汽车更灵活省油。',
+      '骑它需要戴头盔，天气冷或下雨时不太舒适，但堵车时可以穿行很方便。',
+      '哈雷戴维森是著名的它品牌，很多爱好者喜欢改装和长途骑行。'
+    ],
+    example: 'He rode his motorcycle across the country during his summer vacation.'
+  },
+  {
+    word: 'lemon',
+    meaning: '柠檬',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是一种黄色的椭圆形柑橘类水果，味道非常酸。',
+      '它的汁水常用于调味和制作饮料，蜂蜜泡它水是很受欢迎的饮品。',
+      '它也富含维生素C，切片还可以放在水里除味或装饰菜肴。'
+    ],
+    example: 'Could you please add a slice of lemon to my glass of water?'
+  },
+  {
+    word: 'mushroom',
+    meaning: '蘑菇',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是一种菌类食材，有像小伞一样的形状。',
+      '它可以炒、煮、烤、做汤，西餐中常用奶油它做酱汁，中餐里小鸡炖它很出名。',
+      '注意野生的它有些有毒，一定要从正规渠道购买食用。'
+    ],
+    example: 'I ordered a cream of mushroom soup as my starter.'
+  },
+  {
+    word: 'yogurt',
+    meaning: '酸奶',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是牛奶经乳酸菌发酵制成的乳制品。',
+      '它口感酸甜，含有益生菌对肠道健康有益，可以加水果、谷物、蜂蜜一起吃。',
+      '希腊它更浓稠蛋白质更高，是健康早餐和零食的好选择。'
+    ],
+    example: 'I have a bowl of yogurt with fresh berries for breakfast every morning.'
+  },
+  {
+    word: 'sausage',
+    meaning: '香肠',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是将肉馅灌入肠衣制成的食品，种类繁多。',
+      '它可以煎、烤、煮，德国的它最出名，早餐常吃的培根也是它的近亲。',
+      '中国的腊肠也是它的一种，带有甜味和酒香，蒸着吃最美味。'
+    ],
+    example: 'We grilled some sausages and burgers at the backyard barbecue.'
+  },
+  {
+    word: 'cucumber',
+    meaning: '黄瓜',
+    category: 'food',
+    difficulty: 'medium',
+    hints: [
+      '这是一种常见的蔬菜，通常是长条形的，外皮绿色，内部浅绿色多汁。',
+      '它口感脆嫩，可以生吃、凉拌、炒菜，也常用于美容敷脸。',
+      '它含水量很高，热量低，是减肥餐的好选择。'
+    ],
+    example: 'I like to add sliced cucumber to my salad for extra crunch.'
+  },
+  {
+    word: 'cheese',
+    meaning: '奶酪',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是一种用牛奶发酵制成的食品，种类多达数百种。',
+      '法式的它配红酒是经典组合，披萨上的马苏里拉它可以拉出长长的丝。',
+      '它富含蛋白质和钙，但也比较高脂肪，适量食用才健康。'
+    ],
+    example: 'Would you like some cheese and crackers as an appetizer?'
+  },
+  {
+    word: 'dumpling',
+    meaning: '饺子',
+    category: 'food',
+    difficulty: 'easy',
+    hints: [
+      '这是一种传统中国食物，用面皮包裹馅料制成。',
+      '春节时北方家庭必吃它，可以水煮、蒸、煎，馅料有猪肉白菜、韭菜鸡蛋等。',
+      '它的形状像元宝，象征财富和好运。'
+    ],
+    example: 'My whole family makes dumplings together on Chinese New Year\'s Eve.'
+  },
+  {
+    word: 'vinegar',
+    meaning: '醋',
+    category: 'food',
+    difficulty: 'medium',
+    hints: [
+      '这是一种酸味的液态调味品，由粮食或水果发酵制成。',
+      '吃饺子、凉菜、酸辣粉都离不开它，山西人尤其喜爱它的味道。',
+      '它除了调味还可以清洁水垢、腌制食物，妙用很多。'
+    ],
+    example: 'This dish tastes much better with a little vinegar added to it.'
+  },
+  {
+    word: 'shampoo',
+    meaning: '洗发水',
+    category: 'daily',
+    difficulty: 'medium',
+    hints: [
+      '这是专门用来清洗头发的清洁产品。',
+      '它通常是粘稠液体，有各种香味和功能，去屑、柔顺、防脱发等。',
+      '洗澡时第一步通常就是用它洗头发，然后再用护发素。'
+    ],
+    example: 'This new shampoo makes my hair feel so soft and shiny.'
+  },
+  {
+    word: 'toothpaste',
+    meaning: '牙膏',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是配合牙刷清洁牙齿用的膏状物品。',
+      '它一般含氟化物可以防蛀牙，有薄荷等清新口味，早晚刷牙都要挤在牙刷上。',
+      '儿童版的它有水果味，且不建议吞食。'
+    ],
+    example: 'You should apply a pea-sized amount of toothpaste to your toothbrush.'
+  },
+  {
+    word: 'curtain',
+    meaning: '窗帘',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是挂在窗户上的布艺物品。',
+      '它可以遮挡阳光、保护隐私、装饰房间，早上拉开它晚上拉上它是日常动作。',
+      '它有遮光和半透明等不同材质，颜色图案要和房间装修搭配。'
+    ],
+    example: 'Please draw the curtains, the sunlight is too bright in here.'
+  },
+  {
+    word: 'broom',
+    meaning: '扫帚',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是扫地用的清洁工具，有长手柄和前端的刷毛。',
+      '用它把垃圾扫到一起，再用簸箕收走，是传统的地面清洁方式。',
+      '哈利波特里巫师骑着它飞行，但现实中它只能用来扫地。'
+    ],
+    example: 'She grabbed a broom and swept the fallen leaves off the porch.'
+  },
+  {
+    word: 'mop',
+    meaning: '拖把',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是用来拖洗地板的清洁工具。',
+      '它有长杆和吸水的布头，先沾水再拖地，可以去除地面的污渍。',
+      '现代的它有免手洗旋转款，比传统布条它方便很多。'
+    ],
+    example: 'I need to use the mop to clean the spilled juice off the kitchen floor.'
+  },
+  {
+    word: 'towel',
+    meaning: '毛巾',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是用布料制成的吸水用品。',
+      '洗完手、脸、澡后用它擦干身体，有浴巾、面巾、方巾等不同尺寸。',
+      '它应该定期清洗更换，建议每人使用自己的它更卫生。'
+    ],
+    example: 'After swimming, she wrapped herself in a big warm towel.'
+  },
+  {
+    word: 'envelope',
+    meaning: '信封',
+    category: 'daily',
+    difficulty: 'easy',
+    hints: [
+      '这是用来装信件的纸质封套。',
+      '它通常是长方形的，上面要写收件人地址、姓名和贴邮票，封口后通过邮局寄出。',
+      '过年装压岁钱的红包也算它的一种特殊形式。'
+    ],
+    example: 'She sealed the letter in an envelope and wrote the address on the front.'
+  },
+  {
+    word: 'screw',
+    meaning: '螺丝',
+    category: 'tool',
+    difficulty: 'medium',
+    hints: [
+      '这是一种带螺纹的金属紧固件。',
+      '它和螺母配合使用，可以把东西牢固地固定在一起，用螺丝刀拧它。',
+      '组装家具、维修电器都需要用到它，它比钉子更容易拆卸。'
+    ],
+    example: 'You\'ll need a screwdriver to tighten these screws properly.'
+  },
+  {
+    word: 'ladder',
+    meaning: '梯子',
+    category: 'tool',
+    difficulty: 'easy',
+    hints: [
+      '这是两根长杆中间有多个横杠的攀爬工具。',
+      '换灯泡、取高处物品、粉刷墙壁都需要用到它，使用时要注意安全防止滑倒。',
+      '成功路上也常被比喻为它，需要一步一步往上爬。'
+    ],
+    example: 'Could you hold the ladder steady while I climb up to fix the light?'
+  },
+  {
+    word: 'hammer',
+    meaning: '锤子',
+    category: 'tool',
+    difficulty: 'easy',
+    hints: [
+      '这是一种敲打用的工具，有手柄和金属头。',
+      '它可以把钉子敲进木头，也可以拆除东西，木匠和装修工人都离不开它。',
+      '使用它时要注意瞄准，别砸到手指了。'
+    ],
+    example: 'He used a hammer to drive the nail into the wooden board.'
+  },
+  {
+    word: 'compass',
+    meaning: '指南针',
+    category: 'tool',
+    difficulty: 'medium',
+    hints: [
+      '这是一种利用地磁指示方向的导航工具。',
+      '它的红色指针永远指向北方，登山、探险、野外求生都需要它。',
+      '画图时也有一种画圆的工具叫同样的名字，但用途不同。'
+    ],
+    example: 'Hikers always carry a compass so they don\'t get lost in the wilderness.'
+  },
+  {
+    word: 'soccer',
+    meaning: '足球',
+    category: 'sports',
+    difficulty: 'easy',
+    hints: [
+      '这是世界上最受欢迎的团队球类运动，也是这项运动用球的名字。',
+      '每队11人在场上比赛，只能用脚、头和身体触球（守门员除外），把球踢进对方球门得分。',
+      '世界杯是这项运动最高级别的国际赛事，每四年举办一次。'
+    ],
+    example: 'Playing soccer is my favorite weekend activity with my friends.'
+  },
+  {
+    word: 'tennis',
+    meaning: '网球',
+    category: 'sports',
+    difficulty: 'medium',
+    hints: [
+      '这是一项隔着网用球拍击球的运动，也是球的名字。',
+      '可以单打或双打，在草地、红土、硬地等不同场地进行，四大满贯是最重要的赛事。',
+      '费德勒、纳达尔、德约科维奇是这项运动的传奇巨星。'
+    ],
+    example: 'She plays tennis at the local club every Saturday morning.'
+  },
+  {
+    word: 'helmet',
+    meaning: '头盔',
+    category: 'sports',
+    difficulty: 'easy',
+    hints: [
+      '这是保护头部的安全装备。',
+      '骑自行车、摩托车、滑雪、攀岩、打橄榄球等运动都必须佩戴它。',
+      '它由坚固的外壳和缓冲内层组成，能在摔倒时减轻对头部的伤害。'
+    ],
+    example: 'Always wear a helmet when riding your bicycle, it could save your life.'
+  },
+  {
+    word: 'marathon',
+    meaning: '马拉松',
+    category: 'sports',
+    difficulty: 'medium',
+    hints: [
+      '这是一项长距离跑步比赛，全程42.195公里。',
+      '它的名字来源于古希腊战争故事，为了纪念跑回雅典报捷后牺牲的士兵。',
+      '完成它需要几个月的训练，很多城市每年举办它的比赛吸引众多跑者。'
+    ],
+    example: 'She trained for six months before running her first full marathon.'
+  },
+  {
+    word: 'trophy',
+    meaning: '奖杯',
+    category: 'entertainment',
+    difficulty: 'medium',
+    hints: [
+      '这是一种奖品，通常授予比赛或竞赛的获胜者。',
+      '它通常由金属制成，有杯状或人物雕像等形状，底座上刻有获奖信息。',
+      '获得它是对个人或团队成就的认可，是荣誉的象征。'
+    ],
+    example: 'The team proudly lifted the championship trophy after winning the final game.'
+  },
+  {
+    word: 'novel',
+    meaning: '小说',
+    category: 'entertainment',
+    difficulty: 'easy',
+    hints: [
+      '这是一种虚构的散文体长篇文学作品。',
+      '它有完整的故事情节和人物塑造，分为言情、科幻、推理、历史等各种题材。',
+      '很多畅销的它被改编成电影和电视剧，阅读它是很受欢迎的休闲方式。'
+    ],
+    example: 'I\'m reading a fascinating novel by a Japanese author right now.'
+  },
+  {
+    word: 'puppet',
+    meaning: '木偶',
+    category: 'entertainment',
+    difficulty: 'medium',
+    hints: [
+      '这是一种用木头或布料做的人形玩具，可以被人操纵表演。',
+      '它有手偶、提线等不同类型，儿童剧场常有它的演出。',
+      'Sesame Street里的角色大部分都是它，深受孩子们喜爱。'
+    ],
+    example: 'The kids were delighted by the puppet show at the birthday party.'
+  },
+  {
+    word: 'jigsaw',
+    meaning: '拼图',
+    category: 'entertainment',
+    difficulty: 'medium',
+    hints: [
+      '这是一种把很多小块碎片拼合成完整图画的益智玩具。',
+      '它有从几十块到几千块的不同难度，完成后很有成就感，是很好的家庭活动。',
+      '也用来比喻错综复杂的问题，解决它需要找到各个部分的联系。'
+    ],
+    example: 'We spent the whole weekend putting together a 1000-piece jigsaw puzzle.'
+  },
+  {
+    word: 'karaoke',
+    meaning: '卡拉OK',
+    category: 'entertainment',
+    difficulty: 'medium',
+    hints: [
+      '这是一种跟着伴奏和字幕唱歌的娱乐活动。',
+      '它起源于日本，在亚洲特别流行，朋友聚会常去专门的它包间唱歌。',
+      '它的日文原意是"空的管弦乐队"，指没有真人乐队只有伴奏。'
+    ],
+    example: 'Let\'s go out for karaoke after dinner to celebrate your birthday!'
   }
 ]
 
@@ -1078,12 +2126,19 @@ const selectedCategory = ref('all')
 const isPlaying = ref(false)
 const isGenerating = ref(false)
 const currentWord = ref<WordItem | null>(null)
+const currentHints = ref<string[]>([])
 const userAnswer = ref('')
 const isAnswered = ref(false)
 const lastResult = ref<'correct' | 'wrong' | 'skipped' | ''>('')
 const lastScoreGained = ref(0)
 const showExtraHint = ref(false)
-const usedWordIndexes = ref<number[]>([])
+
+const RECENT_WINDOW_SIZE = 15
+const COOLDOWN_BASE = 8
+const recentWords = ref<string[]>([])
+const lastWordKey = ref<string>('')
+const cooldownMap = ref<Record<string, number>>({})
+const globalRoundCounter = ref(0)
 
 const score = ref(0)
 const currentStreak = ref(0)
@@ -1116,6 +2171,10 @@ const loadData = () => {
       wrongCount.value = data.wrongCount || 0
       totalGames.value = data.totalGames || 0
       history.value = data.history || []
+      recentWords.value = data.recentWords || []
+      lastWordKey.value = data.lastWordKey || ''
+      cooldownMap.value = data.cooldownMap || {}
+      globalRoundCounter.value = data.globalRoundCounter || 0
     }
   } catch (e) {
     console.error('Failed to load game data:', e)
@@ -1131,7 +2190,11 @@ const saveData = () => {
       correctCount: correctCount.value,
       wrongCount: wrongCount.value,
       totalGames: totalGames.value,
-      history: history.value
+      history: history.value,
+      recentWords: recentWords.value,
+      lastWordKey: lastWordKey.value,
+      cooldownMap: cooldownMap.value,
+      globalRoundCounter: globalRoundCounter.value
     }))
   } catch (e) {
     console.error('Failed to save game data:', e)
@@ -1140,6 +2203,14 @@ const saveData = () => {
 
 onMounted(() => {
   loadData()
+})
+
+watch([selectedDifficulty, selectedCategory], () => {
+  recentWords.value = []
+  lastWordKey.value = ''
+  cooldownMap.value = {}
+  globalRoundCounter.value = 0
+  saveData()
 })
 
 const getFilteredWords = () => {
@@ -1163,6 +2234,79 @@ const getSecureRandom = () => {
   return Math.random()
 }
 
+const shuffleArray = <T>(arr: T[]): T[] => {
+  const result = arr.slice()
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(getSecureRandom() * (i + 1))
+    ;[result[i], result[j]] = [result[j], result[i]]
+  }
+  return result
+}
+
+const selectHintsForWord = (word: WordItem): string[] => {
+  const allHints: string[][] = [word.hints]
+  if (word.alternateHints && word.alternateHints.length > 0) {
+    allHints.push(...word.alternateHints)
+  }
+  const chosen = allHints[Math.floor(getSecureRandom() * allHints.length)]
+  return shuffleArray(chosen)
+}
+
+const pickNextWord = () => {
+  const available = getFilteredWords()
+  if (available.length === 0) return null
+
+  globalRoundCounter.value++
+  const currentRound = globalRoundCounter.value
+
+  let candidates = available.filter(w => {
+    const key = w.word
+    if (key === lastWordKey.value) return false
+    if (recentWords.value.includes(key)) return false
+    const cooldownUntil = cooldownMap.value[key] || 0
+    if (cooldownUntil > currentRound) return false
+    return true
+  })
+
+  if (candidates.length === 0) {
+    candidates = available.filter(w => {
+      const key = w.word
+      if (key === lastWordKey.value) return false
+      const cooldownUntil = cooldownMap.value[key] || 0
+      if (cooldownUntil > currentRound) return false
+      return true
+    })
+  }
+
+  if (candidates.length === 0) {
+    candidates = available.filter(w => w.word !== lastWordKey.value)
+  }
+
+  if (candidates.length === 0) {
+    candidates = available
+  }
+
+  const shuffled = shuffleArray(candidates)
+  const chosen = shuffled[0]
+  const key = chosen.word
+
+  lastWordKey.value = key
+  recentWords.value.push(key)
+  if (recentWords.value.length > RECENT_WINDOW_SIZE) {
+    recentWords.value = recentWords.value.slice(-RECENT_WINDOW_SIZE)
+  }
+
+  const cooldown = Math.min(COOLDOWN_BASE + Math.floor(getSecureRandom() * 6), Math.max(available.length - 2, 3))
+  cooldownMap.value[key] = currentRound + cooldown
+
+  const staleKeys = Object.keys(cooldownMap.value).filter(k => {
+    return (cooldownMap.value[k] || 0) < currentRound - 50
+  })
+  staleKeys.forEach(k => delete cooldownMap.value[k])
+
+  return chosen
+}
+
 const startNewRound = () => {
   const availableWords = getFilteredWords()
   if (availableWords.length === 0) {
@@ -1179,20 +2323,11 @@ const startNewRound = () => {
   lastScoreGained.value = 0
 
   setTimeout(() => {
-    let randomIndex
-    if (usedWordIndexes.value.length >= availableWords.length) {
-      usedWordIndexes.value = []
+    const chosen = pickNextWord()
+    if (chosen) {
+      currentWord.value = chosen
+      currentHints.value = selectHintsForWord(chosen)
     }
-
-    let attempts = 0
-    do {
-      const idx = Math.floor(getSecureRandom() * availableWords.length)
-      randomIndex = idx
-      attempts++
-    } while (usedWordIndexes.value.includes(randomIndex) && attempts < 50)
-
-    usedWordIndexes.value.push(randomIndex)
-    currentWord.value = availableWords[randomIndex]
     isGenerating.value = false
   }, 800 + Math.floor(getSecureRandom() * 600))
 }
@@ -1298,8 +2433,12 @@ const clearHistory = () => {
   correctCount.value = 0
   wrongCount.value = 0
   totalGames.value = 0
-  usedWordIndexes.value = []
+  recentWords.value = []
+  lastWordKey.value = ''
+  cooldownMap.value = {}
+  globalRoundCounter.value = 0
   currentWord.value = null
+  currentHints.value = []
   isAnswered.value = false
   lastResult.value = ''
   userAnswer.value = ''
