@@ -275,6 +275,11 @@ const routes: RouteRecordRaw[] = [
         path: '/copywriting-creator',
         name: 'CopywritingCreator',
         component: () => import('@/views/CopywritingCreator.vue')
+      },
+      {
+        path: '/historical-storyteller',
+        name: 'HistoricalStoryteller',
+        component: () => import('@/views/HistoricalStoryteller.vue')
       }
     ]
   }
