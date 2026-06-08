@@ -270,6 +270,11 @@ const routes: RouteRecordRaw[] = [
         path: '/english-polisher',
         name: 'EnglishWritingPolisher',
         component: () => import('@/views/EnglishWritingPolisher.vue')
+      },
+      {
+        path: '/copywriting-creator',
+        name: 'CopywritingCreator',
+        component: () => import('@/views/CopywritingCreator.vue')
       }
     ]
   }

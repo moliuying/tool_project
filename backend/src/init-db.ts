@@ -56,8 +56,9 @@ async function bootstrap() {
       { name: '教学设计生成', path: '/teaching-design', icon: 'Reading', parentId: null, sort: 39, component: 'views/TeachingDesignGenerator.vue' },
       { name: 'FAB营销文案', path: '/fab-marketing', icon: 'Promotion', parentId: null, sort: 40, component: 'views/FabMarketingGenerator.vue' },
       { name: '爆款文案生成', path: '/viral-copy', icon: 'MagicStick', parentId: null, sort: 41, component: 'views/ViralCopyGenerator.vue' },
+      { name: '多类型文案创作', path: '/copywriting-creator', icon: 'EditPen', parentId: null, sort: 42, component: 'views/CopywritingCreator.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 42, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 43, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {
