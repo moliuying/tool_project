@@ -295,6 +295,11 @@ const routes: RouteRecordRaw[] = [
         path: '/essay-generator',
         name: 'EssayGenerator',
         component: () => import('@/views/EssayGenerator.vue')
+      },
+      {
+        path: '/daily-psychology',
+        name: 'DailyPsychology',
+        component: () => import('@/views/DailyPsychology.vue')
       }
     ]
   }
