@@ -148,6 +148,89 @@
           </div>
         </div>
       </div>
+
+      <el-divider />
+      <div class="depth-section">
+        <h4 class="expectation-title">📏 三档篇幅与深度详细对比</h4>
+        <p class="depth-subtitle">
+          根据你的使用场景选择合适的详略程度，每一档都有明确的内容深度和输出预期
+        </p>
+        <el-table :data="depthComparisonData" :border="false" class="depth-table" stripe>
+          <el-table-column label="对比维度" width="130" align="center">
+            <template #default="{ row }">
+              <div class="dim-cell">
+                <span class="dim-icon">{{ row.icon }}</span>
+                <span class="dim-label">{{ row.dim }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="📝 精要短篇" align="center">
+            <template #default="{ row }">
+              <div class="depth-cell short-cell">
+                <span class="cell-badge short-badge">入门级</span>
+                <span class="cell-value">{{ row.short }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="📖 标准中篇" align="center">
+            <template #default="{ row }">
+              <div class="depth-cell medium-cell">
+                <span class="cell-badge medium-badge">推荐 ⭐</span>
+                <span class="cell-value">{{ row.medium }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="📚 详尽长篇" align="center">
+            <template #default="{ row }">
+              <div class="depth-cell long-cell">
+                <span class="cell-badge long-badge">深度级</span>
+                <span class="cell-value">{{ row.long }}</span>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="depth-use-cases">
+          <h5 class="use-cases-title">🎯 各档适用场景推荐</h5>
+          <div class="use-case-grid">
+            <div class="use-case-item short-use">
+              <div class="uc-header">
+                <span class="uc-icon">📝</span>
+                <span class="uc-name">精要短篇</span>
+              </div>
+              <ul class="uc-list">
+                <li>快速了解历史事件梗概</li>
+                <li>短视频口播文案（1-2分钟）</li>
+                <li>考试复习速记版</li>
+                <li>社交媒体历史科普短文</li>
+              </ul>
+            </div>
+            <div class="use-case-item medium-use">
+              <div class="uc-header">
+                <span class="uc-icon">📖</span>
+                <span class="uc-name">标准中篇 ⭐</span>
+              </div>
+              <ul class="uc-list">
+                <li>日常历史学习与兴趣阅读</li>
+                <li>课堂教学辅助材料</li>
+                <li>公众号历史文章基础版</li>
+                <li>中学生历史作业参考</li>
+              </ul>
+            </div>
+            <div class="use-case-item long-use">
+              <div class="uc-header">
+                <span class="uc-icon">📚</span>
+                <span class="uc-name">详尽长篇</span>
+              </div>
+              <ul class="uc-list">
+                <li>深度历史爱好者系统学习</li>
+                <li>历史科普长文/视频脚本</li>
+                <li>教师备课详细教案</li>
+                <li>历史研究入门资料整理</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
     </el-card>
 
     <el-card class="main-card">
@@ -277,19 +360,60 @@
         <div class="input-section flex-1">
           <div class="section-title">
             <el-icon><Document /></el-icon>
-            <span>故事篇幅</span>
+            <span>故事篇幅 & 叙述深度</span>
+            <el-tag size="small" type="info" class="hint-tag">
+              当前选择：{{ currentLengthConfig.label }}（{{ currentLengthConfig.wordCount }}）
+            </el-tag>
           </div>
-          <div class="length-options">
+          <div class="length-options length-options-enhanced">
             <div
               v-for="opt in lengthOptions"
               :key="opt.value"
-              class="length-card"
-              :class="{ active: selectedLength === opt.value, disabled: isGenerating }"
+              class="length-card length-card-enhanced"
+              :class="[`length-${opt.value}`, { active: selectedLength === opt.value, disabled: isGenerating }]"
               @click="!isGenerating && (selectedLength = opt.value)"
             >
-              <div class="length-label">{{ opt.label }}</div>
-              <div class="length-desc">{{ opt.desc }}</div>
-              <div class="length-word">{{ opt.wordCount }}</div>
+              <div class="lc-top">
+                <div class="lc-emoji">{{ opt.emoji }}</div>
+                <div class="lc-title-wrap">
+                  <div class="lc-title-row">
+                    <span class="lc-label">{{ opt.label }}</span>
+                    <el-tag size="small" :type="opt.value === 'medium' ? 'warning' : 'info'" effect="light">
+                      {{ opt.badge }}
+                    </el-tag>
+                  </div>
+                  <div class="lc-desc">{{ opt.desc }}</div>
+                </div>
+              </div>
+              <div class="lc-stats">
+                <div class="lc-stat">
+                  <span class="lc-stat-label">字数</span>
+                  <span class="lc-stat-value">{{ opt.wordCount }}</span>
+                </div>
+                <div class="lc-stat">
+                  <span class="lc-stat-label">阅读</span>
+                  <span class="lc-stat-value">{{ opt.readingTime }}</span>
+                </div>
+              </div>
+              <div class="lc-detail">
+                <div class="lc-detail-row">
+                  <span class="lc-detail-label">📑</span>
+                  <span class="lc-detail-text">{{ opt.chapters }}</span>
+                </div>
+                <div class="lc-detail-row">
+                  <span class="lc-detail-label">🔍</span>
+                  <span class="lc-detail-text">{{ opt.detailLevel }}</span>
+                </div>
+                <div class="lc-detail-row">
+                  <span class="lc-detail-label">⭐</span>
+                  <span class="lc-detail-text">{{ opt.keyPointsCount }}</span>
+                </div>
+              </div>
+              <div class="lc-features">
+                <span v-for="(f, i) in opt.features" :key="i" class="lc-feature-tag">
+                  ✓ {{ f }}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -349,11 +473,19 @@
           <span class="dot"></span>
           <span class="dot"></span>
         </div>
-        <span class="generating-text">
-          📚 正在梳理「{{ subject }}」的历史脉络
-          <span v-if="focusPointsList.length > 0">，围绕 {{ focusPointsList.length }} 个关注要点</span>
-          ，以「{{ currentStyleLabel }}」风格编织生动故事…
-        </span>
+        <div class="generating-text-wrap">
+          <span class="generating-text">
+            📚 正在梳理「{{ subject }}」的历史脉络
+            <span v-if="focusPointsList.length > 0">，围绕 {{ focusPointsList.length }} 个关注要点</span>
+            ，以「{{ currentStyleLabel }}」风格编织生动故事…
+          </span>
+          <div class="generating-meta">
+            <el-tag size="small" type="info">📖 {{ currentLengthConfig.label }}</el-tag>
+            <el-tag size="small" type="warning">✍️ {{ currentLengthConfig.wordCount }}</el-tag>
+            <el-tag size="small" type="success">⏱️ {{ currentLengthConfig.readingTime }}</el-tag>
+            <el-tag size="small">📑 {{ currentLengthConfig.chapters }}</el-tag>
+          </div>
+        </div>
       </div>
     </el-card>
 
@@ -378,6 +510,57 @@
           </div>
         </div>
       </template>
+
+      <div class="result-depth-banner">
+        <div class="rdb-header">
+          <span class="rdb-title">📋 本次输出规格</span>
+          <span class="rdb-badge">{{ currentLengthConfig.badge }}</span>
+        </div>
+        <div class="rdb-items">
+          <div class="rdb-item">
+            <span class="rdb-icon">📖</span>
+            <div class="rdb-text">
+              <div class="rdb-label">篇幅等级</div>
+              <div class="rdb-value">{{ currentLengthConfig.label }}</div>
+            </div>
+          </div>
+          <div class="rdb-item">
+            <span class="rdb-icon">✍️</span>
+            <div class="rdb-text">
+              <div class="rdb-label">预计字数</div>
+              <div class="rdb-value">{{ currentLengthConfig.wordCount }}</div>
+            </div>
+          </div>
+          <div class="rdb-item">
+            <span class="rdb-icon">⏱️</span>
+            <div class="rdb-text">
+              <div class="rdb-label">阅读时长</div>
+              <div class="rdb-value">{{ currentLengthConfig.readingTime }}</div>
+            </div>
+          </div>
+          <div class="rdb-item">
+            <span class="rdb-icon">📑</span>
+            <div class="rdb-text">
+              <div class="rdb-label">章节结构</div>
+              <div class="rdb-value">{{ currentLengthConfig.chapters }}</div>
+            </div>
+          </div>
+          <div class="rdb-item">
+            <span class="rdb-icon">🔍</span>
+            <div class="rdb-text">
+              <div class="rdb-label">细节深度</div>
+              <div class="rdb-value">{{ currentLengthConfig.detailLevel }}</div>
+            </div>
+          </div>
+          <div class="rdb-item">
+            <span class="rdb-icon">⭐</span>
+            <div class="rdb-text">
+              <div class="rdb-label">知识点</div>
+              <div class="rdb-value">{{ currentLengthConfig.keyPointsCount }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div class="version-tabs">
         <div
@@ -625,10 +808,117 @@ const narrativeStyles: NarrativeStyle[] = [
   { value: 'epic', label: '史诗叙事式', emoji: '🏰' }
 ]
 
-const lengthOptions = [
-  { value: 'short', label: '短篇', desc: '精炼简洁', wordCount: '约 400-600 字' },
-  { value: 'medium', label: '中篇', desc: '推荐 ⭐', wordCount: '约 800-1200 字' },
-  { value: 'long', label: '长篇', desc: '详尽丰富', wordCount: '约 1500-2000 字' }
+interface LengthOption {
+  value: string
+  label: string
+  emoji: string
+  badge: string
+  desc: string
+  wordCount: string
+  readingTime: string
+  chapters: string
+  detailLevel: string
+  keyPointsCount: string
+  extendedCount: string
+  features: string[]
+}
+
+const lengthOptions: LengthOption[] = [
+  {
+    value: 'short',
+    label: '精要短篇',
+    emoji: '📝',
+    badge: '入门级',
+    desc: '快速掌握核心脉络',
+    wordCount: '约 400-600 字',
+    readingTime: '⏱️ 约 2 分钟',
+    chapters: '2 个章节',
+    detailLevel: '🔹 梗概级：主线清晰',
+    keyPointsCount: '3 个核心知识点',
+    extendedCount: '2 条延伸建议',
+    features: ['事件框架完整', '关键人物出场', '核心转折明确']
+  },
+  {
+    value: 'medium',
+    label: '标准中篇',
+    emoji: '📖',
+    badge: '推荐 ⭐',
+    desc: '平衡深度与可读性',
+    wordCount: '约 800-1200 字',
+    readingTime: '⏱️ 约 4-5 分钟',
+    chapters: '3 个章节',
+    detailLevel: '🔹🔹🔹 细节级：情节丰富',
+    keyPointsCount: '4-5 个核心知识点',
+    extendedCount: '3 条延伸建议',
+    features: ['情节细节展开', '人物对话与心理', '时代背景铺垫']
+  },
+  {
+    value: 'long',
+    label: '详尽长篇',
+    emoji: '📚',
+    badge: '深度级',
+    desc: '沉浸式深度解读',
+    wordCount: '约 1500-2000 字',
+    readingTime: '⏱️ 约 8-10 分钟',
+    chapters: '4-5 个章节',
+    detailLevel: '🔹🔹🔹🔹🔹 全景级：多维度展开',
+    keyPointsCount: '6+ 个核心知识点',
+    extendedCount: '3 条延伸建议',
+    features: ['多视角叙事', '前因后果深度分析', '同时代对比与历史反思']
+  }
+]
+
+interface DepthComparisonRow {
+  icon: string
+  dim: string
+  short: string
+  medium: string
+  long: string
+}
+
+const depthComparisonData: DepthComparisonRow[] = [
+  {
+    icon: '✍️',
+    dim: '字数范围',
+    short: '400 ~ 600 字',
+    medium: '800 ~ 1200 字',
+    long: '1500 ~ 2000 字'
+  },
+  {
+    icon: '⏱️',
+    dim: '阅读时长',
+    short: '约 2 分钟',
+    medium: '约 4-5 分钟',
+    long: '约 8-10 分钟'
+  },
+  {
+    icon: '📑',
+    dim: '章节数量',
+    short: '2 个章节（开端+结局）',
+    medium: '3 个章节（开端+发展+结局）',
+    long: '4-5 章（序章+开端+高潮+终章+尾声）'
+  },
+  {
+    icon: '🔍',
+    dim: '细节深度',
+    short: '梗概级：讲清来龙去脉',
+    medium: '细节级：含场景描写与人物互动',
+    long: '全景级：多视角、背景、影响全覆盖'
+  },
+  {
+    icon: '⭐',
+    dim: '知识点数',
+    short: '3 个核心要点',
+    medium: '4-5 个关键信息',
+    long: '6+ 个深度知识点'
+  },
+  {
+    icon: '🎯',
+    dim: '适合用途',
+    short: '速览、短视频、考试速记',
+    medium: '日常学习、课堂教学、科普短文',
+    long: '深度阅读、备课资料、长文创作'
+  }
 ]
 
 const versionOptions = [
@@ -713,6 +1003,10 @@ const showAllHistory = ref(false)
 
 const currentInputTypeConfig = computed(() => {
   return inputTypes.find(t => t.value === selectedInputType.value) || inputTypes[0]
+})
+
+const currentLengthConfig = computed(() => {
+  return lengthOptions.find(l => l.value === selectedLength.value) || lengthOptions[1]
 })
 
 const focusPointsList = computed(() =>
@@ -1757,8 +2051,8 @@ onMounted(() => {
 
 .generating-status {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: flex-start;
+  gap: 16px;
   margin-top: 20px;
   padding: 16px 20px;
   background: linear-gradient(135deg, rgba(142, 45, 226, 0.08) 0%, rgba(74, 0, 224, 0.08) 100%);
@@ -1769,6 +2063,7 @@ onMounted(() => {
 .generating-dots {
   display: flex;
   gap: 6px;
+  padding-top: 6px;
 }
 
 .generating-dots .dot {
@@ -1796,10 +2091,23 @@ onMounted(() => {
   }
 }
 
+.generating-text-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .generating-text {
   font-size: 14px;
   color: #606266;
   line-height: 1.6;
+}
+
+.generating-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .header-actions {
@@ -2014,6 +2322,399 @@ onMounted(() => {
 .history-text {
   font-size: 14px;
   color: #303133;
+}
+
+.depth-subtitle {
+  color: #909399;
+  font-size: 13px;
+  margin: -8px 0 16px;
+  line-height: 1.6;
+}
+
+.depth-table {
+  margin-bottom: 20px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.depth-table :deep(.el-table__row) {
+  height: 58px;
+}
+
+.depth-table :deep(.el-table__cell) {
+  padding: 10px 12px;
+}
+
+.dim-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #303133;
+  font-size: 13px;
+}
+
+.dim-icon {
+  font-size: 16px;
+}
+
+.depth-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.cell-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.short-badge {
+  background: rgba(144, 147, 153, 0.15);
+  color: #606266;
+}
+
+.medium-badge {
+  background: rgba(230, 162, 60, 0.15);
+  color: #b88230;
+}
+
+.long-badge {
+  background: rgba(142, 45, 226, 0.15);
+  color: #6b1db0;
+}
+
+.cell-value {
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.5;
+}
+
+.depth-use-cases {
+  margin-top: 8px;
+}
+
+.use-cases-title {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.use-case-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.use-case-item {
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1.5px solid transparent;
+}
+
+.short-use {
+  background: #fafafa;
+  border-color: #e4e7ed;
+}
+
+.medium-use {
+  background: linear-gradient(135deg, rgba(230, 162, 60, 0.06) 0%, rgba(250, 219, 139, 0.06) 100%);
+  border-color: rgba(230, 162, 60, 0.3);
+}
+
+.long-use {
+  background: linear-gradient(135deg, rgba(142, 45, 226, 0.06) 0%, rgba(74, 0, 224, 0.06) 100%);
+  border-color: rgba(142, 45, 226, 0.3);
+}
+
+.uc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.uc-icon {
+  font-size: 20px;
+}
+
+.uc-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.uc-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.uc-list li {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+  padding-left: 16px;
+  position: relative;
+}
+
+.uc-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #8E2DE2;
+  font-weight: bold;
+}
+
+.length-options-enhanced {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.length-card-enhanced {
+  border: 2px solid #e4e7ed;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.25s;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  user-select: none;
+  text-align: left;
+}
+
+.length-card-enhanced:hover:not(.disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.length-card-enhanced.active {
+  background: linear-gradient(135deg, rgba(142, 45, 226, 0.06) 0%, rgba(74, 0, 224, 0.06) 100%);
+  box-shadow: 0 4px 16px rgba(142, 45, 226, 0.18);
+}
+
+.length-card-enhanced.length-short.active {
+  border-color: #909399;
+}
+
+.length-card-enhanced.length-medium.active {
+  border-color: #e6a23c;
+}
+
+.length-card-enhanced.length-long.active {
+  border-color: #8E2DE2;
+}
+
+.length-card-enhanced.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lc-top {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.lc-emoji {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.lc-title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.lc-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.lc-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.lc-desc {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
+}
+
+.lc-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 10px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.length-card-enhanced.length-medium.active .lc-stats {
+  background: rgba(230, 162, 60, 0.08);
+}
+
+.length-card-enhanced.length-long.active .lc-stats {
+  background: rgba(142, 45, 226, 0.08);
+}
+
+.lc-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lc-stat-label {
+  font-size: 11px;
+  color: #909399;
+}
+
+.lc-stat-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.lc-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lc-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #606266;
+}
+
+.lc-detail-label {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.lc-detail-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.lc-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed #ebeef5;
+}
+
+.lc-feature-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  background: rgba(142, 45, 226, 0.08);
+  color: #6b1db0;
+  border-radius: 10px;
+  line-height: 1.4;
+}
+
+.length-card-enhanced.length-short .lc-feature-tag {
+  background: rgba(144, 147, 153, 0.12);
+  color: #606266;
+}
+
+.length-card-enhanced.length-medium .lc-feature-tag {
+  background: rgba(230, 162, 60, 0.12);
+  color: #b88230;
+}
+
+.result-depth-banner {
+  background: linear-gradient(135deg, #faf7ff 0%, #f3efff 100%);
+  border: 1px solid #e0d0f5;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.rdb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #d5c0ec;
+}
+
+.rdb-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #5a2094;
+}
+
+.rdb-badge {
+  font-size: 12px;
+  padding: 3px 12px;
+  background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+  color: #fff;
+  border-radius: 10px;
+  font-weight: 500;
+}
+
+.rdb-items {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+
+.rdb-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #efe5fa;
+}
+
+.rdb-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.rdb-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rdb-label {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.2;
+}
+
+.rdb-value {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5a2094;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .history-footer {
