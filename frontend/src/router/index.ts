@@ -290,6 +290,11 @@ const routes: RouteRecordRaw[] = [
         path: '/english-speaking',
         name: 'EnglishSpeakingPractice',
         component: () => import('@/views/EnglishSpeakingPractice.vue')
+      },
+      {
+        path: '/essay-generator',
+        name: 'EssayGenerator',
+        component: () => import('@/views/EssayGenerator.vue')
       }
     ]
   }
