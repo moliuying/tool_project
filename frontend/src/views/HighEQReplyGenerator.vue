@@ -619,6 +619,13 @@ const quickSamplesByRelation: Record<string, QuickSample[]> = {
   ],
   colleague: [
     {
+      label: '领导模糊指示',
+      scene: '领导在办公室交代你一件事，但说得比较模糊',
+      message: '这个事情你看着处理一下，尽快搞定，灵活一点。',
+      relation: 'colleague',
+      hintStyles: ['professional', 'tactful', 'assertive']
+    },
+    {
       label: '被甩锅',
       scene: '工作群，项目出了问题同事暗示是你的责任',
       message: '这个方案之前好像是小X在跟进的吧？怎么会出这种问题呢？',
@@ -764,11 +771,12 @@ const extractMessageIntent = (msg: string): string => {
   if (/催|什么时候|进度|什么时候好|还没好|等了/.test(trimmed)) return 'urging'
   if (/结婚|对象|相亲|催婚|找对象|单身/.test(trimmed)) return 'marriage_pressure'
   if (/忘|不在乎|生气|不理|算了|分手|不开心/.test(trimmed)) return 'emotional_upset'
-  if (/帮|帮忙|做一下|替|能不能帮/.test(trimmed)) return 'favor_request'
   if (/面试|工作|稳定|公务员|国企|换工作/.test(trimmed)) return 'career_advice'
   if (/加班|累|疯了|崩溃|烦死|压力|不想干/.test(trimmed)) return 'complaint'
   if (/谁|同时|掉水里|我和你妈/.test(trimmed)) return 'trap_question'
   if (/方案|不行|问题|怎么|错误|锅|责任/.test(trimmed)) return 'blame_or_criticism'
+  if (/看着办|处理一下|搞定|弄一下|优化一下|完善一下|调整一下|跟进|尽快|抓一下|落实|安排一下|把这个事|你看看|琢磨一下|研究一下|想想办法|酌情处理|灵活处理/.test(trimmed)) return 'vague_instruction'
+  if (/帮|帮忙|做一下|替|能不能帮/.test(trimmed)) return 'favor_request'
   return 'general'
 }
 
@@ -851,6 +859,38 @@ const replyTemplateBank: Record<string, Record<string, ReplyTemplate[]>> = {
     ]
   },
   colleague: {
+    vague_instruction: [
+      {
+        reply: '好的领导，我明白了。为了确保方向不跑偏，我先梳理一下我的理解：您的意思是XXX，对吗？我整理一个初步思路，下午3点前发给您确认后再推进，您看可行吗？',
+        tip: '先表态接下任务，然后用"复述理解+确认"的方式把模糊的指令变清晰，主动提出给领导确认的时间点，既展现了执行力又体现了谨慎负责的态度，避免做错方向返工。',
+        scenario: '领导给出模糊指示（如"你看着办"、"处理一下"），需要确认具体方向时',
+        toneAnalysis: '执行表态 + 主动确认 + 时间承诺，专业稳重，让领导放心'
+      },
+      {
+        reply: '收到领导。这个事情我先去调研一下，初步计划从A和B两个方向切入，评估各自的利弊后给您一个建议方案，您来拍板最终方向，可以吗？',
+        tip: '不直接问领导"该怎么做"（那是让领导做填空题），而是主动给出选项让领导做选择题，既体现了你的思考能力和主动性，又让领导有掌控感和决策权。',
+        scenario: '领导只给方向不给具体方案、需要你发挥主观能动性时',
+        toneAnalysis: '主动思考 + 提供选项 + 尊重决策权，展现独立工作能力和向上管理意识'
+      },
+      {
+        reply: '明白领导。我先快速推进，预计明天中午前给您一个初步版本，您看完我们再根据反馈调整细节。有几个小问题我梳理好后，晚点一起找您对齐一下。',
+        tip: '先给出明确的交付时间承诺让领导安心，然后用"初步版本+后续调整"的方式留足试错空间，同时把零散问题集中沟通，不频繁打扰领导，高效又专业。',
+        scenario: '任务紧急但细节不明确、需要先动起来再逐步对齐时',
+        toneAnalysis: '快速行动 + 迭代交付 + 高效沟通，展现执行力和时间管理能力'
+      },
+      {
+        reply: '好的领导，这个事情我来负责。为了确保结果符合预期，我想确认两个关键点：第一是交付时间节点，第二是核心评价标准。您方便的时候我找您聊5分钟对齐一下？',
+        tip: '直接点明需要确认的两个最核心维度（时间+质量标准），用"方便的时候聊5分钟"表达对领导时间的尊重，目标明确不啰嗦，是成熟职场人的沟通方式。',
+        scenario: '任务重要、需要明确交付标准和时间节点时',
+        toneAnalysis: '目标导向 + 抓大放小 + 尊重对方时间，专业高效不拖沓'
+      },
+      {
+        reply: '收到，我马上去办。如果推进过程中遇到需要您决策的节点，我会及时同步给您，确保不耽误整体进度。',
+        tip: '简洁有力的执行表态，同时提前铺垫好"需要决策时会及时汇报"，既给了领导"你在掌控"的安心感，又为后续需要请示时留好了合理的通道。',
+        scenario: '相对简单的任务、领导信任你可以自己处理、但需要让领导知道你有汇报意识时',
+        toneAnalysis: '简洁有力 + 边界清晰 + 汇报意识，干脆利落展现靠谱'
+      }
+    ],
     blame_or_criticism: [
       {
         reply: '张哥说得对，这个问题确实需要我们重视。我这边的部分我再仔细核对一遍，也请大家一起看看各自的模块，我们一起把问题定位清楚，确保下次不会再出现。',
