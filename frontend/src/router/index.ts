@@ -250,6 +250,11 @@ const routes: RouteRecordRaw[] = [
         path: '/image-ocr',
         name: 'ImageOCR',
         component: () => import('@/views/ImageOCR.vue')
+      },
+      {
+        path: '/official-document',
+        name: 'OfficialDocumentWriter',
+        component: () => import('@/views/OfficialDocumentWriter.vue')
       }
     ]
   }
