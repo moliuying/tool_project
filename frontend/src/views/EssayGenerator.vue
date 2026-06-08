@@ -425,6 +425,135 @@
               resize="vertical"
             />
           </div>
+
+          <el-divider />
+
+          <div class="input-section">
+            <div class="section-title">
+              <el-icon><User /></el-icon>
+              <span>👨‍👩‍👧‍👦 家庭成员详细信息（写「我的家人」类作文强烈推荐）</span>
+              <el-tag size="small" type="danger" effect="light" v-if="hasFamilyMembers">
+                已添加 {{ validFamilyMembers.length }} 位家人
+              </el-tag>
+              <el-button
+                size="small"
+                type="primary"
+                link
+                :icon="Plus"
+                @click="addFamilyMember"
+                style="margin-left: auto;"
+              >
+                + 添加一位家人
+              </el-button>
+            </div>
+            <div class="family-tip">
+              <el-tag size="small" type="info" effect="light">
+                💡 填写每位家人的外貌、性格、爱好和小故事，生成的作文会为每位家人创建专属的描写段落，写出他们的独特特点！
+              </el-tag>
+            </div>
+
+            <div
+              v-for="(member, mIdx) in formData.personal.familyMembers"
+              :key="member.id"
+              class="family-member-card"
+            >
+              <div class="family-member-header">
+                <el-select
+                  v-model="member.relation"
+                  placeholder="选择身份"
+                  size="default"
+                  style="width: 180px;"
+                  :disabled="isGenerating"
+                >
+                  <el-option
+                    v-for="opt in familyRelationOptions"
+                    :key="opt.value"
+                    :label="opt.label"
+                    :value="opt.value"
+                  />
+                </el-select>
+                <el-input
+                  v-model="member.name"
+                  placeholder="小名/称呼（如：小明爸爸、李女士，可不填）"
+                  size="default"
+                  style="width: 220px;"
+                  :disabled="isGenerating"
+                />
+                <el-input
+                  v-model="member.age"
+                  placeholder="年龄（可不填）"
+                  size="default"
+                  style="width: 100px;"
+                  :disabled="isGenerating"
+                />
+                <el-button
+                  size="small"
+                  type="danger"
+                  link
+                  :icon="Delete"
+                  @click="removeFamilyMember(member.id)"
+                  style="margin-left: auto;"
+                >
+                  删除
+                </el-button>
+              </div>
+              <div class="family-member-body">
+                <div class="family-field">
+                  <label class="field-label">🎨 外貌特点</label>
+                  <el-input
+                    v-model="member.appearance"
+                    placeholder="如：高高的个子，大大的眼睛，戴着一副黑框眼镜，笑起来有个小酒窝"
+                    :disabled="isGenerating"
+                    maxlength="100"
+                  />
+                </div>
+                <div class="family-field">
+                  <label class="field-label">💝 性格特点</label>
+                  <el-input
+                    v-model="member.personality"
+                    placeholder="如：温柔善良、幽默风趣、严厉但很爱我、勤劳朴实"
+                    :disabled="isGenerating"
+                    maxlength="100"
+                  />
+                </div>
+                <div class="family-field">
+                  <label class="field-label">⚽ 爱好/特长</label>
+                  <el-input
+                    v-model="member.hobby"
+                    placeholder="如：喜欢打篮球、做美食、看书、养花、钓鱼"
+                    :disabled="isGenerating"
+                    maxlength="100"
+                  />
+                </div>
+                <div class="family-field">
+                  <label class="field-label">💼 职业（可不填）</label>
+                  <el-input
+                    v-model="member.job"
+                    placeholder="如：老师、医生、工程师、司机、全职妈妈"
+                    :disabled="isGenerating"
+                    maxlength="50"
+                  />
+                </div>
+                <div class="family-field" style="grid-column: span 2;">
+                  <label class="field-label">📖 和我之间的一件小事（让人物鲜活起来）</label>
+                  <el-input
+                    v-model="member.story"
+                    type="textarea"
+                    :rows="2"
+                    placeholder="用几句话描述一件印象深刻的事：&#10;例：每次我考试没考好，爸爸不会骂我，而是耐心地陪我分析错题，还给我买爱吃的冰淇淋鼓励我。"
+                    :disabled="isGenerating"
+                    maxlength="300"
+                    show-word-limit
+                    resize="none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div v-if="formData.personal.familyMembers.length === 0" class="empty-family">
+              <el-empty description="还没有添加家人，点击右上角「+ 添加一位家人」开始填写" :image-size="80" />
+            </div>
+          </div>
         </el-collapse-item>
       </el-collapse>
 
@@ -522,12 +651,12 @@
         </div>
       </div>
 
-      <div v-if="hasPersonalInfo" class="personalized-badge">
+      <div v-if="hasPersonalInfo || hasFamilyMembers" class="personalized-badge">
         <el-alert
           type="success"
           show-icon
           :closable="false"
-          title="✅ 本范文已融入你提供的真实经历和感受，内容更真实可信，稍作修改即可作为作文参考甚至直接提交！"
+          :title="personalBadgeText"
         />
       </div>
       <div v-else class="personalized-badge">
@@ -535,7 +664,7 @@
           type="warning"
           show-icon
           :closable="false"
-          title="💡 提示：当前范文未融入你的个人经历，内容较为通用。建议展开上方「💝 个性化素材」填写真实经历，生成的作文会更像你自己写的！"
+          title="💡 提示：当前范文未融入你的个人经历和家人信息，内容较为通用。建议展开上方「💝 个性化素材」填写真实经历和家人特点，生成的作文会更像你自己写的！"
         />
       </div>
 
@@ -709,9 +838,23 @@ import {
   Grid,
   ChatLineRound,
   CircleCheck,
-  Files
+  Files,
+  Plus,
+  Delete
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+
+interface FamilyMember {
+  id: string
+  relation: string
+  name: string
+  age: string
+  appearance: string
+  personality: string
+  hobby: string
+  job: string
+  story: string
+}
 
 interface PersonalInfo {
   authorName: string
@@ -721,6 +864,7 @@ interface PersonalInfo {
   specificPeople: string
   specificTime: string
   specificPlace: string
+  familyMembers: FamilyMember[]
 }
 
 interface FormData {
@@ -935,6 +1079,68 @@ const quickSamples: QuickSample[] = [
       specificTime: '今年春节（大年三十到初二）',
       specificPlace: '乡下奶奶家'
     }
+  },
+  {
+    label: '我的家人',
+    topic: '我的家人',
+    keywords: ['温馨', '幸福', '相亲相爱', '温暖的港湾'],
+    grade: 'g4',
+    essayType: 'narrative',
+    wordCount: 'medium',
+    additionalNotes: '写出每位家人的独特特点，突出家庭的温暖和爱',
+    hintStyles: ['touching', 'simple'],
+    personal: {
+      authorName: '小红',
+      gender: 'girl',
+      realFeeling: '我爱我的家，家里每个人都用不同的方式爱着我，我觉得自己是世界上最幸福的孩子',
+      specificPeople: '爸爸、妈妈、爷爷、奶奶、我',
+      familyMembers: [
+        {
+          id: 'sample_dad',
+          relation: '爸爸',
+          name: '大明',
+          age: '38岁',
+          appearance: '高高的个子，戴着一副黑框眼镜，看起来很斯文',
+          personality: '幽默风趣，但是对我学习要求很严格',
+          hobby: '喜欢打篮球和看足球比赛',
+          job: '软件工程师',
+          story: '每次我数学题做不出来的时候，爸爸不会直接告诉我答案，而是耐心地一步步引导我思考，还会用生活中的例子帮我理解'
+        },
+        {
+          id: 'sample_mom',
+          relation: '妈妈',
+          name: '小芳',
+          age: '36岁',
+          appearance: '大大的眼睛，长头发，笑起来有个小酒窝，非常漂亮',
+          personality: '温柔善良，勤劳能干',
+          hobby: '做美食和养花',
+          job: '小学语文老师',
+          story: '每天早上妈妈都会早早起床为我准备营养丰富的早餐，晚上还要陪我写作业。记得有一次我半夜发烧，妈妈一夜没睡，一直守在我身边给我物理降温'
+        },
+        {
+          id: 'sample_grandpa',
+          relation: '爷爷',
+          name: '老李',
+          age: '68岁',
+          appearance: '头发花白，但是精神矍铄，走路很有劲儿',
+          personality: '和蔼可亲，知识渊博',
+          hobby: '下象棋、钓鱼、写毛笔字',
+          job: '退休的老教师',
+          story: '爷爷经常给我讲他小时候的故事，还教我写毛笔字。每个周末爷爷都会带我去公园钓鱼，虽然我经常钓不到鱼，但爷爷总是耐心地教我'
+        },
+        {
+          id: 'sample_grandma',
+          relation: '奶奶',
+          name: '王奶奶',
+          age: '66岁',
+          appearance: '胖胖的，脸上总是带着慈祥的笑容',
+          personality: '慈祥温暖，特别疼我',
+          hobby: '织毛衣、做饭、逛菜市场',
+          job: '退休工人',
+          story: '奶奶做的红烧肉是世界上最好吃的！每次我去奶奶家，她都会提前买好我最爱吃的菜，变着花样给我做好吃的。冬天还会亲手给我织厚厚的毛衣'
+        }
+      ]
+    }
   }
 ]
 
@@ -945,8 +1151,62 @@ const defaultPersonal: PersonalInfo = {
   realFeeling: '',
   specificPeople: '',
   specificTime: '',
-  specificPlace: ''
+  specificPlace: '',
+  familyMembers: []
 }
+
+const familyRelationOptions = [
+  { value: '爸爸', label: '👨 爸爸' },
+  { value: '妈妈', label: '👩 妈妈' },
+  { value: '爷爷', label: '👴 爷爷' },
+  { value: '奶奶', label: '👵 奶奶' },
+  { value: '外公', label: '👴 外公（姥爷）' },
+  { value: '外婆', label: '👵 外婆（姥姥）' },
+  { value: '哥哥', label: '👦 哥哥' },
+  { value: '姐姐', label: '👧 姐姐' },
+  { value: '弟弟', label: '🧒 弟弟' },
+  { value: '妹妹', label: '👧 妹妹' },
+  { value: '叔叔', label: '🧑 叔叔' },
+  { value: '阿姨', label: '👩 阿姨' }
+]
+
+const createEmptyFamilyMember = (): FamilyMember => ({
+  id: `fm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  relation: '',
+  name: '',
+  age: '',
+  appearance: '',
+  personality: '',
+  hobby: '',
+  job: '',
+  story: ''
+})
+
+const addFamilyMember = () => {
+  formData.value.personal.familyMembers.push(createEmptyFamilyMember())
+}
+
+const removeFamilyMember = (id: string) => {
+  const idx = formData.value.personal.familyMembers.findIndex(m => m.id === id)
+  if (idx > -1) {
+    formData.value.personal.familyMembers.splice(idx, 1)
+  }
+}
+
+const hasFamilyMembers = computed(() =>
+  formData.value.personal.familyMembers.some(m => m.relation || m.name || m.appearance || m.personality || m.hobby || m.job || m.story)
+)
+
+const validFamilyMembers = computed(() =>
+  formData.value.personal.familyMembers.filter(m => m.relation || m.name || m.appearance || m.personality || m.hobby || m.job || m.story)
+)
+
+const personalBadgeText = computed(() => {
+  const parts: string[] = []
+  if (hasPersonalInfo.value) parts.push(`${personalFilledCount.value}项个人经历和感受`)
+  if (validFamilyMembers.value.length > 0) parts.push(`${validFamilyMembers.value.length}位家人的详细特点`)
+  return `✅ 本范文已融入${parts.join('、')}，内容真实具体有个性，稍作修改即可作为作文参考甚至直接提交！`
+})
 
 const formData = ref<FormData>({
   topic: '',
@@ -1075,7 +1335,8 @@ const applySample = (sample: QuickSample) => {
       realFeeling: sample.personal.realFeeling || '',
       specificPeople: sample.personal.specificPeople || '',
       specificTime: sample.personal.specificTime || '',
-      specificPlace: sample.personal.specificPlace || ''
+      specificPlace: sample.personal.specificPlace || '',
+      familyMembers: sample.personal.familyMembers ? sample.personal.familyMembers.map(m => ({ ...createEmptyFamilyMember(), ...m })) : []
     }
   }
   ElMessage.success('已载入示例数据（含个性化素材），可点击「💝 个性化素材」展开查看')
@@ -1379,6 +1640,88 @@ const buildPersonalizedEnding = (
   return fallbackEndings[essayType] || fallbackEndings.narrative
 }
 
+const isPersonOrFamilyTopic = (topic: string, type: string): boolean => {
+  const personKeywords = ['家人', '家庭', '爸爸', '妈妈', '爷爷', '奶奶', '外公', '外婆', '哥哥', '姐姐', '弟弟', '妹妹', '亲人', '我家', '写人', '一个人', '我的', '父母']
+  if (type === 'narrative' && personKeywords.some(kw => topic.includes(kw))) return true
+  return false
+}
+
+const buildFamilyMemberParagraph = (member: FamilyMember, authorName: string, gradeLevel: string): string => {
+  const relation = member.relation || '这位家人'
+  const name = member.name ? `（大家都叫${member.name}）` : ''
+  const parts: string[] = []
+
+  const introTpl = gradeLevel === 'lower'
+    ? [`我的${relation}${name}，是我最喜欢的人之一。`]
+    : [
+        `说到我的${relation}${name}，我的心里就涌起一股暖流。`,
+        `${relation}是我生命中非常重要的人，每次想起${relation}，我都觉得特别幸福。`,
+        `我有一个${member.personality || '很好'}的${relation}，${name ? relation + '叫' + member.name + '，' : ''}我特别爱${relation}。`
+      ]
+  parts.push(pick(introTpl))
+
+  if (member.appearance) {
+    if (gradeLevel === 'lower') {
+      parts.push(`${relation}长得${member.appearance}。`)
+    } else {
+      const appearanceTpl = [
+        `${relation}的样子很特别：${member.appearance}，让人一看就觉得很亲切。`,
+        `你看，${relation}${member.appearance}，这就是我心目中最${member.personality || '美丽'}的${relation}。`,
+        `${member.appearance}——这就是我的${relation}给人的第一印象。`
+      ]
+      parts.push(pick(appearanceTpl))
+    }
+  }
+
+  const personalityHobbyParts: string[] = []
+  if (member.personality) {
+    personalityHobbyParts.push(`${relation}的性格${member.personality}`)
+  }
+  if (member.hobby) {
+    personalityHobbyParts.push(`平时最喜欢${member.hobby}`)
+  }
+  if (member.job) {
+    personalityHobbyParts.push(`是一位${member.job}`)
+  }
+  if (personalityHobbyParts.length > 0) {
+    parts.push(personalityHobbyParts.join('，') + '。')
+  }
+
+  if (member.story) {
+    if (gradeLevel === 'lower') {
+      parts.push(`记得有一次，${member.story}。`)
+    } else {
+      const storyTpl = [
+        `最让我难忘的是这件事：${member.story}。`,
+        `说到${relation}，我就想起这件事——${member.story}。`,
+        `${relation}对我的好，我都记在心里。有一次，${member.story}。`,
+        `印象最深的一件事，就是${member.story}，从那以后我就更加爱${relation}了。`
+      ]
+      parts.push(pick(storyTpl))
+    }
+  } else if (gradeLevel !== 'lower') {
+    const genericStoryTpl = [
+      `${relation}平时虽然话不多，但总是用行动默默地关心我、爱护我。`,
+      `每天，${relation}都在为这个家辛勤付出，我看在眼里，记在心里。`,
+      `${relation}对我的爱，就像春雨一样，润物细无声。`,
+      `在我遇到困难的时候，${relation}总是第一个出现在我身边，给我鼓励和帮助。`
+    ]
+    parts.push(pick(genericStoryTpl))
+  }
+
+  const endings = gradeLevel === 'lower'
+    ? [`我爱我的${relation}！`]
+    : [
+        `这就是我的${relation}，我永远爱${relation}！`,
+        `${relation}的爱，是我成长路上最温暖的阳光。`,
+        `我为有这样的${relation}感到骄傲和幸福，长大后我一定要好好报答${relation}。`,
+        `${relation}的爱是无声的，但我能深深感受到它的存在。${relation}，我爱您！`
+      ]
+  parts.push(pick(endings))
+
+  return parts.join('')
+}
+
 const generateEssayContent = (
   topic: string,
   essayType: string,
@@ -1394,21 +1737,57 @@ const generateEssayContent = (
   const hasRealFeeling = personal.realFeeling.trim().length > 0
   const hasPersonal = hasRealExp || hasRealFeeling || personal.authorName
 
+  const familyMembers = personal.familyMembers.filter(m => m.relation || m.name || m.appearance || m.personality || m.hobby || m.job || m.story)
+  const isFamilyTopic = isPersonOrFamilyTopic(topic, essayType) || familyMembers.length > 0
+  const authorName = personal.authorName || '我'
+
   const openingTemplates = buildPersonalizedOpening(essayType, topic, personal)
 
   let paragraphs: string[] = []
+  paragraphs.push(personalizeText(pick(openingTemplates), personal))
+
+  if (isFamilyTopic && familyMembers.length > 0) {
+    const familyIntroTpl = gradeLevel === 'lower'
+      ? [
+          `我家有${familyMembers.length + 1}口人，让我来给大家介绍介绍吧！`,
+          `我生活在一个幸福的家庭里，家里有爱我的家人。`
+        ]
+      : [
+          `我生活在一个${pick(['温馨', '幸福', '和睦', '充满爱', '快乐'])}的家庭里，家里有爱我的家人，他们是我最亲的人。`,
+          `我有一个${pick(['幸福美满', '温馨和睦', '充满欢乐', '相亲相爱'])}的家，家里的每一位成员都有自己的特点。`,
+          `有人说家是温暖的港湾，在我家这个港湾里，有${familyMembers.length}位我最爱的家人，让我一一介绍给你们吧。`
+        ]
+    paragraphs.push(pick(familyIntroTpl))
+
+    for (const member of familyMembers) {
+      paragraphs.push(personalizeText(buildFamilyMemberParagraph(member, authorName, gradeLevel), personal))
+    }
+
+    if (familyMembers.length >= 2) {
+      const familySummaryTpl = gradeLevel === 'lower'
+        ? [`我爱我的家，我爱家里的每一个人！`]
+        : [
+            `这就是我的家，有${familyMembers.map(m => m.relation).join('、')}，我们是相亲相爱的一家人。`,
+            `${familyMembers.map(m => m.relation).join('、')}，他们用不同的方式爱着我，我也深深地爱着他们。这就是我的家，平凡而温暖的家。`,
+            `家是我最温暖的港湾，${familyMembers.map(m => m.relation).join('、')}就是为我遮风挡雨的人。我爱我家！`
+          ]
+      paragraphs.push(pick(familySummaryTpl))
+    }
+  }
 
   if (hasRealExp) {
-    paragraphs.push(personalizeText(pick(openingTemplates), personal))
+    if (!isFamilyTopic || familyMembers.length === 0) {
+      paragraphs = [personalizeText(pick(openingTemplates), personal)]
+    }
 
-    const expParagraphs = chunkIntoParagraphs(personal.realExperience, Math.max(2, wcConfig.paraCount - 2))
+    const expParagraphs = chunkIntoParagraphs(personal.realExperience, Math.max(2, wcConfig.paraCount - paragraphs.length - 1))
     for (const para of expParagraphs) {
       paragraphs.push(personalizeText(para, personal))
     }
 
     const people = personal.specificPeople.trim()
     if (people && paragraphs.length < wcConfig.paraCount - 1) {
-      paragraphs.push(`这件事离不开${people}的陪伴和帮助，想到他们，${personal.authorName || '我'}的心里就充满了感激。`)
+      paragraphs.push(`这件事离不开${people}的陪伴和帮助，想到他们，${authorName}的心里就充满了感激。`)
     }
 
     const time = personal.specificTime.trim()
@@ -1417,9 +1796,9 @@ const generateEssayContent = (
       const detailParts: string[] = []
       if (time) detailParts.push(time)
       if (place) detailParts.push(place)
-      paragraphs.push(`${detailParts.join('在')}发生的这件事，将成为${personal.authorName || '我'}成长路上最珍贵的记忆。`)
+      paragraphs.push(`${detailParts.join('在')}发生的这件事，将成为${authorName}成长路上最珍贵的记忆。`)
     }
-  } else {
+  } else if (!isFamilyTopic || familyMembers.length === 0) {
     const genericBody: Record<string, string[][]> = {
       narrative: [
         [
@@ -2534,6 +2913,52 @@ onMounted(() => {
 }
 
 .personalized-badge :deep(.el-alert) {
+  border-radius: 8px;
+}
+
+.family-tip {
+  margin-bottom: 16px;
+}
+
+.family-member-card {
+  background: #fff;
+  border: 2px solid #ebeef5;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s;
+}
+
+.family-member-card:hover {
+  border-color: #165DFF;
+  box-shadow: 0 2px 12px rgba(22, 93, 255, 0.1);
+}
+
+.family-member-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed #ebeef5;
+  flex-wrap: wrap;
+}
+
+.family-member-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.family-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.empty-family {
+  padding: 20px;
+  background: #fafafa;
   border-radius: 8px;
 }
 </style>
