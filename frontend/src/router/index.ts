@@ -265,6 +265,11 @@ const routes: RouteRecordRaw[] = [
         path: '/high-eq-reply',
         name: 'HighEQReplyGenerator',
         component: () => import('@/views/HighEQReplyGenerator.vue')
+      },
+      {
+        path: '/english-polisher',
+        name: 'EnglishWritingPolisher',
+        component: () => import('@/views/EnglishWritingPolisher.vue')
       }
     ]
   }
