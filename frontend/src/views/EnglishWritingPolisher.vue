@@ -495,6 +495,80 @@ John"
         </div>
       </div>
 
+      <div v-if="selectedDocType === 'academic'" class="variant-recommend-banner">
+        <el-alert
+          :title="academicVariantRecommend.title"
+          :type="academicVariantRecommend.type"
+          :description="academicVariantRecommend.desc"
+          show-icon
+          :closable="false"
+          class="recommend-alert"
+        >
+          <template #default>
+            <div class="recommend-actions">
+              <el-button
+                v-for="rec in academicVariantRecommend.actions"
+                :key="rec.variant"
+                size="small"
+                :type="rec.primary ? 'primary' : 'default'"
+                @click="quickSwitchVariant(rec.variant)"
+              >
+                {{ rec.label }}
+              </el-button>
+            </div>
+          </template>
+        </el-alert>
+      </div>
+
+      <div class="quick-variant-switcher">
+        <div class="qvs-header">
+          <el-icon color="#722ed1"><Switch /></el-icon>
+          <span class="qvs-title">快速切换英语变体（无需重新润色）</span>
+          <el-tag size="small" type="info" effect="plain">当前: {{ getVariantCode(selectedVariant) }}</el-tag>
+        </div>
+        <div class="qvs-buttons">
+          <el-tooltip
+            v-for="v in englishVariants"
+            :key="v.value"
+            :content="`立即将文本转换为${v.label}标准`"
+            placement="top"
+          >
+            <el-button
+              size="default"
+              :type="selectedVariant === v.value ? 'primary' : 'default'"
+              :class="{ active: selectedVariant === v.value }"
+              class="qvs-btn"
+              @click="quickSwitchVariant(v.value)"
+            >
+              <span class="qvs-flag">{{ v.flag }}</span>
+              <span class="qvs-name">{{ v.label }}</span>
+              <span class="qvs-code">{{ v.code }}</span>
+            </el-button>
+          </el-tooltip>
+        </div>
+      </div>
+
+      <div v-if="selectedDocType === 'academic' && selectedVariant === 'british'" class="uk-journal-checklist">
+        <el-collapse>
+          <el-collapse-item title="📋 英国期刊投稿英语标准检查清单" name="1">
+            <div class="checklist-grid">
+              <div
+                v-for="(item, idx) in ukJournalChecklist"
+                :key="idx"
+                class="checklist-item"
+                :class="{ checked: item.checked }"
+              >
+                <el-checkbox v-model="item.checked" />
+                <div class="cl-content">
+                  <div class="cl-title">{{ item.title }}</div>
+                  <div class="cl-desc">{{ item.desc }}</div>
+                </div>
+              </div>
+            </div>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+
       <el-tabs v-model="activeResultTab" class="result-tabs">
         <el-tab-pane label="📝 润色后文本" name="polished">
           <div class="polished-text-box">
@@ -640,7 +714,8 @@ import {
   WarningFilled,
   RefreshRight,
   Brush,
-  Location
+  Location,
+  Switch
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -1017,6 +1092,59 @@ const activeResultTab = ref('polished')
 const history = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
 
+const ukJournalChecklist = ref([
+  {
+    title: '拼写使用 -our 后缀',
+    desc: 'colour, favour, honour, behaviour, humour, labour, neighbour 等（非美式 -or）',
+    checked: false
+  },
+  {
+    title: '拼写使用 -ise / -isation 后缀',
+    desc: 'organise, realise, recognise, optimise, modernisation, prioritisation 等（非美式 -ize / -ization）',
+    checked: false
+  },
+  {
+    title: '拼写使用 -ence 后缀',
+    desc: 'defence, offence, licence (名词), pretence 等（非美式 -ense）',
+    checked: false
+  },
+  {
+    title: '双写 l 的拼写规则',
+    desc: 'travelled, travelling, cancelled, modelling, signalled 等（非美式 traveled, canceling）',
+    checked: false
+  },
+  {
+    title: '日期格式 DD/MM/YYYY',
+    desc: '英国期刊统一使用日/月/年格式，如 15 March 2024 或 15/03/2024（非美式 MM/DD/YYYY）',
+    checked: false
+  },
+  {
+    title: '介词和固定搭配',
+    desc: 'at the weekend (非 on), different from/to (非 than), in hospital (非 in the hospital)',
+    checked: false
+  },
+  {
+    title: '英式惯用词汇',
+    desc: '使用 petrol, lift, flat, autumn, biscuit, underground, postcode, pavement, trousers 等英式词汇',
+    checked: false
+  },
+  {
+    title: '引用格式规范',
+    desc: "英国期刊常用 Harvard 或 Oxford 引用格式，单引号优先于双引号（如 'text' 而非 \"text\"）",
+    checked: false
+  },
+  {
+    title: '学术词汇一致性',
+    desc: 'maths (非 math), analyse (非 analyze), catalogue (非 catalog), centre (非 center), metre (非 meter)',
+    checked: false
+  },
+  {
+    title: '避免美式特有表达',
+    desc: '避免 "I guess", "gotten", "on the team", "write me", "reach out to" 等典型美式表达',
+    checked: false
+  }
+])
+
 const draftWordCount = computed(() => {
   const text = originalDraft.value.trim()
   if (!text) return 0
@@ -1043,6 +1171,91 @@ const displayHistory = computed(() => {
   const reversed = history.value.slice().reverse()
   return showAllHistory.value ? reversed : reversed.slice(0, 10)
 })
+
+const academicVariantRecommend = computed(() => {
+  const isUS = selectedVariant.value === 'american'
+  const isUK = selectedVariant.value === 'british'
+
+  if (isUS) {
+    return {
+      title: '⚠️ 注意：当前为美式英语标准',
+      type: 'warning' as const,
+      desc: '您正在撰写学术论文，使用的是美式英语 (en-US) 标准。英国、欧洲、澳洲期刊通常要求英式英语。如需投稿到英国期刊（如 Nature、Elsevier UK、Springer UK 等），建议一键切换为英式英语标准。',
+      actions: [
+        { variant: 'british', label: '🇬🇧 一键切换英式英语 (英国期刊)', primary: true },
+        { variant: 'australian', label: '🇦🇺 切换澳式英语 (澳洲期刊)', primary: false },
+        { variant: 'newzealand', label: '🇳🇿 切换新式英语 (新西兰期刊)', primary: false }
+      ]
+    }
+  }
+
+  if (isUK) {
+    return {
+      title: '✅ 英式英语标准已启用',
+      type: 'success' as const,
+      desc: '当前使用英式英语 (en-GB) 标准，适用于英国、欧洲大部分地区和英联邦国家的学术期刊投稿（如 Elsevier、Springer Nature UK、Oxford University Press、Cambridge University Press 等）。',
+      actions: [
+        { variant: 'american', label: '🇺🇸 切换美式英语 (美国期刊)', primary: false },
+        { variant: 'canadian', label: '🇨🇦 切换加式英语 (加拿大期刊)', primary: false }
+      ]
+    }
+  }
+
+  return {
+    title: '💡 学术期刊英语标准提示',
+    type: 'info' as const,
+    desc: '不同国家/地区的学术期刊对英语拼写和用词有明确的规范要求。请根据目标投稿国家选择对应的英语变体标准。',
+    actions: [
+      { variant: 'british', label: '🇬🇧 英式英语 (英/欧期刊)', primary: true },
+      { variant: 'american', label: '🇺🇸 美式英语 (北美期刊)', primary: false }
+    ]
+  }
+})
+
+const quickSwitchVariant = async (targetVariant: string) => {
+  if (!polishedResult.value) return
+  if (targetVariant === selectedVariant.value) {
+    ElMessage.info('当前已是该英语标准')
+    return
+  }
+
+  const oldVariant = selectedVariant.value
+  const oldVariantLabel = getVariantLabel(oldVariant)
+  const newVariantLabel = getVariantLabel(targetVariant)
+
+  const variantOutput = applyVariant(polishedResult.value.polishedText, targetVariant)
+
+  if (variantOutput.changes.length === 0) {
+    selectedVariant.value = targetVariant
+    ElMessage.success(`已切换为 ${newVariantLabel}，文本无需调整`)
+    return
+  }
+
+  selectedVariant.value = targetVariant
+  polishedResult.value.polishedText = variantOutput.converted
+
+  const variantChanges = variantOutput.changes.map(c => ({
+    ...c,
+    title: `${newVariantLabel} 标准调整：${c.title.replace(/^🇺🇸|🇬🇧|🇦🇺|🇨🇦|🇳🇿\s*/, '')}`
+  }))
+
+  polishedResult.value.improvements = [...variantChanges, ...polishedResult.value.improvements.filter(
+    imp => !imp.title.includes('标准调整') && !imp.title.includes('拼写规范') && !imp.title.includes('惯用词汇')
+  )]
+
+  polishedResult.value.stats.wordImprovements += variantChanges.filter(c => c.type === 'vocabulary').length
+  polishedResult.value.stats.expressionImprovements += variantChanges.filter(c => c.type === 'expression').length
+
+  const variantBonus = variantChanges.length * 2
+  polishedResult.value.stats.overallScore = Math.min(polishedResult.value.stats.overallScore + variantBonus, 99)
+
+  ElMessage.success({
+    message: `已从 ${oldVariantLabel} 切换为 ${newVariantLabel}，自动调整了 ${variantChanges.length} 处拼写和用词`,
+    type: 'success',
+    duration: 4000,
+    showClose: true
+  })
+}
 
 const getDocTypeLabel = (v: string) => docTypes.find(d => d.value === v)?.label || v
 const getVariantLabel = (v: string) => {
@@ -1853,6 +2066,10 @@ const polishText = async () => {
   polishedResult.value = null
   activeResultTab.value = 'polished'
 
+  ukJournalChecklist.value.forEach(item => {
+    item.checked = false
+  })
+
   await new Promise(resolve => setTimeout(resolve, 1400))
 
   let result: PolishResult
@@ -1954,6 +2171,9 @@ const resetAll = () => {
   selectedDimensions.value = ['grammar', 'vocabulary', 'expression', 'logic']
   polishedResult.value = null
   activeResultTab.value = 'polished'
+  ukJournalChecklist.value.forEach(item => {
+    item.checked = false
+  })
 }
 
 const loadHistory = () => {
@@ -3044,7 +3264,141 @@ onMounted(() => {
   line-height: 1.4;
 }
 
+.variant-recommend-banner {
+  margin-bottom: 16px;
+}
+
+.recommend-alert {
+  border-radius: 10px;
+}
+
+.recommend-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.quick-variant-switcher {
+  padding: 16px;
+  background: linear-gradient(135deg, #f9f0ff 0%, #f3e8ff 100%);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  border: 1px dashed #d3adf7;
+}
+
+.qvs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.qvs-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  flex: 1;
+}
+
+.qvs-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.qvs-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.qvs-btn.active {
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.3);
+}
+
+.qvs-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.qvs-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.qvs-code {
+  font-size: 11px;
+  opacity: 0.8;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+.uk-journal-checklist {
+  margin-bottom: 16px;
+}
+
+.checklist-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 8px 4px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  transition: all 0.2s;
+}
+
+.checklist-item:hover {
+  border-color: #165DFF;
+  background: #ecf5ff;
+}
+
+.checklist-item.checked {
+  background: #f0f9eb;
+  border-color: #67c23a;
+}
+
+.checklist-item :deep(.el-checkbox) {
+  margin-top: 2px;
+}
+
+.cl-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.cl-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.cl-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.6;
+}
+
 @media (max-width: 768px) {
+  .checklist-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .qvs-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
   .variant-options {
     grid-template-columns: repeat(2, 1fr);
   }
