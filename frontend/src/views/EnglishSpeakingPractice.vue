@@ -468,7 +468,7 @@
 
         <div v-if="correctionTiming === 'summary' && collectedCorrections.length > 0" class="correction-summary">
           <el-divider content-position="left">
-            <span class="summary-title">📝 本次对话纠错汇总</span>
+            <span class="summary-title">📝 本次对话学习总结</span>
           </el-divider>
           <div
             v-for="(group, gIdx) in collectedCorrections"
@@ -480,20 +480,56 @@
               <span class="group-user-msg">「{{ group.message }}」</span>
               <span class="group-time">{{ formatTime(group.timestamp) }}</span>
             </div>
-            <div
-              v-for="(corr, cIdx) in group.corrections"
-              :key="cIdx"
-              class="summary-correction-item"
-            >
-              <div class="corr-pair">
-                <span class="corr-before">❌ {{ corr.before }}</span>
-                <el-icon color="#909399"><Right /></el-icon>
-                <span class="corr-after">✅ {{ corr.after }}</span>
-                <el-tag size="small" :type="getCorrectionTagType(corr.type)">{{ getCorrectionTypeLabel(corr.type) }}</el-tag>
+            <div v-if="group.corrections && group.corrections.length > 0">
+              <div class="group-section-title">
+                <el-icon color="#f56c6c"><EditPen /></el-icon>
+                <span>纠错反馈</span>
               </div>
-              <div class="corr-explain">
-                <el-icon color="#e6a23c"><Bulb /></el-icon>
-                <span>{{ corr.explanation }}</span>
+              <div
+                v-for="(corr, cIdx) in group.corrections"
+                :key="cIdx"
+                class="summary-correction-item"
+              >
+                <div class="corr-pair">
+                  <span class="corr-before">❌ {{ corr.before }}</span>
+                  <el-icon color="#909399"><Right /></el-icon>
+                  <span class="corr-after">✅ {{ corr.after }}</span>
+                  <el-tag size="small" :type="getCorrectionTagType(corr.type)">{{ getCorrectionTypeLabel(corr.type) }}</el-tag>
+                </div>
+                <div class="corr-explain">
+                  <el-icon color="#e6a23c"><Bulb /></el-icon>
+                  <span>{{ corr.explanation }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="group.vocabulary && group.vocabulary.length > 0">
+              <div class="group-section-title">
+                <el-icon color="#67c23a"><Collection /></el-icon>
+                <span>词汇拓展</span>
+              </div>
+              <div
+                v-for="(voc, vIdx) in group.vocabulary"
+                :key="vIdx"
+                class="summary-vocab-item"
+              >
+                <span class="voc-word">{{ voc.word }}</span>
+                <span class="voc-pos">{{ voc.pos }}</span>
+                <span class="voc-meaning">{{ voc.meaning }}</span>
+                <span class="voc-example">e.g. {{ voc.example }}</span>
+              </div>
+            </div>
+            <div v-if="group.tips && group.tips.length > 0">
+              <div class="group-section-title">
+                <el-icon color="#e6a23c"><Star /></el-icon>
+                <span>地道表达</span>
+              </div>
+              <div
+                v-for="(tip, tIdx) in group.tips"
+                :key="tIdx"
+                class="summary-tip-item"
+              >
+                <strong>{{ tip.expression }}</strong> — {{ tip.explanation }}
+                <div class="tip-context">例句：{{ tip.context }}</div>
               </div>
             </div>
           </div>
@@ -576,7 +612,8 @@ import {
   Clock,
   ArrowDown,
   CircleCheckFilled,
-  Right
+  Right,
+  EditPen
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -607,6 +644,14 @@ interface ChatMessage {
   corrections?: Correction[]
   vocabulary?: VocabularyItem[]
   tips?: ExpressionTip[]
+  timestamp: number
+}
+
+interface SummaryItem {
+  message: string
+  corrections: Correction[]
+  vocabulary: VocabularyItem[]
+  tips: ExpressionTip[]
   timestamp: number
 }
 
@@ -853,7 +898,7 @@ const inputText = ref('')
 const isGenerating = ref(false)
 const isTyping = ref(false)
 const quickSuggestions = ref<string[]>([])
-const collectedCorrections = ref<{ message: string; corrections: Correction[]; timestamp: number }[]>([])
+const collectedCorrections = ref<SummaryItem[]>([])
 
 const isListening = ref(false)
 const interimTranscript = ref('')
@@ -907,18 +952,33 @@ const generateOpening = async () => {
   isTyping.value = true
   await simulateDelay(800 + Math.random() * 700)
   
+  const teacherValue = selectedTeacher.value
+  
+  const teacherGreetings: Record<string, string> = {
+    owen: "Hi there! I'm Owen, and I'm super excited to chat with you today! Don't worry about making mistakes—just relax and enjoy our conversation. ",
+    lily: "Hey hey! Lily here, ready to have a fun chat with you! Feel free to say whatever comes to mind. ",
+    emma: "Good day. I'm Emma, and I'll be your tutor today. Let's begin with a warm-up. ",
+    james: "Hello. James here. Let's get straight to our business English practice. ",
+    michael: "Thank you for coming in today. I'm Michael, and I'll be conducting this interview. Let's begin. "
+  }
+  
   const openings = sceneOpenings[selectedScene.value] || sceneOpenings.daily
-  const openingText = openings[Math.floor(Math.random() * openings.length)]
+  const baseOpening = openings[Math.floor(Math.random() * openings.length)]
+  const greeting = teacherGreetings[teacherValue] || ""
+  const openingText = greeting + baseOpening
   
   const openingTranslation = getTranslation(openingText)
+  
+  const vocabCount = teacherValue === 'owen' ? 0 : 2
+  const tipsCount = (teacherValue === 'owen' && correctionTiming.value === 'summary') ? 0 : 0
   
   const assistantMsg: ChatMessage = {
     role: 'assistant',
     content: openingText,
     translation: openingTranslation,
     corrections: [],
-    vocabulary: pickRandom(vocabularyDatabase, 2),
-    tips: [],
+    vocabulary: pickRandom(vocabularyDatabase, vocabCount),
+    tips: pickRandom(expressionTips, tipsCount),
     timestamp: Date.now()
   }
   
@@ -949,23 +1009,30 @@ const sendMessage = async () => {
   
   const aiResponse = generateAIResponse(text)
   
-  if (correctionTiming.value === 'summary' && aiResponse.corrections.length > 0) {
+  const isSummaryMode = correctionTiming.value === 'summary'
+  const hasLearningContent = aiResponse.corrections.length > 0 || aiResponse.vocabulary.length > 0 || aiResponse.tips.length > 0
+  
+  if (isSummaryMode && hasLearningContent) {
     collectedCorrections.value.push({
       message: text,
       corrections: aiResponse.corrections,
+      vocabulary: aiResponse.vocabulary,
+      tips: aiResponse.tips,
       timestamp: Date.now()
     })
   }
   
-  const displayCorrections = correctionTiming.value === 'instant' ? aiResponse.corrections : []
+  const displayCorrections = isSummaryMode ? [] : aiResponse.corrections
+  const displayVocabulary = isSummaryMode ? [] : aiResponse.vocabulary
+  const displayTips = isSummaryMode ? [] : aiResponse.tips
   
   const assistantMsg: ChatMessage = {
     role: 'assistant',
     content: aiResponse.reply,
     translation: aiResponse.translation,
     corrections: displayCorrections,
-    vocabulary: aiResponse.vocabulary,
-    tips: aiResponse.tips,
+    vocabulary: displayVocabulary,
+    tips: displayTips,
     timestamp: Date.now()
   }
   
@@ -982,15 +1049,18 @@ const sendMessage = async () => {
 const generateAIResponse = (userText: string): AIResponseData => {
   const scene = selectedScene.value
   const level = selectedLevel.value
-  const teacher = currentTeacherInfo.value.personality
+  const teacherValue = selectedTeacher.value
+  const teacherInfo = currentTeacherInfo.value
   
-  const corrections = detectCorrections(userText)
+  const corrections = detectCorrections(userText, teacherValue)
   
-  const reply = generateContextualReply(userText, scene, level, teacher)
+  const reply = generateContextualReply(userText, scene, level, teacherValue, corrections.length)
   const translation = getTranslation(reply)
   
-  const vocab = pickRandom(vocabularyDatabase, 2)
-  const tips = pickRandom(expressionTips, 1)
+  const vocabCount = teacherValue === 'owen' ? 1 : teacherValue === 'emma' ? 2 : 2
+  const tipsCount = teacherValue === 'owen' ? (correctionTiming.value === 'summary' ? 0 : 1) : 1
+  const vocab = pickRandom(vocabularyDatabase, vocabCount)
+  const tips = pickRandom(expressionTips, tipsCount)
   
   const quickSug = generateQuickSuggestions(reply)
   
@@ -1004,7 +1074,7 @@ const generateAIResponse = (userText: string): AIResponseData => {
   }
 }
 
-const detectCorrections = (text: string): Correction[] => {
+const detectCorrections = (text: string, teacherValue: string = 'lily'): Correction[] => {
   const corrections: Correction[] = []
   const lowerText = text.toLowerCase()
   
@@ -1015,27 +1085,38 @@ const detectCorrections = (text: string): Correction[] => {
   }
   
   if (/^[a-z]/.test(text)) {
-    corrections.push({
-      before: text.charAt(0),
-      after: text.charAt(0).toUpperCase(),
-      explanation: 'Sentences in English should always begin with a capital letter.',
-      type: 'grammar'
-    })
+    if (teacherValue !== 'owen') {
+      corrections.push({
+        before: text.charAt(0),
+        after: text.charAt(0).toUpperCase(),
+        explanation: 'Sentences in English should always begin with a capital letter.',
+        type: 'grammar'
+      })
+    }
   }
   
   if (!/[.!?]$/.test(text.trim()) && text.split(' ').length > 3) {
-    corrections.push({
-      before: text,
-      after: text + '.',
-      explanation: 'Complete sentences should end with punctuation (period, question mark, or exclamation mark).',
-      type: 'grammar'
-    })
+    if (teacherValue !== 'owen' && teacherValue !== 'lily') {
+      corrections.push({
+        before: text,
+        after: text + '.',
+        explanation: 'Complete sentences should end with punctuation (period, question mark, or exclamation mark).',
+        type: 'grammar'
+      })
+    }
+  }
+  
+  if (teacherValue === 'owen' && corrections.length > 2) {
+    return corrections.slice(0, 1)
+  }
+  if (teacherValue === 'lily' && corrections.length > 2) {
+    return corrections.slice(0, 1)
   }
   
   return corrections
 }
 
-const generateContextualReply = (userText: string, scene: string, level: string, teacher: string): string => {
+const generateContextualReply = (userText: string, scene: string, level: string, teacherValue: string, errorCount: number): string => {
   const responsesByScene: Record<string, string[]> = {
     daily: [
       `That's really interesting! ${userText.includes('?') ? "To answer your question, " : ''}I'd love to hear more about that. Could you elaborate a bit more on what you mean?`,
@@ -1082,6 +1163,44 @@ const generateContextualReply = (userText: string, scene: string, level: string,
   } else if (level === 'advanced') {
     reply = enrichLanguage(reply)
   }
+  
+  const teacherPrefixes: Record<string, () => string> = {
+    owen: () => {
+      const praises = [
+        "Great job sharing that! ",
+        "Awesome, I love hearing about this! ",
+        "Well done on expressing yourself so clearly! ",
+        "That's brilliant—thanks for opening up! ",
+        "Fantastic, keep it up! "
+      ]
+      if (errorCount === 0) {
+        return praises[Math.floor(Math.random() * praises.length)] + "Perfect English by the way! "
+      }
+      return praises[Math.floor(Math.random() * praises.length)]
+    },
+    lily: () => {
+      const casual = [
+        "Haha, that's so cool! ",
+        "OMG, really? ",
+        "No way, that's awesome! ",
+        "Aww, that's sweet! ",
+        "That's totally relatable! "
+      ]
+      return casual[Math.floor(Math.random() * casual.length)]
+    },
+    emma: () => {
+      return ""
+    },
+    james: () => {
+      return ""
+    },
+    michael: () => {
+      return ""
+    }
+  }
+  
+  const prefixFn = teacherPrefixes[teacherValue] || (() => "")
+  reply = prefixFn() + reply
   
   return reply
 }
@@ -2361,6 +2480,75 @@ const getHistoryPreview = (item: HistorySession) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.group-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.summary-vocab-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border: 1px solid #ebeef5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.summary-vocab-item .voc-word {
+  font-weight: 700;
+  color: #165DFF;
+  font-size: 14px;
+}
+
+.summary-vocab-item .voc-pos {
+  font-size: 11px;
+  color: #909399;
+  background: #f4f4f5;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.summary-vocab-item .voc-meaning {
+  color: #303133;
+  font-weight: 500;
+}
+
+.summary-vocab-item .voc-example {
+  font-size: 12px;
+  color: #606266;
+  width: 100%;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.summary-tip-item {
+  background: white;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border: 1px solid #ebeef5;
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.6;
+}
+
+.tip-context {
+  font-size: 12px;
+  color: #606266;
+  font-style: italic;
+  margin-top: 4px;
 }
 
 @media (max-width: 768px) {
