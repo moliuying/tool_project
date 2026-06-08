@@ -260,6 +260,11 @@ const routes: RouteRecordRaw[] = [
         path: '/viral-copy',
         name: 'ViralCopyGenerator',
         component: () => import('@/views/ViralCopyGenerator.vue')
+      },
+      {
+        path: '/high-eq-reply',
+        name: 'HighEQReplyGenerator',
+        component: () => import('@/views/HighEQReplyGenerator.vue')
       }
     ]
   }
