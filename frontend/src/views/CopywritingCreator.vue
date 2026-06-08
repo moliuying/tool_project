@@ -102,22 +102,40 @@
             <div class="ch-left">
               <div class="ch-icon">💡</div>
               <div class="ch-texts">
-                <div class="ch-title">没找到你想要的文案类型？</div>
+                <div class="ch-title">不确定选哪个类型？没找到想要的？</div>
                 <div class="ch-desc">
-                  遇到非常规需求时，请选择<strong>最接近的类型</strong>，然后在「补充要求」中详细描述你的具体场景和需求（例如：我需要一段婚礼祝酒词、我要写一封道歉信等），AI 会根据你的描述灵活调整输出内容。
+                  <strong>① 交叉场景（如产品发布会、公司年会等）：</strong>点击右侧「查看常见场景指南」对照推荐<br />
+                  <strong>② 非常规需求：</strong>选择最接近的类型，然后在「补充要求」中详细描述具体场景（如婚礼祝酒词、道歉信等），AI 会灵活调整。
                 </div>
+                <el-button
+                  size="small"
+                  type="warning"
+                  plain
+                  class="ch-help-btn"
+                  @click="showTypeHelpDialog = true"
+                >
+                  <el-icon><QuestionFilled /></el-icon>
+                  查看常见场景选择指南
+                </el-button>
               </div>
             </div>
             <div class="ch-right">
               <div class="ch-examples">
-                <span class="ch-example-label">可处理的非常规场景示例：</span>
+                <span class="ch-example-label">常见交叉场景：</span>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">🚀 产品发布会</el-tag>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">🎊 公司年会</el-tag>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">👋 自我介绍</el-tag>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">🛍️ 产品推广</el-tag>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">🎁 节日祝福</el-tag>
+                <el-tag size="small" effect="plain" @click="showTypeHelpDialog = true">📖 读书分享</el-tag>
+              </div>
+              <div class="ch-examples" style="margin-top: 10px">
+                <span class="ch-example-label">非常规场景同样可处理：</span>
                 <el-tag size="small" effect="plain">婚礼祝酒词</el-tag>
                 <el-tag size="small" effect="plain">道歉信</el-tag>
                 <el-tag size="small" effect="plain">感谢信</el-tag>
                 <el-tag size="small" effect="plain">辞职信</el-tag>
-                <el-tag size="small" effect="plain">请假条</el-tag>
                 <el-tag size="small" effect="plain">颁奖词</el-tag>
-                <el-tag size="small" effect="plain">毕业感言</el-tag>
                 <el-tag size="small" effect="plain">家长寄语</el-tag>
               </div>
             </div>
@@ -196,6 +214,16 @@
           <el-tag size="small" type="info" class="hint-tag">
             不同类型的结构、语气、字数都会自动适配
           </el-tag>
+          <el-button
+            link
+            type="primary"
+            size="small"
+            class="help-btn"
+            @click="showTypeHelpDialog = true"
+          >
+            <el-icon><QuestionFilled /></el-icon>
+            不确定选哪个？
+          </el-button>
         </div>
         <div class="type-filter-bar">
           <div
@@ -220,17 +248,55 @@
           </div>
         </div>
         <div class="type-options">
-          <div
+          <el-tooltip
             v-for="type in filteredTypes"
             :key="type.value"
-            class="type-card"
-            :class="{ active: selectedType === type.value, disabled: isGenerating }"
-            @click="!isGenerating && (selectedType = type.value)"
+            placement="top"
+            :show-after="300"
           >
-            <div class="type-emoji">{{ type.emoji }}</div>
-            <div class="type-name">{{ type.label }}</div>
-            <div class="type-desc">{{ type.desc }}</div>
-          </div>
+            <template #content>
+              <div class="type-tooltip">
+                <div class="tt-title">
+                  <span>{{ type.emoji }}</span>
+                  <span>{{ type.label }}</span>
+                </div>
+                <div class="tt-section">
+                  <div class="tt-label">💡 适用说明：</div>
+                  <div class="tt-text">{{ type.detailGuide }}</div>
+                </div>
+                <div class="tt-section">
+                  <div class="tt-label">🏷️ 典型场景：</div>
+                  <div class="tt-scenes">
+                    <el-tag
+                      v-for="s in type.typicalScenes"
+                      :key="s"
+                      size="small"
+                      type="info"
+                      effect="plain"
+                    >{{ s }}</el-tag>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <div
+              class="type-card"
+              :class="{ active: selectedType === type.value, disabled: isGenerating }"
+              @click="!isGenerating && (selectedType = type.value)"
+            >
+              <div class="type-emoji">{{ type.emoji }}</div>
+              <div class="type-name">{{ type.label }}</div>
+              <div class="type-desc">{{ type.desc }}</div>
+              <div class="type-scenes">
+                <el-tag
+                  v-for="s in type.typicalScenes.slice(0, 2)"
+                  :key="s"
+                  size="small"
+                  effect="plain"
+                  type="info"
+                >{{ s }}</el-tag>
+              </div>
+            </div>
+          </el-tooltip>
         </div>
       </div>
 
@@ -502,6 +568,57 @@
         </el-button>
       </div>
     </el-card>
+
+    <el-dialog
+      v-model="showTypeHelpDialog"
+      title="🤔 常见场景 · 文案类型选择指南"
+      width="780px"
+      :close-on-click-modal="true"
+    >
+      <div class="help-dialog-content">
+        <div class="help-tip">
+          <el-icon color="#e6a23c"><InfoFilled /></el-icon>
+          <span>点击下方推荐类型可直接选中并关闭对话框</span>
+        </div>
+        <div class="help-scene-list">
+          <div
+            v-for="scene in ambiguousScenesHelp"
+            :key="scene.scene"
+            class="help-scene-item"
+          >
+            <div class="hs-header">
+              <span class="hs-emoji">{{ scene.emoji }}</span>
+              <span class="hs-name">{{ scene.scene }}</span>
+              <el-tag
+                type="success"
+                effect="light"
+                size="small"
+                class="hs-recommend"
+                @click="selectTypeFromHelp(scene.recommend)"
+              >
+                ✅ 推荐选：{{ scene.recommendLabel }}
+              </el-tag>
+            </div>
+            <div class="hs-alternatives">
+              <div
+                v-for="alt in scene.alternatives"
+                :key="alt.type"
+                class="hs-alt-item"
+                @click="selectTypeFromHelp(alt.type)"
+              >
+                <el-tag type="info" effect="plain" size="small">{{ alt.label }}</el-tag>
+                <span class="hs-alt-reason">{{ alt.reason }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <el-divider />
+        <div class="help-footer-note">
+          <strong>💡 终极法则：</strong>
+          仍不确定时，选择最接近的类型，然后在「补充要求」中详细描述你的具体场景和需求，AI 会灵活调整输出内容。
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -526,7 +643,8 @@ import {
   Bulb,
   Promotion,
   User,
-  Grid
+  Grid,
+  QuestionFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -568,6 +686,8 @@ interface CopyTypeConfig {
   placeholder: string
   defaultStyles: string[]
   contentLength: { min: number; max: number }
+  typicalScenes: string[]
+  detailGuide: string
 }
 
 const copyTypes: CopyTypeConfig[] = [
@@ -578,7 +698,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '小红书笔记、好物分享',
     placeholder: '例如：最近发现一款超好用的洗面奶，用完皮肤滑滑的不紧绷，学生党也能轻松入手',
     defaultStyles: ['warm', 'playful'],
-    contentLength: { min: 200, max: 600 }
+    contentLength: { min: 200, max: 600 },
+    typicalScenes: ['好物测评', '开箱分享', '使用心得', '避坑指南', '穿搭教程'],
+    detailGuide: '适用于小红书、大众点评等种草平台风格的笔记内容，以个人真实体验口吻撰写，使用大量 emoji 和口语化表达，适合发布在社交平台上吸引点赞收藏。'
   },
   {
     value: 'moments',
@@ -587,7 +709,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '朋友圈、社群推广文案',
     placeholder: '例如：新开业的咖啡店，环境超好，饮品颜值高还不贵，周末约朋友打卡的好去处',
     defaultStyles: ['warm', 'concise'],
-    contentLength: { min: 80, max: 250 }
+    contentLength: { min: 80, max: 250 },
+    typicalScenes: ['新店开业', '产品安利', '活动宣传', '个人动态', '社群通知'],
+    detailGuide: '适用于微信朋友圈、微信群、QQ空间等短平快社交场景，文字精炼、语气自然，像朋友聊天口吻，可搭配图片或短视频配文。'
   },
   {
     value: 'product',
@@ -596,7 +720,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '电商详情页、产品介绍',
     placeholder: '例如：一款多功能无线蓝牙耳机，主打降噪和长续航，适合通勤和运动使用',
     defaultStyles: ['professional', 'persuasive'],
-    contentLength: { min: 150, max: 400 }
+    contentLength: { min: 150, max: 400 },
+    typicalScenes: ['淘宝详情', '商品介绍', '功能卖点', '参数说明', '新品上市'],
+    detailGuide: '以产品为核心，突出卖点、功能、参数、使用场景，偏向消费者视角撰写，适合电商详情页、商品介绍文案等正式销售场景。如果需要在活动/促销信息请选「活动通知」，如需要发布会演讲请选「演讲稿件」。'
   },
   {
     value: 'activity',
@@ -605,7 +731,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '活动公告、促销通知',
     placeholder: '例如：618年中大促活动，全场商品五折起，满300减50，还有精美赠品',
     defaultStyles: ['enthusiastic', 'concise'],
-    contentLength: { min: 100, max: 300 }
+    contentLength: { min: 100, max: 300 },
+    typicalScenes: ['促销活动', '限时优惠', '周年庆', '新品发售', '节日特惠'],
+    detailGuide: '以活动信息为核心：时间、地点、优惠规则、参与方式等关键信息清晰，适合活动宣传海报、公众号推文、社群公告等。'
   },
   {
     value: 'reading',
@@ -614,7 +742,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '读书心得、学习笔记',
     placeholder: '例如：《原子习惯》这本书讲的是如何通过微小改变培养好习惯，核心观点是习惯的复利效应',
     defaultStyles: ['literary', 'thoughtful'],
-    contentLength: { min: 200, max: 500 }
+    contentLength: { min: 200, max: 500 },
+    typicalScenes: ['读后感', '好书推荐', '知识梳理', '观点摘录', '学习总结'],
+    detailGuide: '适合读完一本书后的个人感悟、要点梳理、内容摘要、书评推荐，偏知识学习和个人成长向。'
   },
   {
     value: 'selfintro',
@@ -623,7 +753,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '面试、社交、入职介绍',
     placeholder: '例如：我叫张三，毕业于北京大学计算机专业，有3年前端开发经验，擅长Vue和React技术栈',
     defaultStyles: ['professional', 'confident'],
-    contentLength: { min: 100, max: 300 }
+    contentLength: { min: 100, max: 300 },
+    typicalScenes: ['求职面试', '新员工入职', '社群破冰', '演讲开场', '相亲交友'],
+    detailGuide: '聚焦个人经历、能力特长、性格特点，根据不同场合调整正式程度。如果是求职简历的自我评价，请选「求职简历」。'
   },
   {
     value: 'report',
@@ -632,7 +764,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '周报、月报、项目总结',
     placeholder: '例如：本月完成了用户系统的重构，性能提升50%，同时上线了3个新功能',
     defaultStyles: ['professional', 'concise'],
-    contentLength: { min: 200, max: 500 }
+    contentLength: { min: 200, max: 500 },
+    typicalScenes: ['周报月报', '项目复盘', '季度总结', '述职报告', '工作规划'],
+    detailGuide: '结构化呈现：已完成工作、数据成果、问题与反思、下一步计划，强调数据和结果，适合职场正式汇报场景。'
   },
   {
     value: 'email',
@@ -641,7 +775,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '工作邮件、商务沟通',
     placeholder: '例如：需要给合作方发邮件确认下周的会议时间和议程',
     defaultStyles: ['professional', 'polite'],
-    contentLength: { min: 100, max: 300 }
+    contentLength: { min: 100, max: 300 },
+    typicalScenes: ['工作沟通', '会议邀请', '合作洽谈', '请假申请', '邮件回复'],
+    detailGuide: '包含标准邮件结构：称呼、正文、落款，语气礼貌得体、条理清晰，适用于职场正式书面沟通。'
   },
   {
     value: 'social',
@@ -650,7 +786,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '生日祝福、节日问候',
     placeholder: '例如：给好朋友写一段生日祝福，我们认识十年了，想表达感谢和祝福',
     defaultStyles: ['warm', 'literary'],
-    contentLength: { min: 80, max: 200 }
+    contentLength: { min: 80, max: 200 },
+    typicalScenes: ['生日祝福', '纪念日', '感谢卡', '毕业寄语', '乔迁祝福'],
+    detailGuide: '聚焦情感表达，温暖走心，适合给朋友、家人、同事的祝贺、感谢、问候等私人社交场景。如需更正式的节日问候发给客户等，请选「节日问候」。'
   },
   {
     value: 'slogan',
@@ -659,7 +797,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '品牌Slogan、广告口号',
     placeholder: '例如：一家主打健康轻食的餐饮品牌，目标客户是注重健康的年轻白领',
     defaultStyles: ['creative', 'concise'],
-    contentLength: { min: 10, max: 50 }
+    contentLength: { min: 10, max: 50 },
+    typicalScenes: ['品牌Slogan', '广告口号', '产品Tagline', '店铺招牌', '活动主题'],
+    detailGuide: '短平快、有记忆点的一句话标语，通常10字以内，突出品牌/产品的核心理念。'
   },
   {
     value: 'speech',
@@ -668,7 +808,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '发言、致辞、分享稿',
     placeholder: '例如：公司年会上作为优秀员工代表发言，需要表达感谢和未来展望',
     defaultStyles: ['inspiring', 'sincere'],
-    contentLength: { min: 300, max: 800 }
+    contentLength: { min: 300, max: 800 },
+    typicalScenes: ['产品发布会', '年会致辞', '获奖感言', '开工讲话', '毕业演讲', '培训分享'],
+    detailGuide: '适合需要当众口头表达的场合：如产品发布会演讲、领导致辞、年会发言、培训分享等，有开场-正文-结尾结构，口语化、有感染力、注重现场氛围。如果是纯活动信息通知请选「活动通知」，如果是写正式邀请他人参加发布会请选「邀请函件」。'
   },
   {
     value: 'composition',
@@ -677,7 +819,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '中小学作文、议论文',
     placeholder: '例如：以"坚持"为主题写一篇议论文，需要有论点论据和例子',
     defaultStyles: ['literary', 'thoughtful'],
-    contentLength: { min: 400, max: 800 }
+    contentLength: { min: 400, max: 800 },
+    typicalScenes: ['议论文', '记叙文', '考场作文', '话题作文', '读后感素材'],
+    detailGuide: '学生作文/议论文：有明确论点、论据、论证结构，语言规范，适合学校写作练习或考试。'
   },
   {
     value: 'invitation',
@@ -686,7 +830,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '婚礼、会议、活动邀请',
     placeholder: '例如：公司新品发布会的邀请函，邀请重要客户和媒体参加',
     defaultStyles: ['polite', 'formal'],
-    contentLength: { min: 100, max: 250 }
+    contentLength: { min: 100, max: 250 },
+    typicalScenes: ['发布会邀请', '婚礼请柬', '会议邀请', '开业典礼', '晚宴邀请'],
+    detailGuide: '用于正式邀请他人参与活动：时间、地点、活动内容、RSVP 信息清晰，措辞礼貌得体。如果需要写发布会上的演讲内容请选「演讲稿件」，如果是发布活动信息告知大家请选「活动通知」。'
   },
   {
     value: 'greeting',
@@ -695,7 +841,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '春节、中秋、新年祝福',
     placeholder: '例如：给客户发送新年祝福，既要正式又要表达诚意和感谢',
     defaultStyles: ['warm', 'polite'],
-    contentLength: { min: 50, max: 150 }
+    contentLength: { min: 50, max: 150 },
+    typicalScenes: ['春节祝福', '新年问候', '中秋祝福', '端午安康', '圣诞快乐'],
+    detailGuide: '节日专属的祝福语，简短真诚，适合发给客户、领导、同事、朋友。如果是生日等私人祝福请选「社交文案」。'
   },
   {
     value: 'job',
@@ -704,7 +852,9 @@ const copyTypes: CopyTypeConfig[] = [
     desc: '自我评价、求职意向',
     placeholder: '例如：应聘产品经理岗位，需要突出自己的项目经验和核心能力',
     defaultStyles: ['professional', 'confident'],
-    contentLength: { min: 150, max: 350 }
+    contentLength: { min: 150, max: 350 },
+    typicalScenes: ['自我评价', '求职意向', '个人简介', '简历Summary', '面试准备'],
+    detailGuide: '求职场景专属：突出个人能力、项目经验、核心优势，语言正式精炼，适合简历和求职场景。如果是面试时的自我介绍请选「自我介绍」。'
   }
 ]
 
@@ -748,6 +898,86 @@ const typeCategories: TypeCategory[] = [
 ]
 
 const activeCategory = ref<string>('all')
+const showTypeHelpDialog = ref(false)
+
+interface AmbiguousScene {
+  scene: string
+  emoji: string
+  recommend: string
+  recommendLabel: string
+  alternatives: { type: string; label: string; reason: string }[]
+}
+
+const ambiguousScenesHelp: AmbiguousScene[] = [
+  {
+    scene: '产品发布会',
+    emoji: '🚀',
+    recommend: 'speech',
+    recommendLabel: '演讲稿件',
+    alternatives: [
+      { type: 'invitation', label: '邀请函件', reason: '如果是写邀请客户/媒体参加发布会的请柬' },
+      { type: 'activity', label: '活动通知', reason: '如果是发布活动信息、优惠规则给用户看' },
+      { type: 'product', label: '产品描述', reason: '如果是写产品本身的功能、卖点、参数介绍' }
+    ]
+  },
+  {
+    scene: '公司年会',
+    emoji: '🎊',
+    recommend: 'speech',
+    recommendLabel: '演讲稿件',
+    alternatives: [
+      { type: 'social', label: '社交文案', reason: '如果是给同事发朋友圈祝福或感谢语' },
+      { type: 'report', label: '工作汇报', reason: '如果是年终总结、年度工作回顾' }
+    ]
+  },
+  {
+    scene: '自我介绍',
+    emoji: '👋',
+    recommend: 'selfintro',
+    recommendLabel: '自我介绍',
+    alternatives: [
+      { type: 'job', label: '求职简历', reason: '如果是写简历上的自我评价、求职意向' },
+      { type: 'speech', label: '演讲稿件', reason: '如果是较长的当众发言、入职演讲' }
+    ]
+  },
+  {
+    scene: '产品推广',
+    emoji: '🛍️',
+    recommend: 'xiaohongshu',
+    recommendLabel: '小红书种草',
+    alternatives: [
+      { type: 'moments', label: '朋友圈推广', reason: '如果是发微信朋友圈/社群短文案' },
+      { type: 'product', label: '产品描述', reason: '如果是写淘宝/电商详情页产品介绍' },
+      { type: 'slogan', label: '品牌标语', reason: '如果是想提炼一句广告口号、品牌 Slogan' }
+    ]
+  },
+  {
+    scene: '节日祝福',
+    emoji: '🎁',
+    recommend: 'greeting',
+    recommendLabel: '节日问候',
+    alternatives: [
+      { type: 'social', label: '社交文案', reason: '如果是生日、纪念日等私人情感祝福' },
+      { type: 'speech', label: '演讲稿件', reason: '如果是节日晚会致辞、领导讲话' }
+    ]
+  },
+  {
+    scene: '读书分享',
+    emoji: '📖',
+    recommend: 'reading',
+    recommendLabel: '读书笔记',
+    alternatives: [
+      { type: 'composition', label: '作文素材', reason: '如果是学校作业、议论文写作' },
+      { type: 'xiaohongshu', label: '小红书种草', reason: '如果是在社交平台推荐好书' }
+    ]
+  }
+]
+
+const selectTypeFromHelp = (typeValue: string) => {
+  activeCategory.value = 'all'
+  selectedType.value = typeValue
+  showTypeHelpDialog.value = false
+}
 
 const filteredTypes = computed(() => {
   if (activeCategory.value === 'all') return copyTypes
@@ -2207,6 +2437,172 @@ onMounted(() => {
   font-size: 11px;
   color: #909399;
   line-height: 1.4;
+}
+
+.type-scenes {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.type-scenes :deep(.el-tag) {
+  font-size: 10px;
+  padding: 0 6px;
+  height: 18px;
+  line-height: 18px;
+  background: rgba(64, 158, 255, 0.08);
+  border: none;
+  color: #409eff;
+}
+
+.help-btn {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.type-tooltip {
+  max-width: 320px;
+  padding: 4px 2px;
+}
+
+.tt-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.tt-section {
+  margin-bottom: 8px;
+}
+
+.tt-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #606266;
+  margin-bottom: 4px;
+}
+
+.tt-text {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.7;
+}
+
+.tt-scenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tt-scenes :deep(.el-tag) {
+  font-size: 11px;
+}
+
+.ch-help-btn {
+  margin-top: 10px;
+}
+
+.help-dialog-content {
+  padding: 4px 8px;
+}
+
+.help-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #fdf6ec;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: #92601a;
+}
+
+.help-scene-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.help-scene-item {
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: all 0.2s;
+}
+
+.help-scene-item:hover {
+  border-color: #409eff;
+  background: #f5faff;
+}
+
+.hs-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.hs-emoji {
+  font-size: 22px;
+}
+
+.hs-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  flex: 1;
+}
+
+.hs-recommend {
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 10px;
+  height: auto;
+}
+
+.hs-alternatives {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 4px;
+}
+
+.hs-alt-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.hs-alt-item:hover {
+  background: #ecf5ff;
+}
+
+.hs-alt-reason {
+  font-size: 12px;
+  color: #909399;
+}
+
+.help-footer-note {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+}
+
+.help-footer-note strong {
+  color: #e6a23c;
 }
 
 .quick-samples {
