@@ -21,10 +21,50 @@ export const categoryInfo = {
   behavior: { name: '行为心理', icon: 'MagicStick', color: '#165DFF' }
 }
 
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced'
+
 export const difficultyInfo = {
-  beginner: { name: '入门', color: '#67C23A' },
-  intermediate: { name: '进阶', color: '#E6A23C' },
-  advanced: { name: '深入', color: '#F56C6C' }
+  beginner: {
+    name: '入门',
+    color: '#67C23A',
+    bgColor: '#f0f9eb',
+    description: '适合心理学零基础用户，概念简单易懂，贴近日常生活',
+    icon: 'Sprout'
+  },
+  intermediate: {
+    name: '进阶',
+    color: '#E6A23C',
+    bgColor: '#fdf6ec',
+    description: '适合有一定基础的用户，涉及经典理论和实验研究',
+    icon: 'Sunny'
+  },
+  advanced: {
+    name: '深入',
+    color: '#F56C6C',
+    bgColor: '#fef0f0',
+    description: '适合心理学爱好者和专业人士，探讨深层机制和学术概念',
+    icon: 'Medal'
+  }
+}
+
+export type RecommendMode = 'progressive' | 'fixed' | 'mixed'
+
+export const recommendModeInfo = {
+  progressive: {
+    name: '循序渐进',
+    description: '从入门开始，随学习进度逐步提升难度，系统自动安排',
+    icon: 'TrendCharts'
+  },
+  fixed: {
+    name: '固定难度',
+    description: '只推送你选择的难度级别，适合特定学习目标',
+    icon: 'Setting'
+  },
+  mixed: {
+    name: '智能混合',
+    description: '各难度合理搭配，80%匹配你的水平，20%适度挑战',
+    icon: 'MagicStick'
+  }
 }
 
 export const psychologyKnowledgeList: PsychologyKnowledge[] = [
@@ -706,4 +746,75 @@ export function getKnowledgeById(id: number): PsychologyKnowledge | undefined {
 
 export function getKnowledgeByCategory(category: string): PsychologyKnowledge[] {
   return psychologyKnowledgeList.filter(k => k.category === category)
+}
+
+export function getKnowledgeByDifficulty(difficulty: DifficultyLevel): PsychologyKnowledge[] {
+  return psychologyKnowledgeList.filter(k => k.difficulty === difficulty)
+}
+
+export function getKnowledgeByDateAndDifficulty(
+  dateStr: string,
+  difficulty?: DifficultyLevel | DifficultyLevel[]
+): PsychologyKnowledge {
+  let pool = psychologyKnowledgeList
+  if (difficulty) {
+    const levels = Array.isArray(difficulty) ? difficulty : [difficulty]
+    pool = psychologyKnowledgeList.filter(k => levels.includes(k.difficulty))
+  }
+  if (pool.length === 0) pool = psychologyKnowledgeList
+  const date = new Date(dateStr)
+  const start = new Date(date.getFullYear(), 0, 0)
+  const diff = date.getTime() - start.getTime()
+  const oneDay = 1000 * 60 * 60 * 24
+  const dayOfYear = Math.floor(diff / oneDay)
+  const index = dayOfYear % pool.length
+  return pool[index]
+}
+
+export function getRandomKnowledge(
+  excludeId?: number,
+  difficulty?: DifficultyLevel | DifficultyLevel[]
+): PsychologyKnowledge {
+  let pool = psychologyKnowledgeList
+  if (difficulty) {
+    const levels = Array.isArray(difficulty) ? difficulty : [difficulty]
+    pool = psychologyKnowledgeList.filter(k => levels.includes(k.difficulty))
+  }
+  if (excludeId !== undefined) {
+    pool = pool.filter(k => k.id !== excludeId)
+  }
+  if (pool.length === 0) pool = psychologyKnowledgeList.filter(k => k.id !== excludeId)
+  if (pool.length === 0) pool = psychologyKnowledgeList
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
+export function calculateAdaptiveDifficulty(
+  learnedBeginner: number,
+  learnedIntermediate: number
+): { mainLevel: DifficultyLevel; recommendedLevels: DifficultyLevel[] } {
+  const totalBeginner = getKnowledgeByDifficulty('beginner').length
+  const totalIntermediate = getKnowledgeByDifficulty('intermediate').length
+
+  const beginnerProgress = learnedBeginner / totalBeginner
+  const intermediateProgress = learnedIntermediate / totalIntermediate
+
+  if (beginnerProgress < 0.3) {
+    return { mainLevel: 'beginner', recommendedLevels: ['beginner'] }
+  } else if (beginnerProgress < 0.7) {
+    return { mainLevel: 'beginner', recommendedLevels: ['beginner', 'intermediate'] }
+  } else if (intermediateProgress < 0.3) {
+    return { mainLevel: 'intermediate', recommendedLevels: ['beginner', 'intermediate'] }
+  } else if (intermediateProgress < 0.7) {
+    return { mainLevel: 'intermediate', recommendedLevels: ['intermediate', 'advanced'] }
+  } else {
+    return { mainLevel: 'advanced', recommendedLevels: ['intermediate', 'advanced'] }
+  }
+}
+
+export function getDifficultyCounts(): Record<DifficultyLevel, number> {
+  return {
+    beginner: getKnowledgeByDifficulty('beginner').length,
+    intermediate: getKnowledgeByDifficulty('intermediate').length,
+    advanced: getKnowledgeByDifficulty('advanced').length
+  }
 }
