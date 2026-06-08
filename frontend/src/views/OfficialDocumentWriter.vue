@@ -17,6 +17,123 @@
       </el-steps>
       <el-divider />
       <div class="expectation-section">
+        <h4 class="expectation-title">📜 遵循标准规范</h4>
+        <el-alert
+          type="success"
+          :closable="false"
+          show-icon
+          class="standard-alert"
+        >
+          <template #title>
+            <span class="alert-title">输出严格遵循：<b>GB/T 9704-2012《党政机关公文格式》</b> 国家标准，及《党政机关公文处理工作条例》（中办发〔2012〕14号）相关规定</span>
+          </template>
+          <div class="standard-content">
+            <div class="standard-item">
+              <el-icon color="#67c23a"><CircleCheck /></el-icon>
+              <span>标题格式：发文机关 + 事由 + 文种</span>
+            </div>
+            <div class="standard-item">
+              <el-icon color="#67c23a"><CircleCheck /></el-icon>
+              <span>正文结构：导语 + 分条列项 + 结语套语</span>
+            </div>
+            <div class="standard-item">
+              <el-icon color="#67c23a"><CircleCheck /></el-icon>
+              <span>落款规范：发文机关署名 + 成文日期</span>
+            </div>
+            <div class="standard-item">
+              <el-icon color="#67c23a"><CircleCheck /></el-icon>
+              <span>语言风格：庄重、准确、朴实、精炼、严谨、规范</span>
+            </div>
+          </div>
+        </el-alert>
+
+        <el-divider />
+
+        <h4 class="expectation-title">📋 支持的公文类型（共 8 种）</h4>
+        <div class="doctype-table">
+          <div class="doctype-row doctype-header">
+            <div class="doctype-col">类型</div>
+            <div class="doctype-col">适用场景</div>
+            <div class="doctype-col">典型用例</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">📢 通知</div>
+            <div class="doctype-col">发布事项、传达要求、任免人员</div>
+            <div class="doctype-col">会议通知、放假通知、工作部署</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">📊 报告</div>
+            <div class="doctype-col">向上级汇报工作、反映情况</div>
+            <div class="doctype-col">工作报告、调研报告、情况报告</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">🙏 请示</div>
+            <div class="doctype-col">向上级请求指示、批准事项</div>
+            <div class="doctype-col">经费申请、项目立项、人事请示</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">✉️ 函</div>
+            <div class="doctype-col">不相隶属单位间商洽、询问、答复</div>
+            <div class="doctype-col">商务公函、合作邀请、事项咨询</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">📜 决定</div>
+            <div class="doctype-col">重要决策、奖惩、重大事项变更</div>
+            <div class="doctype-col">表彰决定、处分决定、机构调整</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">💡 意见</div>
+            <div class="doctype-col">对工作提出见解、处理办法</div>
+            <div class="doctype-col">实施意见、指导意见、工作建议</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">📋 工作总结</div>
+            <div class="doctype-col">回顾总结、分析经验、计划安排</div>
+            <div class="doctype-col">年度总结、季度总结、专项总结</div>
+          </div>
+          <div class="doctype-row">
+            <div class="doctype-col doctype-name">📣 公告</div>
+            <div class="doctype-col">向社会公布重要或法定事项</div>
+            <div class="doctype-col">活动公告、公示、通告</div>
+          </div>
+        </div>
+
+        <el-divider />
+
+        <h4 class="expectation-title">🎯 适用对象与范围</h4>
+        <div class="scope-grid">
+          <div class="scope-card">
+            <el-icon :size="28" color="#165DFF"><OfficeBuilding /></el-icon>
+            <div class="scope-title">党政机关</div>
+            <div class="scope-desc">各级党委、政府及其组成部门</div>
+          </div>
+          <div class="scope-card">
+            <el-icon :size="28" color="#67c23a"><School /></el-icon>
+            <div class="scope-title">事业单位</div>
+            <div class="scope-desc">学校、医院、科研院所等</div>
+          </div>
+          <div class="scope-card">
+            <el-icon :size="28" color="#e6a23c"><Briefcase /></el-icon>
+            <div class="scope-title">国有企业</div>
+            <div class="scope-desc">央企、国企及所属单位</div>
+          </div>
+          <div class="scope-card">
+            <el-icon :size="28" color="#722ed1"><User /></el-icon>
+            <div class="scope-title">社会团体</div>
+            <div class="scope-desc">人民团体、社会组织、行业协会</div>
+          </div>
+        </div>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          class="scope-hint"
+        >
+          <span>本工具输出格式参照中国大陆党政机关公文标准，适用于中国境内正式公文起草参考。如为企业内部非正式行文，可直接使用生成内容作为基础后按需调整。</span>
+        </el-alert>
+
+        <el-divider />
+
         <h4 class="expectation-title">📊 你将获得什么？</h4>
         <div class="expectation-grid">
           <div class="expectation-item">
@@ -49,7 +166,7 @@
           </div>
         </div>
         <el-divider />
-        <h4 class="expectation-title">🎯 适用场景</h4>
+        <h4 class="expectation-title">🎯 典型使用场景</h4>
         <div class="scenario-tags">
           <el-tag type="primary" size="large" effect="plain">🏢 机关单位发文</el-tag>
           <el-tag type="success" size="large" effect="plain">📋 行政办公起草</el-tag>
@@ -436,7 +553,12 @@ import {
   Clock,
   InfoFilled,
   Document,
-  Grid
+  Grid,
+  CircleCheck,
+  OfficeBuilding,
+  School,
+  User,
+  Briefcase
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -1138,6 +1260,121 @@ onMounted(() => {
   padding: 4px 0;
 }
 
+.standard-alert {
+  margin-bottom: 16px;
+}
+
+.standard-alert :deep(.el-alert__title) {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-title {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.standard-content {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+}
+
+.standard-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #303133;
+}
+
+.doctype-table {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.doctype-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 1fr;
+}
+
+.doctype-header {
+  background: #f0f7ff;
+  font-weight: 600;
+  color: #165DFF;
+  font-size: 13px;
+}
+
+.doctype-col {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #303133;
+  border-right: 1px solid #ebeef5;
+  border-bottom: 1px solid #ebeef5;
+  line-height: 1.5;
+}
+
+.doctype-col:last-child {
+  border-right: none;
+}
+
+.doctype-row:last-child .doctype-col {
+  border-bottom: none;
+}
+
+.doctype-name {
+  font-weight: 600;
+  color: #165DFF;
+  background: #fafcff;
+}
+
+.scope-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.scope-card {
+  background: linear-gradient(135deg, #fff 0%, #f5f7fa 100%);
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 16px 12px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.scope-card:hover {
+  border-color: #c6e2ff;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f3ff 100%);
+  transform: translateY(-2px);
+}
+
+.scope-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin: 8px 0 4px 0;
+}
+
+.scope-desc {
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
+}
+
+.scope-hint {
+  margin-bottom: 8px;
+}
+
+.scope-hint :deep(.el-alert__description) {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
 .expectation-title {
   font-size: 15px;
   font-weight: 600;
@@ -1541,6 +1778,28 @@ onMounted(() => {
 
   .doc-paper {
     padding: 30px 24px;
+  }
+
+  .standard-content {
+    grid-template-columns: 1fr;
+  }
+
+  .doctype-row {
+    grid-template-columns: 90px 1fr;
+  }
+
+  .doctype-row .doctype-col:nth-child(3) {
+    grid-column: 2;
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .doctype-header .doctype-col:nth-child(3) {
+    display: none;
+  }
+
+  .scope-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
