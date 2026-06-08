@@ -101,6 +101,33 @@
       </el-row>
     </el-card>
 
+    <el-card class="mastery-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#9b59b6">
+            <Trophy />
+          </el-icon>
+          <span>词汇掌握度</span>
+          <el-tag size="small" type="info">词汇库 {{ masteryStats.total }} 词</el-tag>
+        </div>
+      </template>
+      <div class="mastery-progress-list">
+        <div v-for="(level, idx) in MASTERY_LEVELS.slice().reverse()" :key="level.level" class="mastery-progress-row">
+          <div class="mp-label">
+            <span class="mp-dot" :style="{ backgroundColor: level.color }"></span>
+            <span class="mp-name">{{ level.label }}</span>
+          </div>
+          <el-progress
+            :percentage="Math.round((masteryStats['level' + level.level] / masteryStats.total) * 100)"
+            :color="level.color"
+            :stroke-width="14"
+            :show-text="true"
+          />
+          <span class="mp-count">{{ masteryStats['level' + level.level] }} 词</span>
+        </div>
+      </div>
+    </el-card>
+
     <el-card class="game-card">
       <template #header>
         <div class="card-header">
@@ -272,6 +299,20 @@
                   <span class="wm-label">中文释义：</span>
                   <span class="wm-text">{{ currentWord.meaning }}</span>
                 </div>
+                <div class="word-mastery">
+                  <span class="wm-label">掌握程度：</span>
+                  <el-tag
+                    :color="getMasteryColor(currentWord.word)"
+                    effect="dark"
+                    size="small"
+                    style="border: none;"
+                  >
+                    {{ getMasteryLabel(currentWord.word) }}
+                  </el-tag>
+                  <span class="mastery-detail">
+                    (答对 {{ getMastery(currentWord.word).correctCount }} 次 / 答错 {{ getMastery(currentWord.word).wrongCount }} 次)
+                  </span>
+                </div>
                 <div v-if="currentWord.example" class="word-example">
                   <span class="we-label">例句：</span>
                   <span class="we-text">{{ currentWord.example }}</span>
@@ -352,7 +393,8 @@ import {
   ChatDotRound,
   CopyDocument,
   User,
-  InfoFilled
+  InfoFilled,
+  Trophy
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -364,6 +406,23 @@ interface WordItem {
   hints: string[]
   example?: string
   alternateHints?: string[][]
+}
+
+interface WordMastery {
+  word: string
+  correctCount: number
+  wrongCount: number
+  consecutiveCorrect: number
+  masteryLevel: number
+  lastAnsweredAt: number
+  nextScheduledRound: number
+}
+
+interface HintUsageRecord {
+  word: string
+  hintSetIndex: number
+  lastUsedRound: number
+  useCount: number
 }
 
 interface HistoryRecord {
@@ -2127,18 +2186,30 @@ const isPlaying = ref(false)
 const isGenerating = ref(false)
 const currentWord = ref<WordItem | null>(null)
 const currentHints = ref<string[]>([])
+const currentHintSetIndex = ref(0)
 const userAnswer = ref('')
 const isAnswered = ref(false)
 const lastResult = ref<'correct' | 'wrong' | 'skipped' | ''>('')
 const lastScoreGained = ref(0)
 const showExtraHint = ref(false)
 
-const RECENT_WINDOW_SIZE = 15
-const COOLDOWN_BASE = 8
+const RECENT_WINDOW_SIZE = 20
+const globalRoundCounter = ref(0)
 const recentWords = ref<string[]>([])
 const lastWordKey = ref<string>('')
-const cooldownMap = ref<Record<string, number>>({})
-const globalRoundCounter = ref(0)
+
+const MASTERY_LEVELS = [
+  { level: 0, label: '未学习', color: '#909399', interval: 0 },
+  { level: 1, label: '初学', color: '#F56C6C', interval: 2 },
+  { level: 2, label: '熟悉', color: '#E6A23C', interval: 5 },
+  { level: 3, label: '掌握', color: '#67C23A', interval: 12 },
+  { level: 4, label: '熟练', color: '#409EFF', interval: 25 },
+  { level: 5, label: '精通', color: '#9b59b6', interval: 50 }
+]
+
+const masteryMap = ref<Record<string, WordMastery>>({})
+const hintUsageMap = ref<Record<string, HintUsageRecord[]>>({})
+const currentHintSet = ref(0)
 
 const score = ref(0)
 const currentStreak = ref(0)
@@ -2148,6 +2219,36 @@ const wrongCount = ref(0)
 const totalGames = ref(0)
 const history = ref<HistoryRecord[]>([])
 const showAllHistory = ref(false)
+
+const getMastery = (word: string): WordMastery => {
+  if (!masteryMap.value[word]) {
+    masteryMap.value[word] = {
+      word,
+      correctCount: 0,
+      wrongCount: 0,
+      consecutiveCorrect: 0,
+      masteryLevel: 0,
+      lastAnsweredAt: 0,
+      nextScheduledRound: 0
+    }
+  }
+  return masteryMap.value[word]
+}
+
+const masteryStats = computed(() => {
+  const stats = { total: wordDatabase.length, level0: 0, level1: 0, level2: 0, level3: 0, level4: 0, level5: 0 }
+  wordDatabase.forEach(w => {
+    const m = masteryMap.value[w.word]
+    const lvl = m ? m.masteryLevel : 0
+    if (lvl === 0) stats.level0++
+    else if (lvl === 1) stats.level1++
+    else if (lvl === 2) stats.level2++
+    else if (lvl === 3) stats.level3++
+    else if (lvl === 4) stats.level4++
+    else stats.level5++
+  })
+  return stats
+})
 
 const accuracyRate = computed(() => {
   if (totalGames.value === 0) return 0
@@ -2173,8 +2274,9 @@ const loadData = () => {
       history.value = data.history || []
       recentWords.value = data.recentWords || []
       lastWordKey.value = data.lastWordKey || ''
-      cooldownMap.value = data.cooldownMap || {}
       globalRoundCounter.value = data.globalRoundCounter || 0
+      masteryMap.value = data.masteryMap || {}
+      hintUsageMap.value = data.hintUsageMap || {}
     }
   } catch (e) {
     console.error('Failed to load game data:', e)
@@ -2193,8 +2295,9 @@ const saveData = () => {
       history: history.value,
       recentWords: recentWords.value,
       lastWordKey: lastWordKey.value,
-      cooldownMap: cooldownMap.value,
-      globalRoundCounter: globalRoundCounter.value
+      globalRoundCounter: globalRoundCounter.value,
+      masteryMap: masteryMap.value,
+      hintUsageMap: hintUsageMap.value
     }))
   } catch (e) {
     console.error('Failed to save game data:', e)
@@ -2208,7 +2311,6 @@ onMounted(() => {
 watch([selectedDifficulty, selectedCategory], () => {
   recentWords.value = []
   lastWordKey.value = ''
-  cooldownMap.value = {}
   globalRoundCounter.value = 0
   saveData()
 })
@@ -2243,68 +2345,157 @@ const shuffleArray = <T>(arr: T[]): T[] => {
   return result
 }
 
-const selectHintsForWord = (word: WordItem): string[] => {
+const getHintUsageRecords = (word: string): HintUsageRecord[] => {
+  if (!hintUsageMap.value[word]) {
+    hintUsageMap.value[word] = []
+  }
+  return hintUsageMap.value[word]
+}
+
+const selectHintsForWord = (word: WordItem, currentRound: number): { hints: string[], setIndex: number } => {
   const allHints: string[][] = [word.hints]
   if (word.alternateHints && word.alternateHints.length > 0) {
     allHints.push(...word.alternateHints)
   }
-  const chosen = allHints[Math.floor(getSecureRandom() * allHints.length)]
-  return shuffleArray(chosen)
+
+  const records = getHintUsageRecords(word.word)
+  while (records.length < allHints.length) {
+    records.push({ word: word.word, hintSetIndex: records.length, lastUsedRound: -999, useCount: 0 })
+  }
+
+  const scored = records
+    .filter(r => r.hintSetIndex < allHints.length)
+    .map(r => ({
+      record: r,
+      score: (currentRound - r.lastUsedRound) * 10 - r.useCount * 3 + getSecureRandom() * 5
+    }))
+    .sort((a, b) => b.score - a.score)
+
+  const chosen = scored[0]?.record || records[0]
+  chosen.lastUsedRound = currentRound
+  chosen.useCount++
+
+  return {
+    hints: shuffleArray(allHints[chosen.hintSetIndex]),
+    setIndex: chosen.hintSetIndex
+  }
 }
 
-const pickNextWord = () => {
+const calculateMasteryPriority = (word: WordItem, currentRound: number): number => {
+  const m = getMastery(word.word)
+  const levelConfig = MASTERY_LEVELS[m.masteryLevel] || MASTERY_LEVELS[0]
+
+  const readyForReview = m.nextScheduledRound <= currentRound
+  const timeSinceLast = currentRound - (m.lastAnsweredAt || 0)
+
+  let priority = 0
+
+  if (m.masteryLevel === 0) {
+    priority += 100
+  } else if (m.masteryLevel === 1) {
+    priority += 80
+  } else if (m.masteryLevel === 2) {
+    priority += 55
+  } else if (m.masteryLevel === 3) {
+    priority += 30
+  } else if (m.masteryLevel === 4) {
+    priority += 12
+  } else {
+    priority += 3
+  }
+
+  if (readyForReview && m.masteryLevel > 0) {
+    priority += 40
+  }
+
+  if (m.wrongCount > m.correctCount && (m.wrongCount + m.correctCount) > 0) {
+    priority += 25
+  }
+
+  priority += timeSinceLast * 0.5
+  priority += getSecureRandom() * 20
+
+  return priority
+}
+
+const pickNextWord = (): { word: WordItem, hints: string[], setIndex: number } | null => {
   const available = getFilteredWords()
   if (available.length === 0) return null
 
   globalRoundCounter.value++
   const currentRound = globalRoundCounter.value
 
-  let candidates = available.filter(w => {
-    const key = w.word
-    if (key === lastWordKey.value) return false
-    if (recentWords.value.includes(key)) return false
-    const cooldownUntil = cooldownMap.value[key] || 0
-    if (cooldownUntil > currentRound) return false
-    return true
-  })
-
-  if (candidates.length === 0) {
-    candidates = available.filter(w => {
+  const applyHardFilters = (words: WordItem[], excludeRecent: boolean, excludeLast: boolean): WordItem[] => {
+    return words.filter(w => {
       const key = w.word
-      if (key === lastWordKey.value) return false
-      const cooldownUntil = cooldownMap.value[key] || 0
-      if (cooldownUntil > currentRound) return false
+      const m = getMastery(key)
+      if (excludeLast && key === lastWordKey.value) return false
+      if (excludeRecent && recentWords.value.includes(key)) return false
+      if (m.nextScheduledRound > currentRound && m.masteryLevel >= 3) return false
       return true
     })
   }
 
+  let candidates = applyHardFilters(available, true, true)
+
   if (candidates.length === 0) {
-    candidates = available.filter(w => w.word !== lastWordKey.value)
+    candidates = applyHardFilters(available, false, true)
+  }
+
+  if (candidates.length === 0) {
+    candidates = applyHardFilters(available, false, false)
   }
 
   if (candidates.length === 0) {
     candidates = available
   }
 
-  const shuffled = shuffleArray(candidates)
-  const chosen = shuffled[0]
-  const key = chosen.word
+  const scored = candidates
+    .map(w => ({ word: w, priority: calculateMasteryPriority(w, currentRound) }))
+    .sort((a, b) => b.priority - a.priority)
 
+  const topN = Math.min(Math.max(3, Math.floor(candidates.length * 0.4)), scored.length)
+  const topPool = scored.slice(0, topN)
+  const shuffledTop = shuffleArray(topPool)
+  const chosen = shuffledTop[0]
+
+  if (!chosen) return null
+
+  const key = chosen.word.word
   lastWordKey.value = key
   recentWords.value.push(key)
   if (recentWords.value.length > RECENT_WINDOW_SIZE) {
     recentWords.value = recentWords.value.slice(-RECENT_WINDOW_SIZE)
   }
 
-  const cooldown = Math.min(COOLDOWN_BASE + Math.floor(getSecureRandom() * 6), Math.max(available.length - 2, 3))
-  cooldownMap.value[key] = currentRound + cooldown
+  const { hints, setIndex } = selectHintsForWord(chosen.word, currentRound)
+  return { word: chosen.word, hints, setIndex }
+}
 
-  const staleKeys = Object.keys(cooldownMap.value).filter(k => {
-    return (cooldownMap.value[k] || 0) < currentRound - 50
-  })
-  staleKeys.forEach(k => delete cooldownMap.value[k])
+const updateMasteryAfterAnswer = (word: string, isCorrect: boolean) => {
+  const m = getMastery(word)
+  const currentRound = globalRoundCounter.value
 
-  return chosen
+  m.lastAnsweredAt = currentRound
+  if (isCorrect) {
+    m.correctCount++
+    m.consecutiveCorrect++
+    if (m.consecutiveCorrect >= 2 && m.masteryLevel < 5) {
+      m.masteryLevel++
+      m.consecutiveCorrect = 0
+    }
+  } else {
+    m.wrongCount++
+    m.consecutiveCorrect = 0
+    if (m.masteryLevel > 1) {
+      m.masteryLevel = Math.max(1, m.masteryLevel - 1)
+    }
+  }
+
+  const levelConfig = MASTERY_LEVELS[m.masteryLevel] || MASTERY_LEVELS[0]
+  const baseInterval = levelConfig.interval
+  const jitter = Math.floor(getSecureRandom() * Math.max(1, Math.floor(baseInterval * 0.3)))
+  m.nextScheduledRound = currentRound + baseInterval + jitter
 }
 
 const startNewRound = () => {
@@ -2323,10 +2514,11 @@ const startNewRound = () => {
   lastScoreGained.value = 0
 
   setTimeout(() => {
-    const chosen = pickNextWord()
-    if (chosen) {
-      currentWord.value = chosen
-      currentHints.value = selectHintsForWord(chosen)
+    const result = pickNextWord()
+    if (result) {
+      currentWord.value = result.word
+      currentHints.value = result.hints
+      currentHintSet.value = result.setIndex
     }
     isGenerating.value = false
   }, 800 + Math.floor(getSecureRandom() * 600))
@@ -2340,8 +2532,9 @@ const checkAnswer = () => {
 
   isAnswered.value = true
   totalGames.value++
+  const isCorrectAnswer = answer === correct
 
-  if (answer === correct) {
+  if (isCorrectAnswer) {
     lastResult.value = 'correct'
     correctCount.value++
     currentStreak.value++
@@ -2356,6 +2549,11 @@ const checkAnswer = () => {
 
     if (currentStreak.value >= 3) {
       points += currentStreak.value
+    }
+
+    const m = getMastery(currentWord.value.word)
+    if (m.masteryLevel >= 3) {
+      points = Math.max(1, Math.floor(points * 0.6))
     }
 
     lastScoreGained.value = points
@@ -2381,6 +2579,8 @@ const checkAnswer = () => {
     })
   }
 
+  updateMasteryAfterAnswer(currentWord.value.word, isCorrectAnswer)
+
   history.value.push({
     word: currentWord.value.word,
     meaning: currentWord.value.meaning,
@@ -2400,6 +2600,8 @@ const giveUp = () => {
   totalGames.value++
   wrongCount.value++
   currentStreak.value = 0
+
+  updateMasteryAfterAnswer(currentWord.value.word, false)
 
   history.value.push({
     word: currentWord.value.word,
@@ -2435,10 +2637,12 @@ const clearHistory = () => {
   totalGames.value = 0
   recentWords.value = []
   lastWordKey.value = ''
-  cooldownMap.value = {}
   globalRoundCounter.value = 0
+  masteryMap.value = {}
+  hintUsageMap.value = {}
   currentWord.value = null
   currentHints.value = []
+  currentHintSet.value = 0
   isAnswered.value = false
   lastResult.value = ''
   userAnswer.value = ''
@@ -2446,6 +2650,18 @@ const clearHistory = () => {
   isPlaying.value = false
   saveData()
   ElMessage.success('记录已清空')
+}
+
+const getMasteryLabel = (word: string) => {
+  const m = masteryMap.value[word]
+  const lvl = m ? m.masteryLevel : 0
+  return MASTERY_LEVELS[lvl]?.label || '未学习'
+}
+
+const getMasteryColor = (word: string) => {
+  const m = masteryMap.value[word]
+  const lvl = m ? m.masteryLevel : 0
+  return MASTERY_LEVELS[lvl]?.color || '#909399'
 }
 
 const getDifficultyLabel = (difficulty: string) => {
@@ -2623,6 +2839,65 @@ const formatTime = (dateStr: string) => {
   font-size: 22px;
   font-weight: bold;
   color: #165DFF;
+}
+
+.mastery-card {
+  margin-bottom: 24px;
+}
+
+.mastery-progress-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mastery-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mp-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 70px;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.mp-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.mp-count {
+  width: 70px;
+  text-align: right;
+  font-size: 13px;
+  color: #909399;
+  flex-shrink: 0;
+}
+
+.mastery-progress-row :deep(.el-progress) {
+  flex: 1;
+}
+
+.word-mastery {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.mastery-detail {
+  color: #909399;
+  font-size: 13px;
 }
 
 .game-card {
