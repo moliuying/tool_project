@@ -317,6 +317,117 @@
         </div>
       </div>
 
+      <el-collapse class="personal-collapse">
+        <el-collapse-item title="💝 个性化素材（强烈推荐填写，让作文更真实）" name="personal">
+          <div class="personal-tip">
+            <el-alert
+              title="填写个性化素材，生成的作文会融入你自己的真实经历和感受，不再是千篇一律的模板范文，更像你自己写的，可以直接参考使用甚至稍作修改后提交！"
+              type="success"
+              show-icon
+              :closable="false"
+            />
+          </div>
+
+          <div class="two-col-section">
+            <div class="input-section flex-1">
+              <div class="section-title">
+                <el-icon><User /></el-icon>
+                <span>小作者信息</span>
+              </div>
+              <div class="author-info-grid">
+                <div class="author-field">
+                  <label class="field-label">称呼/小名</label>
+                  <el-input
+                    v-model="formData.personal.authorName"
+                    placeholder="如：小明、小红"
+                    :disabled="isGenerating"
+                  />
+                </div>
+                <div class="author-field">
+                  <label class="field-label">性别</label>
+                  <el-radio-group v-model="formData.personal.gender" :disabled="isGenerating">
+                    <el-radio value="boy">👦 男孩</el-radio>
+                    <el-radio value="girl">👧 女孩</el-radio>
+                  </el-radio-group>
+                </div>
+              </div>
+            </div>
+
+            <div class="input-section flex-1">
+              <div class="section-title">
+                <el-icon><Clock /></el-icon>
+                <span>时间 / 地点（让叙事更具体）</span>
+              </div>
+              <div class="author-info-grid">
+                <div class="author-field">
+                  <label class="field-label">事情发生的时间</label>
+                  <el-input
+                    v-model="formData.personal.specificTime"
+                    placeholder="如：上周三下午、春节期间、记得一年级的时候"
+                    :disabled="isGenerating"
+                  />
+                </div>
+                <div class="author-field">
+                  <label class="field-label">事情发生的地点</label>
+                  <el-input
+                    v-model="formData.personal.specificPlace"
+                    placeholder="如：学校操场、人民公园、奶奶家的小院"
+                    :disabled="isGenerating"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-section">
+            <div class="section-title">
+              <el-icon><User /></el-icon>
+              <span>涉及的人物</span>
+            </div>
+            <el-input
+              v-model="formData.personal.specificPeople"
+              placeholder="如：我、妈妈、班主任王老师、同桌小明（可填写多人及称呼关系）"
+              :disabled="isGenerating"
+            />
+          </div>
+
+          <div class="input-section">
+            <div class="section-title">
+              <el-icon><EditPen /></el-icon>
+              <span>真实经历（写清楚发生了什么事）</span>
+              <el-tag size="small" type="danger" effect="light">⭐ 最关键</el-tag>
+            </div>
+            <el-input
+              v-model="formData.personal.realExperience"
+              type="textarea"
+              :rows="4"
+              placeholder="用几句话把事情经过讲清楚：&#10;• 为什么发生？怎么开始的？&#10;• 中间遇到了什么困难或有趣的事？&#10;• 最后结果怎么样？&#10;例：上周三我半夜发烧到39度，外面下着大雨，妈妈背着我跑到医院，衣服全淋湿了，自己却感冒了。"
+              maxlength="500"
+              show-word-limit
+              :disabled="isGenerating"
+              resize="vertical"
+            />
+          </div>
+
+          <div class="input-section">
+            <div class="section-title">
+              <el-icon><ChatDotRound /></el-icon>
+              <span>真实感受（你心里是怎么想的）</span>
+            </div>
+            <el-input
+              v-model="formData.personal.realFeeling"
+              type="textarea"
+              :rows="3"
+              placeholder="写出你当时的心情和想法：&#10;• 高兴？难过？感动？害怕？&#10;• 从这件事明白了什么道理？&#10;• 想对某人说什么？&#10;例：看到妈妈淋湿的背影，我鼻子一酸，觉得妈妈太辛苦了，我一定要好好学习报答她。"
+              maxlength="300"
+              show-word-limit
+              :disabled="isGenerating"
+              resize="vertical"
+            />
+          </div>
+        </el-collapse-item>
+      </el-collapse>
+
       <div class="quick-samples">
         <span class="sample-label">💡 快速体验：</span>
         <el-tag
@@ -365,7 +476,9 @@
           <span class="dot"></span>
         </div>
         <span class="generating-text">
-          ✍️ 正在围绕「{{ formData.topic }}」主题，融合 {{ keywordsList.length }} 个关键词
+          ✍️ 正在围绕「{{ formData.topic }}」主题
+          <span v-if="keywordsList.length > 0">，融合 {{ keywordsList.length }} 个关键词</span>
+          <span v-if="hasPersonalInfo">，结合你的 {{ personalFilledCount }} 项真实经历与感受</span>
           <span v-if="selectedStyles.length > 0"> + {{ selectedStyles.length }} 种风格偏好</span>
           ，为 {{ getGradeLabel(formData.grade) }} 学生创作 {{ formData.versionCount }} 篇优质范文…
         </span>
@@ -407,6 +520,23 @@
             {{ generatedEssays[idx].styleLabel }}
           </el-tag>
         </div>
+      </div>
+
+      <div v-if="hasPersonalInfo" class="personalized-badge">
+        <el-alert
+          type="success"
+          show-icon
+          :closable="false"
+          title="✅ 本范文已融入你提供的真实经历和感受，内容更真实可信，稍作修改即可作为作文参考甚至直接提交！"
+        />
+      </div>
+      <div v-else class="personalized-badge">
+        <el-alert
+          type="warning"
+          show-icon
+          :closable="false"
+          title="💡 提示：当前范文未融入你的个人经历，内容较为通用。建议展开上方「💝 个性化素材」填写真实经历，生成的作文会更像你自己写的！"
+        />
       </div>
 
       <div v-if="currentEssay" class="result-content">
@@ -583,6 +713,16 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+interface PersonalInfo {
+  authorName: string
+  gender: '' | 'boy' | 'girl'
+  realExperience: string
+  realFeeling: string
+  specificPeople: string
+  specificTime: string
+  specificPlace: string
+}
+
 interface FormData {
   topic: string
   grade: string
@@ -590,6 +730,7 @@ interface FormData {
   wordCount: string
   additionalNotes: string
   versionCount: number
+  personal: PersonalInfo
 }
 
 interface TeacherComment {
@@ -628,6 +769,7 @@ interface QuickSample {
   wordCount: string
   additionalNotes: string
   hintStyles: string[]
+  personal: Partial<PersonalInfo>
 }
 
 const STORAGE_KEY = 'essay_generator_history'
@@ -688,7 +830,16 @@ const quickSamples: QuickSample[] = [
     essayType: 'narrative',
     wordCount: 'medium',
     additionalNotes: '要有具体事例，真情实感',
-    hintStyles: ['touching', 'simple']
+    hintStyles: ['touching', 'simple'],
+    personal: {
+      authorName: '小明',
+      gender: 'boy',
+      realExperience: '上周三我半夜发烧到39度，外面下着大雨，妈妈背着我跑到医院，衣服全淋湿了，自己却感冒了',
+      realFeeling: '觉得妈妈很辛苦，很爱我，长大后要好好报答她',
+      specificPeople: '妈妈（李女士）、我',
+      specificTime: '上周三晚上',
+      specificPlace: '家里、人民医院'
+    }
   },
   {
     label: '春天来了',
@@ -698,7 +849,16 @@ const quickSamples: QuickSample[] = [
     essayType: 'descriptive',
     wordCount: 'medium',
     additionalNotes: '运用比喻拟人修辞手法，按顺序描写',
-    hintStyles: ['literary']
+    hintStyles: ['literary'],
+    personal: {
+      authorName: '小红',
+      gender: 'girl',
+      realExperience: '上周六和爸爸妈妈去郊外植物园春游，看到了迎春花开了，柳树发芽了，还有小燕子从南方飞回来了，我们还在草地上野餐',
+      realFeeling: '春天很美，心情特别愉快，觉得大自然很神奇',
+      specificPeople: '我、爸爸、妈妈',
+      specificTime: '上周六上午',
+      specificPlace: '城市植物园'
+    }
   },
   {
     label: '难忘的一件事',
@@ -708,7 +868,16 @@ const quickSamples: QuickSample[] = [
     essayType: 'narrative',
     wordCount: 'long',
     additionalNotes: '要有起因经过结果，写出心理变化',
-    hintStyles: ['inspiring', 'touching']
+    hintStyles: ['inspiring', 'touching'],
+    personal: {
+      authorName: '小华',
+      gender: 'boy',
+      realExperience: '学校演讲比赛，我一开始很紧张上台时忘词了，后来想起老师鼓励的话，深呼吸重新开始，最后获得了三等奖',
+      realFeeling: '从紧张害怕到勇敢面对，明白了战胜自己就是最大的成功',
+      specificPeople: '我、王老师、全班同学',
+      specificTime: '上个月的校园文化艺术节',
+      specificPlace: '学校大礼堂'
+    }
   },
   {
     label: '看图写话',
@@ -718,7 +887,16 @@ const quickSamples: QuickSample[] = [
     essayType: 'picture',
     wordCount: 'short',
     additionalNotes: '按顺序观察，写清楚谁在什么地方干什么',
-    hintStyles: ['simple', 'humorous']
+    hintStyles: ['simple', 'humorous'],
+    personal: {
+      authorName: '小丽',
+      gender: 'girl',
+      realExperience: '今年3月12日植树节，学校组织我们去人民公园种树，我和同桌小芳一组，我扶着树苗她浇水，累得满头大汗',
+      realFeeling: '种树很辛苦但是很开心，希望小树苗能和我一起长大',
+      specificPeople: '我、同桌小芳、班主任张老师',
+      specificTime: '3月12日植树节下午',
+      specificPlace: '人民公园'
+    }
   },
   {
     label: '二十年后的我',
@@ -728,7 +906,16 @@ const quickSamples: QuickSample[] = [
     essayType: 'imaginative',
     wordCount: 'long',
     additionalNotes: '大胆想象，要有具体场景描写',
-    hintStyles: ['creative', 'inspiring']
+    hintStyles: ['creative', 'inspiring'],
+    personal: {
+      authorName: '小强',
+      gender: 'boy',
+      realExperience: '从小喜欢拆玩具装回去，去年参加了市青少年科技创新大赛，拿了一等奖，我的梦想是成为航天科学家',
+      realFeeling: '相信只要努力学习，梦想一定能实现，想为祖国做贡献',
+      specificPeople: '二十年后的我、我的机器人助手小科',
+      specificTime: '2045年的某天',
+      specificPlace: '中国航天科技研究中心'
+    }
   },
   {
     label: '快乐的春节',
@@ -738,9 +925,28 @@ const quickSamples: QuickSample[] = [
     essayType: 'festival',
     wordCount: 'medium',
     additionalNotes: '突出节日氛围和快乐心情',
-    hintStyles: ['humorous', 'literary']
+    hintStyles: ['humorous', 'literary'],
+    personal: {
+      authorName: '小美',
+      gender: 'girl',
+      realExperience: '今年春节和爸爸妈妈回了奶奶家，和爷爷一起贴春联，跟奶奶学包饺子，大年初一给长辈拜年收了好多压岁钱，还和弟弟放烟花',
+      realFeeling: '和家人在一起特别幸福，喜欢春节的热闹和温馨',
+      specificPeople: '我、爸爸、妈妈、爷爷、奶奶、弟弟',
+      specificTime: '今年春节（大年三十到初二）',
+      specificPlace: '乡下奶奶家'
+    }
   }
 ]
+
+const defaultPersonal: PersonalInfo = {
+  authorName: '',
+  gender: '',
+  realExperience: '',
+  realFeeling: '',
+  specificPeople: '',
+  specificTime: '',
+  specificPlace: ''
+}
 
 const formData = ref<FormData>({
   topic: '',
@@ -748,7 +954,8 @@ const formData = ref<FormData>({
   essayType: 'narrative',
   wordCount: 'medium',
   additionalNotes: '',
-  versionCount: 1
+  versionCount: 1,
+  personal: { ...defaultPersonal }
 })
 
 const keywordsText = ref('')
@@ -765,6 +972,31 @@ const keywordsList = computed(() =>
 
 const canGenerate = computed(() => {
   return formData.value.topic.trim().length > 0 && formData.value.grade && formData.value.essayType
+})
+
+const hasPersonalInfo = computed(() => {
+  const p = formData.value.personal
+  return (
+    p.realExperience.trim().length > 0 ||
+    p.realFeeling.trim().length > 0 ||
+    p.specificPeople.trim().length > 0 ||
+    p.specificTime.trim().length > 0 ||
+    p.specificPlace.trim().length > 0 ||
+    p.authorName.trim().length > 0
+  )
+})
+
+const personalFilledCount = computed(() => {
+  const p = formData.value.personal
+  let count = 0
+  if (p.authorName.trim()) count++
+  if (p.gender) count++
+  if (p.realExperience.trim()) count++
+  if (p.realFeeling.trim()) count++
+  if (p.specificPeople.trim()) count++
+  if (p.specificTime.trim()) count++
+  if (p.specificPlace.trim()) count++
+  return count
 })
 
 const currentStep = computed(() => {
@@ -835,7 +1067,18 @@ const applySample = (sample: QuickSample) => {
   formData.value.wordCount = sample.wordCount
   formData.value.additionalNotes = sample.additionalNotes
   selectedStyles.value = [...sample.hintStyles]
-  ElMessage.success('已载入示例数据')
+  if (sample.personal) {
+    formData.value.personal = {
+      authorName: sample.personal.authorName || '',
+      gender: sample.personal.gender || '',
+      realExperience: sample.personal.realExperience || '',
+      realFeeling: sample.personal.realFeeling || '',
+      specificPeople: sample.personal.specificPeople || '',
+      specificTime: sample.personal.specificTime || '',
+      specificPlace: sample.personal.specificPlace || ''
+    }
+  }
+  ElMessage.success('已载入示例数据（含个性化素材），可点击「💝 个性化素材」展开查看')
 }
 
 const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
@@ -863,20 +1106,22 @@ const getGradeLevel = (grade: string) => {
   return 'upper'
 }
 
-const generateTitle = (topic: string, essayType: string, keywords: string[]): string => {
+const generateTitle = (topic: string, essayType: string, keywords: string[], personal: PersonalInfo): string => {
   const cleanTopic = topic.replace(/[《》""''「」]/g, '').trim()
+  const name = personal.authorName ? personal.authorName : '我'
   const topicPatterns: Record<string, string[]> = {
     narrative: [
       `${cleanTopic}`,
       `记${cleanTopic}`,
-      `我心中的${cleanTopic}`,
+      `${name}心中的${cleanTopic}`,
       `${cleanTopic}二三事`,
-      `难忘的${cleanTopic}`
+      `难忘的${cleanTopic}`,
+      `${name}的一次${cleanTopic.replace(/的/g, '')}经历`
     ],
     descriptive: [
       `${cleanTopic}`,
       `美丽的${cleanTopic}`,
-      `我爱${cleanTopic}`,
+      `${name}爱${cleanTopic}`,
       `${cleanTopic}真美`,
       `走进${cleanTopic}`
     ],
@@ -889,9 +1134,9 @@ const generateTitle = (topic: string, essayType: string, keywords: string[]): st
     ],
     imaginative: [
       `${cleanTopic}`,
-      `假如我是${cleanTopic}`,
+      `假如${name}是${cleanTopic}`,
       `${cleanTopic}历险记`,
-      `二十年后的${cleanTopic}`,
+      `二十年后的${name}`,
       `神奇的${cleanTopic}`
     ],
     picture: [
@@ -903,28 +1148,235 @@ const generateTitle = (topic: string, essayType: string, keywords: string[]): st
     ],
     diary: [
       `${cleanTopic}日记一则`,
-      `记${cleanTopic}的一天`,
-      `我的周末日记`,
+      `${name}记${cleanTopic}的一天`,
+      `${name}的周末日记`,
       `一件小事`,
-      `今天我真开心`
+      `今天${name}真开心`
     ],
     letter: [
       `给${cleanTopic}的一封信`,
       `写给${cleanTopic}的信`,
       `一封感谢信`,
       `给${cleanTopic}的建议书`,
-      `${cleanTopic}，我想对你说`
+      `${cleanTopic}，${name}想对你说`
     ],
     festival: [
       `快乐的${cleanTopic}`,
       `难忘的${cleanTopic}`,
       `${cleanTopic}见闻`,
-      `我爱${cleanTopic}`,
+      `${name}爱${cleanTopic}`,
       `${cleanTopic}的味道`
     ]
   }
   const patterns = topicPatterns[essayType] || topicPatterns.narrative
   return pick(patterns)
+}
+
+const splitIntoSentences = (text: string): string[] => {
+  if (!text.trim()) return []
+  const cleaned = text.replace(/\s+/g, ' ').trim()
+  const sentences = cleaned.match(/[^。！？.!?]+[。！？.!?]+/g) || [cleaned]
+  return sentences.map(s => s.trim()).filter(s => s.length > 0)
+}
+
+const chunkIntoParagraphs = (text: string, maxParaCount: number): string[] => {
+  if (!text.trim()) return []
+  const sentences = splitIntoSentences(text)
+  if (sentences.length === 0) return [text]
+  if (sentences.length <= maxParaCount) {
+    return sentences.map(s => s)
+  }
+  const paraCount = Math.min(maxParaCount, 3)
+  const sentencesPerPara = Math.ceil(sentences.length / paraCount)
+  const result: string[] = []
+  for (let i = 0; i < paraCount; i++) {
+    const start = i * sentencesPerPara
+    const end = Math.min(start + sentencesPerPara, sentences.length)
+    const para = sentences.slice(start, end).join('')
+    if (para.trim()) result.push(para)
+  }
+  return result
+}
+
+const personalizeText = (text: string, personal: PersonalInfo): string => {
+  let result = text
+  if (personal.authorName) {
+    result = result.replace(/\b我(?!们|的|妈|爸|爷|奶|同|学|老|师|家|心|里|中|国|校|爱|想|说|去|到|和|跟|与|把|被|让|给|对|从|在|是|有|会|能|要|就|也|都|还|不|没|很|真|太|最|一|这|那|每|各|哪|谁|什|多|少|大|小|高|低|好|坏|新|旧|早|晚|上|下|前|后|左|右|里|外|开|关|来|去)/g, personal.authorName)
+  }
+  if (personal.gender === 'boy') {
+    result = result.replace(/他\/她/g, '他')
+  } else if (personal.gender === 'girl') {
+    result = result.replace(/他\/她/g, '她')
+  }
+  return result
+}
+
+const buildPersonalizedOpening = (
+  essayType: string,
+  topic: string,
+  personal: PersonalInfo
+): string[] => {
+  const name = personal.authorName ? personal.authorName : '我'
+  const time = personal.specificTime ? personal.specificTime : ''
+  const place = personal.specificPlace ? personal.specificPlace : ''
+
+  const baseOpenings: Record<string, string[]> = {
+    narrative: time
+      ? [
+          `记得${time}，发生了一件让${name}久久不能忘怀的事——${topic}。`,
+          `${time}，在${place || name}的记忆里，留下了关于${topic}的深刻印记。`,
+          `每当${name}想起${time}发生的那件事，心里就久久不能平静。`,
+          `时间过得真快，转眼间${time}的那件事已经过去好久了，但${name}却一直记在心里。`
+        ]
+      : [
+          `在${name}的记忆中，有一件事让${name}久久不能忘怀，那就是关于${topic}的故事。`,
+          `有人说，生活是一本丰富多彩的书，而${topic}就是这本书中最精彩的一页。`,
+          `每当想起${topic}，${name}的心里就充满了温暖和感动。`,
+          `时间像流水一样匆匆流逝，但${topic}这件事，却深深地刻在了${name}的心里。`
+        ],
+    descriptive: place
+      ? [
+          `${time || '今天'}，${name}来到了${place}，眼前的${topic}让${name}惊叹不已。`,
+          `${place}的${topic}，是${name}见过最美的风景。`,
+          `一走进${place}，${name}就被眼前美丽的${topic}深深吸引住了。`
+        ]
+      : [
+          `春天来了，万物复苏，到处都充满了生机。${topic}更是美得让人陶醉。`,
+          `有人喜欢雄伟的高山，有人喜欢辽阔的大海，而${name}最喜欢的还是${topic}。`,
+          `世界上有许许多多美丽的事物，而${name}觉得最美丽的就是${topic}。`
+        ],
+    argumentative: [
+      `什么是${topic}？有人说它是一种品质，有人说它是一种力量，而${name}认为它是我们成长路上不可或缺的伙伴。`,
+      `在生活中，我们经常会听到关于${topic}的讨论。那么，${topic}到底有多重要呢？${name}想说说自己的看法。`,
+      `古人说："人无信不立。"其实不仅仅是诚信，${topic}同样是我们做人做事的根本。${name}对此深有体会。`
+    ],
+    imaginative: [
+      `${time || '一天晚上'}，${name}做了一个奇怪的梦，梦见自己变成了${topic}。`,
+      `假如${name}是${topic}，${name}一定会做许许多多有意义的事情。`,
+      `二十年后，科技飞速发展，${topic}也发生了翻天覆地的变化。${name}畅想那时的世界...`
+    ],
+    picture: [
+      `${time || '今天'}，${name}看到了一幅有趣的图画，画中描绘的是${topic}。让${name}们一起来看看吧！`,
+      `这是一幅充满生活气息的图画，画里的故事可有意思了。`,
+      `仔细观察这幅画，${name}仿佛听到了画中人物的欢声笑语。`
+    ],
+    diary: [
+      `${new Date().toLocaleDateString('zh-CN')}  星期${['日','一','二','三','四','五','六'][new Date().getDay()]}  天气晴`,
+      `${time || '今天'}是个特别的日子，因为${topic}，${name}度过了开心又充实的一天。`
+    ],
+    letter: [
+      `亲爱的${topic}：`,
+      `您好！好久不见，${name}十分想念您。`
+    ],
+    festival: [
+      `"爆竹声中一岁除，春风送暖入屠苏。"每当听到这句诗，${name}就想起了${time || topic}。`,
+      `盼星星，盼月亮，终于盼来了一年一度的${topic}。`,
+      `${topic}是${name}最喜欢的节日，每到${time || '这一天'}，家家户户都喜气洋洋的。`
+    ]
+  }
+
+  return baseOpenings[essayType] || baseOpenings.narrative
+}
+
+const buildPersonalizedEnding = (
+  essayType: string,
+  topic: string,
+  personal: PersonalInfo
+): string[] => {
+  const name = personal.authorName ? personal.authorName : '我'
+  const time = personal.specificTime ? personal.specificTime : ''
+  const hasFeeling = personal.realFeeling.trim().length > 0
+
+  if (hasFeeling) {
+    const feelingText = personal.realFeeling.trim()
+    const customEndings: Record<string, string[]> = {
+      narrative: [
+        `这件事让${name}明白了：${feelingText}`,
+        `现在回想起来，${name}还觉得历历在目。${feelingText}`,
+        `从那以后，${name}就牢牢记住了这件事。${feelingText}`
+      ],
+      descriptive: [
+        `${topic}真是太美了！${feelingText}`,
+        `夕阳西下，${name}恋恋不舍地离开了。${feelingText}`,
+        `这就是${name}最喜欢的${topic}。${feelingText}`
+      ],
+      argumentative: [
+        `总之，${topic}是我们每个人都应该具备的好品质。${feelingText}`,
+        `同学们，听了${name}的介绍，你们是不是也觉得${topic}很重要呢？${feelingText}`,
+        `"不积跬步，无以至千里。"${feelingText}`
+      ],
+      imaginative: [
+        `"叮铃铃——"闹钟响了，${name}从梦中醒来。虽然只是一场梦，但${feelingText}`,
+        `${name}的想象是不是很有趣？${feelingText}`,
+        `虽然这只是${name}的想象，但是${feelingText}`
+      ],
+      picture: [
+        `这幅画真是太有意思了！${feelingText}`,
+        `看着这幅画，${name}想了很多很多。${feelingText}`,
+        `这真是一幅有意义的画！${feelingText}`
+      ],
+      diary: [
+        `${time || '今天'}真是充实又快乐的一天！${feelingText}`,
+        `夜幕降临，${name}躺在床上，回想着今天发生的事情。${feelingText}`,
+        `写完这篇日记，${name}也该睡觉了。${feelingText}`
+      ],
+      letter: [
+        `纸短情长，就写到这里吧。${feelingText}`,
+        `祝您身体健康，万事如意！${feelingText}`,
+        `期待您的回信！${feelingText}`
+      ],
+      festival: [
+        `快乐的时光总是过得那么快。${feelingText}`,
+        `${name}爱${topic}，${feelingText}`,
+        `${topic}在欢声笑语中结束了。${feelingText}`
+      ]
+    }
+    return customEndings[essayType] || customEndings.narrative
+  }
+
+  const fallbackEndings: Record<string, string[]> = {
+    narrative: [
+      `这件事虽然已经过去很久了，但${name}永远都不会忘记。它让${name}明白了一个道理：${pick(['坚持就是胜利', '团结力量大', '世上无难事，只怕有心人', '帮助别人，快乐自己'])}。`,
+      `现在回想起来，${name}还觉得历历在目。${topic}这件事，将成为${name}童年最珍贵的回忆。`,
+      `从那以后，${name}就牢牢记住了这件事。它时刻提醒着${name}，要做一个${pick(['勇敢', '诚实', '善良', '勤劳'])}的好孩子。`
+    ],
+    descriptive: [
+      `${topic}真是太美了！${name}爱这美丽的${topic}，更爱这生机勃勃的大自然。`,
+      `夕阳西下，${name}恋恋不舍地离开了。但${topic}的美丽景象，已经深深地印在了${name}的脑海里。`,
+      `这就是${name}最喜欢的${topic}，它给${name}的童年带来了无数的欢乐和美好的回忆。`
+    ],
+    argumentative: [
+      `总之，${topic}是我们每个人都应该具备的好品质。让我们一起努力，做一个有${topic}的人吧！`,
+      `同学们，听了${name}的介绍，你们是不是也觉得${topic}很重要呢？那就让我们一起行动起来吧！`,
+      `"不积跬步，无以至千里。"让我们从点滴小事做起，慢慢培养${topic}的好品质。`
+    ],
+    imaginative: [
+      `"叮铃铃——"闹钟响了，${name}从梦中醒来。虽然只是一场梦，但${name}相信，只要努力，梦想终有一天会实现。`,
+      `${name}的想象是不是很有趣？你们也来想一想，如果你们是${topic}，会做些什么呢？`,
+      `虽然这只是${name}的想象，但是${name}相信，随着科技的发展，这一切在未来都有可能变成现实。`
+    ],
+    picture: [
+      `这幅画真是太有意思了！它不仅让${name}看到了美丽的景色，还让${name}感受到了生活的美好。`,
+      `看着这幅画，${name}想了很多很多。${name}以后也要像画中的小朋友一样，开开心心地过好每一天。`,
+      `这真是一幅有意义的画！${name}喜欢这幅画，更喜欢画中描绘的美好生活。`
+    ],
+    diary: [
+      `今天真是充实又快乐的一天！${name}要把这份美好的记忆永远珍藏在心里。`,
+      `夜幕降临，${name}躺在床上，回想着今天发生的事情，嘴角不禁微微上扬。多么美好的一天啊！`,
+      `写完这篇日记，${name}也该睡觉了。明天一定会是更美好的一天！`
+    ],
+    letter: [
+      `纸短情长，就写到这里吧。期待您的回信！`,
+      `祝您身体健康，万事如意！`,
+      `此致\n敬礼！`
+    ],
+    festival: [
+      `快乐的时光总是过得那么快，${topic}就这样过去了。但那份快乐和温暖，将永远留在${name}的心中。`,
+      `${name}爱${topic}，爱这份团圆的幸福，更爱家人们在一起的温馨时光。`,
+      `${topic}在欢声笑语中结束了，但那些美好的回忆，将伴随${name}走过整整一年。`
+    ]
+  }
+  return fallbackEndings[essayType] || fallbackEndings.narrative
 }
 
 const generateEssayContent = (
@@ -933,238 +1385,154 @@ const generateEssayContent = (
   grade: string,
   keywords: string[],
   additionalNotes: string,
-  styles: string[]
+  styles: string[],
+  personal: PersonalInfo
 ): { paragraphs: string[]; content: string; wordCount: number } => {
   const gradeLevel = getGradeLevel(grade)
   const wcConfig = getWordCountConfig(formData.value.wordCount)
+  const hasRealExp = personal.realExperience.trim().length > 0
+  const hasRealFeeling = personal.realFeeling.trim().length > 0
+  const hasPersonal = hasRealExp || hasRealFeeling || personal.authorName
 
-  const openingTemplates: Record<string, string[]> = {
-    narrative: [
-      `在我的记忆中，有一件事让我久久不能忘怀，那就是关于${topic}的故事。`,
-      `有人说，生活是一本丰富多彩的书，而${topic}就是这本书中最精彩的一页。`,
-      `每当想起${topic}，我的心里就充满了温暖和感动。`,
-      `时间像流水一样匆匆流逝，但${topic}这件事，却深深地刻在了我的心里。`
-    ],
-    descriptive: [
-      `春天来了，万物复苏，到处都充满了生机。${topic}更是美得让人陶醉。`,
-      `有人喜欢雄伟的高山，有人喜欢辽阔的大海，而我最喜欢的还是${topic}。`,
-      `今天，我来到了${topic}，眼前的景象让我惊叹不已。`,
-      `世界上有许许多多美丽的事物，而我觉得最美丽的就是${topic}。`
-    ],
-    argumentative: [
-      `什么是${topic}？有人说它是一种品质，有人说它是一种力量，而我认为它是我们成长路上不可或缺的伙伴。`,
-      `在生活中，我们经常会听到关于${topic}的讨论。那么，${topic}到底有多重要呢？`,
-      `古人说："人无信不立。"其实不仅仅是诚信，${topic}同样是我们做人做事的根本。`
-    ],
-    imaginative: [
-      `一天晚上，我做了一个奇怪的梦，梦见自己变成了${topic}。`,
-      `假如我是${topic}，我一定会做许许多多有意义的事情。`,
-      `二十年后，科技飞速发展，${topic}也发生了翻天覆地的变化。`,
-      `在一个遥远的地方，有一个神奇的王国，那里住着${topic}。`
-    ],
-    picture: [
-      `今天，我看到了一幅有趣的图画，画中描绘的是${topic}。让我们一起来看看吧！`,
-      `这是一幅充满生活气息的图画，画里的故事可有意思了。`,
-      `仔细观察这幅画，我仿佛听到了画中人物的欢声笑语。`
-    ],
-    diary: [
-      `${new Date().toLocaleDateString('zh-CN')}  星期${['日','一','二','三','四','五','六'][new Date().getDay()]}  天气晴`,
-      `今天是个特别的日子，因为${topic}，我度过了开心又充实的一天。`
-    ],
-    letter: [
-      `亲爱的${topic}：`,
-      `您好！`,
-      `好久不见，您最近身体好吗？`
-    ],
-    festival: [
-      `"爆竹声中一岁除，春风送暖入屠苏。"每当听到这句诗，我就想起了${topic}。`,
-      `盼星星，盼月亮，终于盼来了一年一度的${topic}。`,
-      `${topic}是我最喜欢的节日，每到这一天，家家户户都喜气洋洋的。`
-    ]
-  }
+  const openingTemplates = buildPersonalizedOpening(essayType, topic, personal)
 
-  const bodyTemplates: Record<string, string[][]> = {
-    narrative: [
-      [
-        `记得那是一个阳光明媚的早晨，我早早地起了床，心里既紧张又兴奋。因为今天我要第一次尝试关于${topic}的事情。`,
-        `一开始，我觉得这件事很简单，可是真正做起来才发现并没有那么容易。我遇到了很多困难，好几次都想放弃。`,
-        `但是，想起妈妈平时对我说的话："做任何事情都要有耐心，不能半途而废。"我又鼓起勇气，继续坚持下去。`,
-        `终于，在我的不懈努力下，我成功了！那一刻，我的心里比吃了蜜还要甜。`
-      ],
-      [
-        `那天下午，我们全班同学一起去参加关于${topic}的活动。大家都兴高采烈，一路上有说有笑。`,
-        `到了目的地，老师给我们分配了任务。我和几个好朋友分到了一组，我们决定团结合作，一起完成任务。`,
-        `活动过程中发生了很多有趣的事情，大家互相帮助，互相鼓励，每个人都尽了自己最大的努力。`,
-        `活动结束的时候，虽然大家都很累，但是每个人的脸上都洋溢着幸福的笑容。`
-      ]
-    ],
-    descriptive: [
-      [
-        `你看，${topic}的样子多美啊！远远望去，就像一幅美丽的画卷。`,
-        `走近一看，更是让人心旷神怡。各种各样的颜色交织在一起，红的像火，粉的像霞，白的像雪，美丽极了。`,
-        `微风轻轻吹过，带来一阵阵清香，让人闻了神清气爽。偶尔还能听到几声清脆的鸟鸣，仿佛在唱着欢快的歌。`,
-        `看到这么美丽的景色，我不禁陶醉其中，久久不愿离去。`
-      ],
-      [
-        `${topic}一年四季都有不同的美景。春天，它生机勃勃，万物复苏；夏天，它郁郁葱葱，充满活力；秋天，它金黄一片，硕果累累；冬天，它银装素裹，静谧安详。`,
-        `清晨，${topic}在薄雾中若隐若现，就像一位蒙着面纱的少女，神秘而美丽。`,
-        `傍晚，夕阳的余晖洒在${topic}上，给它镀上了一层金色的光芒，显得格外迷人。`,
-        `我爱这美丽的${topic}，它给我的生活带来了无限的欢乐。`
-      ]
-    ],
-    argumentative: [
-      [
-        `首先，${topic}是我们成长路上的指明灯。有了它，我们才能在人生的道路上不迷失方向。`,
-        `其次，${topic}能让我们变得更加优秀。古今中外，凡是取得伟大成就的人，无一不具备${topic}这种品质。`,
-        `相反，如果一个人缺少${topic}，那么他在学习和生活中就会遇到很多困难，很难取得成功。`,
-        `所以，我们要从小培养${topic}的品质，让它伴随我们成长。`
-      ],
-      [
-        `在生活中，我就有过这样的亲身经历。以前我总是不明白${topic}的重要性，直到有一次...`,
-        `那件事让我深刻地认识到，${topic}对一个人的成长是多么重要。从那以后，我就暗下决心，一定要做一个有${topic}的人。`,
-        `同学们，让我们一起行动起来，从身边的小事做起，培养${topic}的好品质吧！`
-      ]
-    ],
-    imaginative: [
-      [
-        `变成${topic}之后，我发现自己拥有了神奇的能力。我可以飞到天空中，和白云做伴，和小鸟一起唱歌。`,
-        `我飞到了学校，看到同学们正在认真地学习。我悄悄地帮他们整理好书桌，又飞到老师身边，为老师扇风解热。`,
-        `接着，我又飞到了公园里，看到一位老奶奶正在吃力地过马路，我赶紧飞过去，轻轻地扶着她安全地走过了马路。`,
-        `做了这么多好事，我心里美滋滋的。正当我想继续帮助更多人的时候，闹钟响了，原来这是一场梦。虽然是梦，但我决定，以后一定要像梦中那样，做一个乐于助人的好孩子。`
-      ],
-      [
-        `二十年后的${topic}可神奇了！让我来给你们介绍介绍吧。`,
-        `未来的${topic}有许多先进的功能。它不仅会说话，还能思考，能帮助人们解决各种各样的问题。`,
-        `最神奇的是，它还能带着人们去旅行，上到太空，下到海底，没有它去不了的地方。`,
-        `我真希望这一天能早点到来！为了实现这个梦想，我一定要好好学习，将来成为一名科学家，发明出真正的${topic}。`
-      ]
-    ],
-    picture: [
-      [
-        `画的左边是一片绿油油的草地，草地上开满了五颜六色的小花，蝴蝶在花丛中飞来飞去，美丽极了。`,
-        `画的中间，有几个小朋友正在开心地玩耍。他们有的在跑步，有的在跳绳，还有的在放风筝，每个人的脸上都洋溢着灿烂的笑容。`,
-        `画的右边是几棵高大的树，树上的叶子翠绿翠绿的，小鸟在枝头唱着动听的歌。`,
-        `看着这幅画，我仿佛也走进了画中，和小朋友们一起玩耍，一起欢笑。`
-      ]
-    ],
-    diary: [
-      [
-        `早上，我早早地起了床，吃完早饭就兴高采烈地出门了。今天的天气真好，蓝蓝的天上飘着几朵白云，小鸟在枝头唱歌。`,
-        `上午，我和小伙伴们一起玩游戏，我们玩得可开心了！大家你追我赶，笑声回荡在整个院子里。`,
-        `下午，我还帮妈妈做了一些家务。妈妈夸我长大了，懂事了，我的心里美滋滋的。`,
-        `今天真是快乐的一天！我把这件事写在日记里，希望以后每天都能这么开心。`
-      ]
-    ],
-    letter: [
-      [
-        `好久不见，十分想念您。最近学校里发生了很多有趣的事情，我迫不及待地想告诉您。`,
-        `这学期，我的学习进步了很多，上次考试还取得了好成绩呢！老师表扬了我，我心里特别高兴。`,
-        `除了学习，我还参加了学校的兴趣小组，学到了很多新本领。我一定会继续努力，不辜负您对我的期望。`,
-        `祝您身体健康，工作顺利！期待您的回信。`
-      ]
-    ],
-    festival: [
-      [
-        `${topic}这一天，大街小巷都张灯结彩，喜气洋洋。家家户户贴上了春联，挂起了灯笼，到处都是欢声笑语。`,
-        `我们家也不例外。一大早，全家人就忙开了。爸爸妈妈准备丰盛的饭菜，我和弟弟帮忙贴春联、挂灯笼，忙得不亦乐乎。`,
-        `晚上，全家人围坐在一起吃年夜饭，看着精彩的电视节目，大家有说有笑，热闹极了。我还收到了压岁钱，心里美滋滋的。`,
-        `${topic}真是太快乐了！我真希望每天都是${topic}。`
-      ]
-    ]
-  }
+  let paragraphs: string[] = []
 
-  const endingTemplates: Record<string, string[]> = {
-    narrative: [
-      `这件事虽然已经过去很久了，但我永远都不会忘记。它让我明白了一个道理：${pick(['坚持就是胜利', '团结力量大', '世上无难事，只怕有心人', '帮助别人，快乐自己'])}。`,
-      `现在回想起来，我还觉得历历在目。${topic}这件事，将成为我童年最珍贵的回忆。`,
-      `从那以后，我就牢牢记住了这件事。它时刻提醒着我，要做一个${pick(['勇敢', '诚实', '善良', '勤劳'])}的好孩子。`
-    ],
-    descriptive: [
-      `${topic}真是太美了！我爱这美丽的${topic}，更爱这生机勃勃的大自然。`,
-      `夕阳西下，我恋恋不舍地离开了。但${topic}的美丽景象，已经深深地印在了我的脑海里。`,
-      `这就是我最喜欢的${topic}，它给我的童年带来了无数的欢乐和美好的回忆。`
-    ],
-    argumentative: [
-      `总之，${topic}是我们每个人都应该具备的好品质。让我们一起努力，做一个有${topic}的人吧！`,
-      `同学们，听了我的介绍，你们是不是也觉得${topic}很重要呢？那就让我们一起行动起来吧！`,
-      `"不积跬步，无以至千里。"让我们从点滴小事做起，慢慢培养${topic}的好品质。`
-    ],
-    imaginative: [
-      `"叮铃铃——"闹钟响了，我从梦中醒来。虽然只是一场梦，但我相信，只要努力，梦想终有一天会实现。`,
-      `我的想象是不是很有趣？你们也来想一想，如果你们是${topic}，会做些什么呢？`,
-      `虽然这只是我的想象，但是我相信，随着科技的发展，这一切在未来都有可能变成现实。`
-    ],
-    picture: [
-      `这幅画真是太有意思了！它不仅让我看到了美丽的景色，还让我感受到了生活的美好。`,
-      `看着这幅画，我想了很多很多。我以后也要像画中的小朋友一样，开开心心地过好每一天。`,
-      `这真是一幅有意义的画！我喜欢这幅画，更喜欢画中描绘的美好生活。`
-    ],
-    diary: [
-      `今天真是充实又快乐的一天！我要把这份美好的记忆永远珍藏在心里。`,
-      `夜幕降临，我躺在床上，回想着今天发生的事情，嘴角不禁微微上扬。多么美好的一天啊！`,
-      `写完这篇日记，我也该睡觉了。明天一定会是更美好的一天！`
-    ],
-    letter: [
-      `纸短情长，就写到这里吧。期待您的回信！`,
-      `祝您身体健康，万事如意！`,
-      `此致\n敬礼！`
-    ],
-    festival: [
-      `快乐的时光总是过得那么快，${topic}就这样过去了。但那份快乐和温暖，将永远留在我的心中。`,
-      `我爱${topic}，爱这份团圆的幸福，更爱家人们在一起的温馨时光。`,
-      `${topic}在欢声笑语中结束了，但那些美好的回忆，将伴随我走过整整一年。`
-    ]
-  }
+  if (hasRealExp) {
+    paragraphs.push(personalizeText(pick(openingTemplates), personal))
 
-  const goodWordsByType: Record<string, string[]> = {
-    narrative: ['兴致勃勃', '迫不及待', '津津有味', '欢声笑语', '历历在目', '记忆犹新', '兴高采烈', '眉开眼笑', '手舞足蹈', '心花怒放', '坚持不懈', '勇往直前', '锲而不舍', '自强不息', '助人为乐'],
-    descriptive: ['春暖花开', '鸟语花香', '万紫千红', '百花齐放', '生机勃勃', '郁郁葱葱', '层林尽染', '瓜果飘香', '白雪皑皑', '银装素裹', '山清水秀', '湖光山色', '美不胜收', '心旷神怡', '流连忘返'],
-    argumentative: ['坚韧不拔', '持之以恒', '言而有信', '一诺千金', '一丝不苟', '兢兢业业', '勤勤恳恳', '脚踏实地', '志存高远', '胸怀大志', '百折不挠', '临危不惧', '大公无私', '舍己为人', '光明磊落'],
-    imaginative: ['异想天开', '奇思妙想', '天马行空', '光怪陆离', '神秘莫测', '变幻莫测', '五彩缤纷', '神奇无比', '不可思议', '如梦如幻', '五彩斑斓', '奇幻无比', '奥秘无穷', '心想事成', '梦想成真'],
-    picture: ['栩栩如生', '活灵活现', '惟妙惟肖', '跃然纸上', '生动形象', '情景交融', '引人入胜', '身临其境', '其乐融融', '和和美美', '热热闹闹', '开开心心', '快快乐乐', '高高兴兴', '幸福美满'],
-    diary: ['开开心心', '高高兴兴', '快快乐乐', '平平安安', '顺顺利利', '忙忙碌碌', '兢兢业业', '认认真真', '仔仔细细', '踏踏实实', '收获满满', '幸福满满', '元气满满', '快乐多多', '趣事多多'],
-    letter: ['敬爱的', '亲爱的', '尊敬的', '敬启者', '久未见面', '别来无恙', '见字如面', '纸短情长', '不尽欲言', '顺祝安好', '祝好', '盼复', '敬祝', '顺颂', '敬请'],
-    festival: ['喜气洋洋', '张灯结彩', '欢声笑语', '其乐融融', '团团圆圆', '和和美美', '热热闹闹', '鞭炮齐鸣', '锣鼓喧天', '载歌载舞', '普天同庆', '举国欢腾', '吉祥如意', '幸福安康', '万事如意']
-  }
-
-  const goodSentenceTemplates: string[] = [
-    `一阵微风吹过，${topic}就像${pick(['一位翩翩起舞的少女', '翻滚的波浪', '点头微笑的孩子', '跳动的音符'])}，美丽极了。`,
-    `那一刻，我的心里${pick(['比吃了蜜还要甜', '像打翻了五味瓶', '像有一只小兔子在砰砰直跳', '涌起一股暖流'])}。`,
-    `时间过得真快，转眼间${pick(['太阳已经落山了', '一天就过去了', '这件事已经过去很久了', '我们都长大了'])}。`,
-    `这件事让我深深地明白了一个道理：${pick(['一分耕耘，一分收获', '团结就是力量', '帮助别人就是帮助自己', '世上无难事，只怕有心人'])}。`,
-    `看着眼前的景象，我仿佛${pick(['走进了童话世界', '听到了大自然的歌声', '看到了最美的画卷', '感受到了春天的气息'])}。`
-  ]
-
-  const paragraphs: string[] = []
-  const allKeywords = [...keywords, ...pickMany(goodWordsByType[essayType] || goodWordsByType.narrative, 3)]
-
-  const openingTemplatesForType = openingTemplates[essayType] || openingTemplates.narrative
-  const bodyTemplatesForType = bodyTemplates[essayType] || bodyTemplates.narrative
-  const endingTemplatesForType = endingTemplates[essayType] || endingTemplates.narrative
-
-  paragraphs.push(pick(openingTemplatesForType))
-
-  const selectedBody = pick(bodyTemplatesForType)
-  for (let i = 0; i < Math.min(selectedBody.length, wcConfig.paraCount - 2); i++) {
-    let para = selectedBody[i]
-    if (allKeywords.length > 0 && i === 1) {
-      const kw = pickMany(allKeywords, 2)
-      para += ` 我想用${kw.join('、')}这些词语来形容它。`
+    const expParagraphs = chunkIntoParagraphs(personal.realExperience, Math.max(2, wcConfig.paraCount - 2))
+    for (const para of expParagraphs) {
+      paragraphs.push(personalizeText(para, personal))
     }
-    paragraphs.push(para)
+
+    const people = personal.specificPeople.trim()
+    if (people && paragraphs.length < wcConfig.paraCount - 1) {
+      paragraphs.push(`这件事离不开${people}的陪伴和帮助，想到他们，${personal.authorName || '我'}的心里就充满了感激。`)
+    }
+
+    const time = personal.specificTime.trim()
+    const place = personal.specificPlace.trim()
+    if ((time || place) && paragraphs.length < wcConfig.paraCount) {
+      const detailParts: string[] = []
+      if (time) detailParts.push(time)
+      if (place) detailParts.push(place)
+      paragraphs.push(`${detailParts.join('在')}发生的这件事，将成为${personal.authorName || '我'}成长路上最珍贵的记忆。`)
+    }
+  } else {
+    const genericBody: Record<string, string[][]> = {
+      narrative: [
+        [
+          `记得那是一个阳光明媚的早晨，${personal.authorName || '我'}早早地起了床，心里既紧张又兴奋。因为今天${personal.authorName || '我'}要第一次尝试关于${topic}的事情。`,
+          `一开始，${personal.authorName || '我'}觉得这件事很简单，可是真正做起来才发现并没有那么容易。${personal.authorName || '我'}遇到了很多困难，好几次都想放弃。`,
+          `但是，想起妈妈平时对${personal.authorName || '我'}说的话："做任何事情都要有耐心，不能半途而废。"${personal.authorName || '我'}又鼓起勇气，继续坚持下去。`,
+          `终于，在${personal.authorName || '我'}的不懈努力下，${personal.authorName || '我'}成功了！那一刻，${personal.authorName || '我'}的心里比吃了蜜还要甜。`
+        ],
+        [
+          `那天下午，我们全班同学一起去参加关于${topic}的活动。大家都兴高采烈，一路上有说有笑。`,
+          `到了目的地，老师给我们分配了任务。${personal.authorName || '我'}和几个好朋友分到了一组，我们决定团结合作，一起完成任务。`,
+          `活动过程中发生了很多有趣的事情，大家互相帮助，互相鼓励，每个人都尽了自己最大的努力。`,
+          `活动结束的时候，虽然大家都很累，但是每个人的脸上都洋溢着幸福的笑容。`
+        ]
+      ],
+      descriptive: [
+        [
+          `你看，${topic}的样子多美啊！远远望去，就像一幅美丽的画卷。`,
+          `走近一看，更是让人心旷神怡。各种各样的颜色交织在一起，红的像火，粉的像霞，白的像雪，美丽极了。`,
+          `微风轻轻吹过，带来一阵阵清香，让人闻了神清气爽。偶尔还能听到几声清脆的鸟鸣，仿佛在唱着欢快的歌。`,
+          `看到这么美丽的景色，${personal.authorName || '我'}不禁陶醉其中，久久不愿离去。`
+        ],
+        [
+          `${topic}一年四季都有不同的美景。春天，它生机勃勃，万物复苏；夏天，它郁郁葱葱，充满活力；秋天，它金黄一片，硕果累累；冬天，它银装素裹，静谧安详。`,
+          `清晨，${topic}在薄雾中若隐若现，就像一位蒙着面纱的少女，神秘而美丽。`,
+          `傍晚，夕阳的余晖洒在${topic}上，给它镀上了一层金色的光芒，显得格外迷人。`,
+          `${personal.authorName || '我'}爱这美丽的${topic}，它给${personal.authorName || '我'}的生活带来了无限的欢乐。`
+        ]
+      ],
+      argumentative: [
+        [
+          `首先，${topic}是我们成长路上的指明灯。有了它，我们才能在人生的道路上不迷失方向。`,
+          `其次，${topic}能让我们变得更加优秀。古今中外，凡是取得伟大成就的人，无一不具备${topic}这种品质。`,
+          `相反，如果一个人缺少${topic}，那么他在学习和生活中就会遇到很多困难，很难取得成功。`,
+          `所以，我们要从小培养${topic}的品质，让它伴随我们成长。`
+        ]
+      ],
+      imaginative: [
+        [
+          `变成${topic}之后，${personal.authorName || '我'}发现自己拥有了神奇的能力。${personal.authorName || '我'}可以飞到天空中，和白云做伴，和小鸟一起唱歌。`,
+          `${personal.authorName || '我'}飞到了学校，看到同学们正在认真地学习。${personal.authorName || '我'}悄悄地帮他们整理好书桌，又飞到老师身边，为老师扇风解热。`,
+          `接着，${personal.authorName || '我'}又飞到了公园里，看到一位老奶奶正在吃力地过马路，${personal.authorName || '我'}赶紧飞过去，轻轻地扶着她安全地走过了马路。`,
+          `做了这么多好事，${personal.authorName || '我'}心里美滋滋的。正当${personal.authorName || '我'}想继续帮助更多人的时候，闹钟响了，原来这是一场梦。虽然是梦，但${personal.authorName || '我'}决定，以后一定要像梦中那样，做一个乐于助人的好孩子。`
+        ]
+      ],
+      picture: [
+        [
+          `画的左边是一片绿油油的草地，草地上开满了五颜六色的小花，蝴蝶在花丛中飞来飞去，美丽极了。`,
+          `画的中间，有几个小朋友正在开心地玩耍。他们有的在跑步，有的在跳绳，还有的在放风筝，每个人的脸上都洋溢着灿烂的笑容。`,
+          `画的右边是几棵高大的树，树上的叶子翠绿翠绿的，小鸟在枝头唱着动听的歌。`,
+          `看着这幅画，${personal.authorName || '我'}仿佛也走进了画中，和小朋友们一起玩耍，一起欢笑。`
+        ]
+      ],
+      diary: [
+        [
+          `早上，${personal.authorName || '我'}早早地起了床，吃完早饭就兴高采烈地出门了。今天的天气真好，蓝蓝的天上飘着几朵白云，小鸟在枝头唱歌。`,
+          `上午，${personal.authorName || '我'}和小伙伴们一起玩游戏，我们玩得可开心了！大家你追我赶，笑声回荡在整个院子里。`,
+          `下午，${personal.authorName || '我'}还帮妈妈做了一些家务。妈妈夸${personal.authorName || '我'}长大了，懂事了，${personal.authorName || '我'}的心里美滋滋的。`,
+          `今天真是快乐的一天！${personal.authorName || '我'}把这件事写在日记里，希望以后每天都能这么开心。`
+        ]
+      ],
+      letter: [
+        [
+          `好久不见，十分想念您。最近学校里发生了很多有趣的事情，${personal.authorName || '我'}迫不及待地想告诉您。`,
+          `这学期，${personal.authorName || '我'}的学习进步了很多，上次考试还取得了好成绩呢！老师表扬了${personal.authorName || '我'}，${personal.authorName || '我'}心里特别高兴。`,
+          `除了学习，${personal.authorName || '我'}还参加了学校的兴趣小组，学到了很多新本领。${personal.authorName || '我'}一定会继续努力，不辜负您对${personal.authorName || '我'}的期望。`,
+          `祝您身体健康，工作顺利！期待您的回信。`
+        ]
+      ],
+      festival: [
+        [
+          `${topic}这一天，大街小巷都张灯结彩，喜气洋洋。家家户户贴上了春联，挂起了灯笼，到处都是欢声笑语。`,
+          `我们家也不例外。一大早，全家人就忙开了。爸爸妈妈准备丰盛的饭菜，${personal.authorName || '我'}和弟弟帮忙贴春联、挂灯笼，忙得不亦乐乎。`,
+          `晚上，全家人围坐在一起吃年夜饭，看着精彩的电视节目，大家有说有笑，热闹极了。${personal.authorName || '我'}还收到了压岁钱，心里美滋滋的。`,
+          `${topic}真是太快乐了！${personal.authorName || '我'}真希望每天都是${topic}。`
+        ]
+      ]
+    }
+
+    paragraphs.push(personalizeText(pick(openingTemplates), personal))
+    const bodyTemplates = genericBody[essayType] || genericBody.narrative
+    const selectedBody = pick(bodyTemplates)
+    for (let i = 0; i < Math.min(selectedBody.length, wcConfig.paraCount - 2); i++) {
+      let para = selectedBody[i]
+      if (keywords.length > 0 && i === 1) {
+        const kw = pickMany(keywords, 2)
+        para += ` ${personal.authorName || '我'}想用${kw.join('、')}这些词语来形容它。`
+      }
+      paragraphs.push(personalizeText(para, personal))
+    }
   }
 
-  paragraphs.push(pick(endingTemplatesForType))
+  const endingTemplates = buildPersonalizedEnding(essayType, topic, personal)
+  paragraphs.push(personalizeText(pick(endingTemplates), personal))
+
+  if (keywords.length > 0) {
+    const keyPhrase = pickMany(keywords, Math.min(2, keywords.length)).join('、')
+    const insertIdx = Math.min(1, paragraphs.length - 2)
+    if (insertIdx >= 1 && !paragraphs[insertIdx].includes(keyPhrase.split('、')[0])) {
+      paragraphs[insertIdx] += ` 想到这里，${personal.authorName || '我'}的脑海里浮现出${keyPhrase}这些词。`
+    }
+  }
 
   if (gradeLevel === 'lower') {
-    for (let i = 0; i < paragraphs.length; i++) {
-      if (paragraphs[i].length > 100) {
-        const sentences = paragraphs[i].split(/(?<=[。！？])/)
+    paragraphs = paragraphs.map(p => {
+      if (p.length > 100) {
+        const sentences = p.match(/[^。！？]+[。！？]+/g) || [p]
         if (sentences.length > 2) {
-          paragraphs[i] = sentences.slice(0, 2).join('')
+          return sentences.slice(0, 2).join('')
         }
       }
-    }
+      return p
+    })
   }
 
   const content = paragraphs.join('\n\n')
@@ -1251,12 +1619,15 @@ const generateSingleEssay = (
   grade: string,
   keywords: string[],
   additionalNotes: string,
-  styles: string[]
+  styles: string[],
+  personal: PersonalInfo
 ): EssayResult => {
-  const { paragraphs, content, wordCount } = generateEssayContent(topic, essayType, grade, keywords, additionalNotes, styles)
-  const title = generateTitle(topic, essayType, keywords)
+  const { paragraphs, content, wordCount } = generateEssayContent(topic, essayType, grade, keywords, additionalNotes, styles, personal)
+  const title = generateTitle(topic, essayType, keywords, personal)
 
   const gradeLevel = getGradeLevel(grade)
+  const name = personal.authorName ? personal.authorName : '我'
+
   const goodWordsByType: Record<string, string[]> = {
     narrative: ['兴致勃勃', '迫不及待', '津津有味', '欢声笑语', '历历在目', '记忆犹新', '兴高采烈'],
     descriptive: ['春暖花开', '鸟语花香', '万紫千红', '百花齐放', '生机勃勃', '郁郁葱葱', '美不胜收'],
@@ -1273,9 +1644,9 @@ const generateSingleEssay = (
   const goodSentenceCount = gradeLevel === 'lower' ? 1 : gradeLevel === 'middle' ? 2 : 3
   const goodSentenceTemplates = [
     `一阵微风吹过，${topic}就像一位翩翩起舞的少女，美丽极了。`,
-    `那一刻，我的心里比吃了蜜还要甜。`,
-    `这件事让我深深地明白了一个道理：一分耕耘，一分收获。`,
-    `看着眼前的景象，我仿佛走进了童话世界。`,
+    `那一刻，${name}的心里比吃了蜜还要甜。`,
+    `这件事让${name}深深地明白了一个道理：一分耕耘，一分收获。`,
+    `看着眼前的景象，${name}仿佛走进了童话世界。`,
     `时间过得真快，转眼间太阳已经落山了。`
   ]
   const goodSentences = pickMany(goodSentenceTemplates, goodSentenceCount)
@@ -1320,7 +1691,8 @@ const generateEssay = async () => {
       formData.value.grade,
       keywordsList.value,
       formData.value.additionalNotes,
-      styleForEssay
+      styleForEssay,
+      formData.value.personal
     ))
   }
 
@@ -1376,7 +1748,8 @@ const resetAll = () => {
     essayType: 'narrative',
     wordCount: 'medium',
     additionalNotes: '',
-    versionCount: 1
+    versionCount: 1,
+    personal: { ...defaultPersonal }
   }
   keywordsText.value = ''
   selectedStyles.value = []
@@ -2113,5 +2486,54 @@ onMounted(() => {
 .history-footer {
   margin-top: 12px;
   text-align: center;
+}
+
+.personal-collapse {
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.personal-collapse :deep(.el-collapse-item__header) {
+  font-weight: 600;
+  font-size: 15px;
+  color: #e6a23c;
+  background: #fdf6ec;
+  border-radius: 8px;
+  padding-left: 12px;
+}
+
+.personal-collapse :deep(.el-collapse-item__wrap) {
+  background: #fffaf0;
+  border-radius: 0 0 8px 8px;
+}
+
+.personal-tip {
+  margin-bottom: 20px;
+}
+
+.author-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.author-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.personalized-badge {
+  margin-bottom: 20px;
+}
+
+.personalized-badge :deep(.el-alert) {
+  border-radius: 8px;
 }
 </style>
