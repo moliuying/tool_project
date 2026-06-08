@@ -10,7 +10,7 @@
         </div>
       </template>
       <el-steps :active="currentStep" finish-status="success" simple class="guide-steps">
-        <el-step title="选择产品品类" description="8大品类深度适配专属话术" />
+        <el-step title="选择产品品类" description="9大品类深度适配专属话术" />
         <el-step title="输入产品信息" description="产品名称、核心特性、目标用户" />
         <el-step title="设定输出偏好" description="场景 × 风格 × 版本数" />
         <el-step title="查看与复制" description="多版本FAB可对比可选" />
@@ -22,7 +22,7 @@
           <div class="expectation-item">
             <el-icon :size="24" color="#165DFF"><Goods /></el-icon>
             <div class="exp-text">
-              <div class="exp-num">8 大品类适配</div>
+              <div class="exp-num">9 大品类适配</div>
               <div class="exp-label">话术风格贴合品类特性</div>
             </div>
           </div>
@@ -479,6 +479,7 @@ const categories = [
   { value: 'food', label: '食品饮料', emoji: '🍎' },
   { value: 'fashion', label: '服饰鞋包', emoji: '👕' },
   { value: 'baby', label: '母婴儿童', emoji: '👶' },
+  { value: 'gift', label: '礼品文创', emoji: '🎁' },
   { value: 'edu', label: '教育培训', emoji: '📚' },
   { value: 'service', label: '服务咨询', emoji: '💼' }
 ]
@@ -523,6 +524,12 @@ const productSamples: ProductSample[] = [
   { name: '婴儿面霜', category: 'baby', productName: '婴儿多效修护面霜 50g',
     features: ['食品级原料配方', '通过皮肤科敏感测试', '0激素0防腐剂', '仿生胎脂修护技术'],
     targetUser: '0-3岁宝宝的妈妈，宝宝肌肤娇嫩易过敏，追求安全温和' },
+  { name: '手工香薰蜡烛', category: 'gift', productName: '手作香薰蜡烛礼盒 · 栀子花香',
+    features: ['纯手工灌蜡制作', '天然大豆蜡原料', '专属烫金贺卡定制', '复古丝绒礼盒包装'],
+    targetUser: '20-35岁女性，送礼给闺蜜/爱人/妈妈，追求仪式感和专属心意' },
+  { name: '定制手账本', category: 'gift', productName: '真皮定制手账本 · 可刻字',
+    features: ['头层牛皮手工缝制', '封面可刻名字/纪念日', '内页180°平摊设计', '附赠复古黄铜笔'],
+    targetUser: '25-40岁文艺爱好者和职场人，送给重要的人作为纪念礼物' },
   { name: '英语课程', category: 'edu', productName: '商务英语实战训练营',
     features: ['北美外教1对1授课', '真实商务场景模拟', '个性化学习路径', '30天不满意全额退'],
     targetUser: '25-35岁职场人，有英语基础但不敢开口，需提升商务沟通能力' },
@@ -734,6 +741,36 @@ const buildKnowledge = (): Record<string, CategoryKnowledge> => ({
         pains: ['没人做过的事担心踩雷', '小规模团队没见过大场面'],
         benefits: { life: '大量成功案例背书，方法论经过充分验证，放心合作', feeling: '可靠、有保障' } }
     }
+  },
+  gift: {
+    featureFocus: ['手作温度', '专属定制', '仪式感', '情感寄托'],
+    advantageVerbs: ['承载', '传递', '诉说', '见证', '陪伴', '珍藏', '诠释'],
+    benefitAngles: ['心意被看见', '情感被珍藏', '专属仪式感', '回忆的载体', '独一无二的感动'],
+    linkABPhrases: ['这里面藏着的是…', '每一处细节都在诉说…', '不只是一件物品，更是…', '当TA收到时会感受到…'],
+    linkBCPhrases: ['对TA来说…', '这份心意会变成…', '多年以后回望，你会发现…', '最珍贵的不是物品而是…'],
+    painPoints: ['送的礼物千篇一律没心意', '对方收到转头就忘了', '花了钱却没感受到重视', '重要的日子缺了仪式感'],
+    scenarioPairs: [{ s1: '生日纪念日的惊喜时刻', s2: '平平无奇的日常小确幸' }, { s1: '即将分别的临别赠礼', s2: '久别重逢的见面礼' }],
+    valuePropositions: ['心意才是最好的礼物', '让每个重要时刻都被记住', '独一无二的心意之选'],
+    keywordMap: {
+      '手工': { actions: ['每一件都是手作人倾注时间的作品，带着机器无法复制的温度', '每一处细微的不完美，正是手作独有的印记和诚意', '从选材到成品，经过手作人反复打磨的用心'],
+        pains: ['量产货冰冷没有灵魂', '送出去的礼物和别人撞款'],
+        benefits: { life: 'TA拿到手就能感受到你花的心思，这是多少钱都买不来的诚意', feeling: '被重视、独一无二' } },
+      '定制': { actions: ['刻着TA的名字/你们的纪念日，这是全世界独一份的专属', '把说不出口的话，悄悄藏进礼物里', '为你们之间的故事，留下专属的印记'],
+        pains: ['送的礼物看不出是专门为TA准备的', '心意无法精准传达'],
+        benefits: { life: '每当TA看到这件礼物，就会想起你和那个重要的时刻', feeling: '被放在心上、专属感' } },
+      '礼盒': { actions: ['层层拆开的不只是包装，更是你精心铺垫的心意与惊喜', '拆开的那一刻，仪式感就已经拉满了', '从视觉到触感，每一个细节都在诉说"你值得"'],
+        pains: ['礼物裸着送太随意', '缺少拆礼物的期待感'],
+        benefits: { life: '拆礼物的瞬间变成值得记住的美好时刻，连拍照片都特别好看', feeling: '仪式感、被珍视' } },
+      '天然': { actions: ['甄选天然原料，对肌肤和环境都温柔友好', '自然的香气/触感，不刺激不廉价', '带着大自然本身的质朴与美好'],
+        pains: ['廉价材质闻着刺鼻', '担心对身体不好'],
+        benefits: { life: '用起来安心舒服，就像你的关心一样不刻意但贴心', feeling: '安心、温暖' } },
+      '刻字': { actions: ['把想说的话、重要的日子、专属的昵称永久留存', '文字让礼物有了记忆和故事', '每次看到都能想起你写这句话时的心意'],
+        pains: ['礼物用旧了就被遗忘', '心意无法长久留存'],
+        benefits: { life: '时光会流逝，但刻下的字和藏在里面的心意不会褪色', feeling: '永恒、被记住' } },
+      '手缝': { actions: ['每一针每一线都缝进了你的牵挂和祝福', '机器做不来的慢工细活，是心意最好的证明', '带着手作人的温度，不是千篇一律的流水线产物'],
+        pains: ['流水线产品没有灵魂', '花了钱也看不出用心'],
+        benefits: { life: 'TA用的时候会想起，这世界上有人愿意花时间，一针一线为TA准备礼物', feeling: '被爱、被用心对待' } }
+    }
   }
 })
 
@@ -790,6 +827,7 @@ const getFeaturePlaceholder = () => {
     food: '例如：\n6种进口坚果果干\n低温烘焙非油炸\n独立小包装30袋',
     fashion: '例如：\n澳洲进口羊毛面料\n意式手工剪裁\n防皱免烫工艺',
     baby: '例如：\n食品级原料配方\n通过皮肤科敏感测试\n0激素0防腐剂',
+    gift: '例如：\n纯手工灌蜡制作\n封面可刻名字/纪念日\n复古丝绒礼盒包装',
     edu: '例如：\n北美外教1对1授课\n真实商务场景模拟\n30天不满意全额退',
     service: '例如：\n10年以上资深顾问团队\n服务过500+知名企业\n90天陪跑落地'
   }
@@ -812,7 +850,8 @@ const matchKeywordInKnowledge = (feature: string, category: string) => {
   return null
 }
 
-const extractFeatureType = (feature: string): 'tech' | 'material' | 'process' | 'design' | 'service' | 'generic' => {
+const extractFeatureType = (feature: string, category?: string): 'tech' | 'material' | 'process' | 'design' | 'service' | 'emotion' | 'generic' => {
+  if (category === 'gift' || /手工|手作|手缝|定制|刻字|礼盒|纪念|专属|仪式|心意|礼物|限量|独家/i.test(feature)) return 'emotion'
   if (/[\d.]+(dB|小时|mAh|ml|m³|万|次|天|级|nm|K|Hz|%)/i.test(feature) || /蓝牙[\d.]|IPX\d|HEPA/i.test(feature)) return 'tech'
   if (/不锈钢|棉|羊毛|面料|成分|原料|材质/i.test(feature)) return 'material'
   if (/烘焙|工艺|技术|配方|剪裁/i.test(feature)) return 'process'
@@ -838,7 +877,7 @@ const generateAdvantageFromFeature = (feature: string, category: string, style: 
     return `${starter}${action}`
   }
 
-  const ftype = extractFeatureType(feature)
+  const ftype = extractFeatureType(feature, category)
   const verb = pick(kb?.advantageVerbs || ['提升', '实现', '带来'])
 
   const templatesByType: Record<string, string[]> = {
@@ -847,6 +886,11 @@ const generateAdvantageFromFeature = (feature: string, category: string, style: 
     process: [`经过${feature}，产品在细节处理上更${verb}用户期待`, `${feature}的工艺，让每一件出品都达到更高标准`],
     design: [`${feature}的人性化设计，真正从用户角度${verb}使用便捷性`, `精心打磨的${feature}，在实际使用中处处${verb}体验感`],
     service: [`${feature}的服务体系，全程${verb}客户获得预期结果`, `提供${feature}，为每一个环节${verb}可靠保障`],
+    emotion: [
+      `${feature}，藏着你说不出口的心意与牵挂`,
+      `看似只是${feature}，实则是一份愿意花时间的用心`,
+      `${feature}的背后，是你把TA放在心上的最好证明`
+    ],
     generic: [`${feature}，有效${verb}整体使用体验`, `配置${feature}，为用户带来更${verb}的价值`]
   }
   return starter + pick(templatesByType[ftype])
@@ -855,6 +899,7 @@ const generateAdvantageFromFeature = (feature: string, category: string, style: 
 const generateBenefitFromAdvantage = (feature: string, category: string, style: string): string => {
   const kb = categoryKnowledgeBase[category]
   const matched = matchKeywordInKnowledge(feature, category)
+  const ftype = extractFeatureType(feature, category)
 
   if (matched && kb) {
     const { life, feeling } = matched.data.benefits
@@ -867,6 +912,21 @@ const generateBenefitFromAdvantage = (feature: string, category: string, style: 
       return `从「${pain}」到「${life}」，体验上的提升显而易见，${feeling}就是最好的证明`
     }
     return `${life}，${feeling}——这就是${pick(kb.valuePropositions)}`
+  }
+
+  if (ftype === 'emotion') {
+    const emotionBenefits = [
+      'TA收到的那一刻，会真切感受到你花的每一分心思都是值得的',
+      '这件礼物会变成你们之间专属的回忆，每次想起都暖暖的',
+      '不是最贵的，但一定是最用心的——这才是礼物真正的意义',
+      '多年以后TA再看到这件礼物，还会想起你送TA时的那份心动',
+      '比起礼物本身，被人放在心上的感觉才是最珍贵的'
+    ]
+    if (style === 'emotion' || style === 'scenario') {
+      const scenarios = kb?.scenarioPairs ? pick(kb.scenarioPairs) : { s1: '特别的日子', s2: '平凡的每一天' }
+      return `${pick(styleKnowledge[style as keyof typeof styleKnowledge].starters)}${scenarios.s1}还是${scenarios.s2}，${pick(emotionBenefits)}`
+    }
+    return pick(emotionBenefits)
   }
 
   const angle = pick(kb?.benefitAngles || ['生活品质提升'])
@@ -1119,7 +1179,7 @@ onMounted(() => loadHistory())
 .two-col-section { display: flex; gap: 20px; }
 .flex-1 { flex: 1; }
 
-.category-options { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.category-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .category-card { border: 2px solid #ebeef5; border-radius: 10px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.25s; background: #fff; }
 .category-card:hover:not(.disabled) { border-color: #c6e2ff; background: #f5f9ff; }
 .category-card.active { border-color: #165DFF; background: linear-gradient(135deg, #ecf5ff 0%, #d9ecff 100%); }
