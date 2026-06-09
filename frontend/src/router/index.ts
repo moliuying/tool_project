@@ -315,6 +315,11 @@ const routes: RouteRecordRaw[] = [
         path: '/social-scenario',
         name: 'SocialScenarioSimulator',
         component: () => import('@/views/SocialScenarioSimulator.vue')
+      },
+      {
+        path: '/plant-identifier',
+        name: 'PlantIdentifier',
+        component: () => import('@/views/PlantIdentifier.vue')
       }
     ]
   }

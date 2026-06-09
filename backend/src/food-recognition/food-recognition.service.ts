@@ -1205,7 +1205,7 @@ export class FoodRecognitionService {
       confidence: Math.round(adjustedConfidence * 100) / 100,
       mainIngredients: baseResult.mainIngredients.map(ing => ({
         ...ing,
-      probability: Math.max(0.5, Math.min(0.99, ing.probability + (Math.random() * 0.1 - 0.05))
+        probability: Math.max(0.5, Math.min(0.99, ing.probability + (Math.random() * 0.1 - 0.05)))
       }))
     };
     

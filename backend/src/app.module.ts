@@ -9,6 +9,7 @@ import { HttpHeadersModule } from './http-headers/http-headers.module';
 import { CrxDownloaderModule } from './crx-downloader/crx-downloader.module';
 import { FitnessModule } from './fitness/fitness.module';
 import { FoodRecognitionModule } from './food-recognition/food-recognition.module';
+import { PlantRecognitionModule } from './plant-recognition/plant-recognition.module';
 import * as path from 'path';
 
 @Module({
@@ -27,6 +28,7 @@ import * as path from 'path';
     CrxDownloaderModule,
     FitnessModule,
     FoodRecognitionModule,
+    PlantRecognitionModule,
   ],
 })
 export class AppModule {}
