@@ -320,6 +320,11 @@ const routes: RouteRecordRaw[] = [
         path: '/plant-identifier',
         name: 'PlantIdentifier',
         component: () => import('@/views/PlantIdentifier.vue')
+      },
+      {
+        path: '/ancient-wisdom',
+        name: 'AncientWisdomAdvisor',
+        component: () => import('@/views/AncientWisdomAdvisor.vue')
       }
     ]
   }
