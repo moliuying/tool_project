@@ -16,6 +16,11 @@ const holiday_entity_1 = require("./holiday/holiday.entity");
 const whois_module_1 = require("./whois/whois.module");
 const http_headers_module_1 = require("./http-headers/http-headers.module");
 const crx_downloader_module_1 = require("./crx-downloader/crx-downloader.module");
+const fitness_module_1 = require("./fitness/fitness.module");
+const food_recognition_module_1 = require("./food-recognition/food-recognition.module");
+const plant_recognition_module_1 = require("./plant-recognition/plant-recognition.module");
+const photo_critique_module_1 = require("./photo-critique/photo-critique.module");
+const programming_qna_module_1 = require("./programming-qna/programming-qna.module");
 const path = require("path");
 let AppModule = class AppModule {
 };
@@ -34,6 +39,11 @@ AppModule = __decorate([
             whois_module_1.WhoisModule,
             http_headers_module_1.HttpHeadersModule,
             crx_downloader_module_1.CrxDownloaderModule,
+            fitness_module_1.FitnessModule,
+            food_recognition_module_1.FoodRecognitionModule,
+            plant_recognition_module_1.PlantRecognitionModule,
+            photo_critique_module_1.PhotoCritiqueModule,
+            programming_qna_module_1.ProgrammingQnaModule,
         ],
     })
 ], AppModule);

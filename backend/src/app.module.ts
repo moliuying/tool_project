@@ -11,6 +11,7 @@ import { FitnessModule } from './fitness/fitness.module';
 import { FoodRecognitionModule } from './food-recognition/food-recognition.module';
 import { PlantRecognitionModule } from './plant-recognition/plant-recognition.module';
 import { PhotoCritiqueModule } from './photo-critique/photo-critique.module';
+import { ProgrammingQnaModule } from './programming-qna/programming-qna.module';
 import * as path from 'path';
 
 @Module({
@@ -31,6 +32,7 @@ import * as path from 'path';
     FoodRecognitionModule,
     PlantRecognitionModule,
     PhotoCritiqueModule,
+    ProgrammingQnaModule,
   ],
 })
 export class AppModule {}

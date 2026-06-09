@@ -335,6 +335,11 @@ const routes: RouteRecordRaw[] = [
         path: '/photo-critique',
         name: 'PhotoCritique',
         component: () => import('@/views/PhotoCritique.vue')
+      },
+      {
+        path: '/programming-qna',
+        name: 'ProgrammingQna',
+        component: () => import('@/views/ProgrammingQna.vue')
       }
     ]
   }
