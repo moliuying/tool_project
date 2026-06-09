@@ -167,12 +167,91 @@
         />
       </el-card>
 
-      <el-card class="background-card">
+      <el-card class="context-card">
         <div class="section-label">
           <el-icon color="#165DFF"><InfoFilled /></el-icon>
-          <span>场景背景</span>
+          <span>情境解读</span>
+          <el-tag size="small" type="info" effect="plain" class="context-tip">
+            <el-icon><CaretRight /></el-icon>
+            <span>仔细阅读以下信息，它们是读懂对话的关键</span>
+          </el-tag>
         </div>
-        <p class="background-text">{{ currentScenario.background }}</p>
+
+        <div class="context-overview">
+          <div class="context-overview-icon">📋</div>
+          <p class="context-overview-text">{{ currentScenario.background }}</p>
+        </div>
+
+        <div class="context-grid">
+          <div class="context-item">
+            <div class="context-item-header">
+              <el-icon color="#409EFF"><Clock /></el-icon>
+              <span class="context-item-title">时间</span>
+            </div>
+            <p class="context-item-text">{{ currentScenario.context.time }}</p>
+          </div>
+          <div class="context-item">
+            <div class="context-item-header">
+              <el-icon color="#67C23A"><Location /></el-icon>
+              <span class="context-item-title">地点</span>
+            </div>
+            <p class="context-item-text">{{ currentScenario.context.location }}</p>
+          </div>
+        </div>
+
+        <div class="context-section">
+          <div class="context-section-header">
+            <el-icon color="#E6A23C"><Histogram /></el-icon>
+            <span class="context-section-title">前情提要</span>
+          </div>
+          <p class="context-section-text">{{ currentScenario.context.recentHistory }}</p>
+        </div>
+
+        <div class="context-section">
+          <div class="context-section-header">
+            <el-icon color="#F56C6C"><Odometer /></el-icon>
+            <span class="context-section-title">当下氛围</span>
+          </div>
+          <p class="context-section-text atmosphere-text">{{ currentScenario.context.atmosphere }}</p>
+        </div>
+
+        <div class="context-section">
+          <div class="context-section-header">
+            <el-icon color="#909399"><User /></el-icon>
+            <span class="context-section-title">关键人物</span>
+          </div>
+          <div class="character-list">
+            <div
+              v-for="(char, idx) in currentScenario.characters"
+              :key="idx"
+              class="character-card"
+            >
+              <div class="character-header">
+                <div class="character-avatar">
+                  <span>{{ char.name.slice(0, 1) }}</span>
+                </div>
+                <div class="character-basic">
+                  <div class="character-name">{{ char.name }}</div>
+                  <div class="character-role">{{ char.role }}</div>
+                </div>
+              </div>
+              <div class="character-detail">
+                <div class="character-detail-row">
+                  <span class="character-detail-label">关系：</span>
+                  <span class="character-detail-value">{{ char.relationshipWithYou }}</span>
+                </div>
+                <div class="character-detail-row">
+                  <span class="character-detail-label">性格：</span>
+                  <span class="character-detail-value">{{ char.personality }}</span>
+                </div>
+                <div class="character-detail-row">
+                  <span class="character-detail-label">背景：</span>
+                  <span class="character-detail-value">{{ char.background }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </el-card>
 
       <el-card class="dialog-card">
@@ -354,7 +433,7 @@
 
 <script setup lang="ts">import { ref, computed } from 'vue';
 import { socialScenarios, categoryInfo, difficultyInfo, type SocialScenario, type ScenarioQuestion } from '@/data/socialScenarios';
-import { Grid, ArrowLeft, ArrowRight, VideoPlay, InfoFilled, ChatDotRound, MagicStick, QuestionFilled, CircleCheckFilled, CircleCloseFilled, Reading, Trophy, Bulb, Back, Refresh } from '@element-plus/icons-vue';
+import { Grid, ArrowLeft, ArrowRight, VideoPlay, InfoFilled, ChatDotRound, MagicStick, QuestionFilled, CircleCheckFilled, CircleCloseFilled, Reading, Trophy, Bulb, Back, Refresh, Clock, Location, Histogram, Odometer, User, CaretRight } from '@element-plus/icons-vue';
 const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
 const currentScenario = ref<SocialScenario | null>(null);
@@ -719,21 +798,189 @@ function nextScenario() {
   margin-bottom: 12px;
 }
 
-.background-card,
+.context-card,
 .dialog-card,
 .question-card,
 .result-card {
   margin-bottom: 4px;
 }
 
-.background-text {
+.context-tip {
+  margin-left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.context-overview {
+  display: flex;
+  gap: 12px;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4ff 100%);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-left: 3px solid #409EFF;
+}
+
+.context-overview-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.context-overview-text {
+  flex: 1;
   font-size: 14px;
+  color: #303133;
+  line-height: 1.8;
+  margin: 0;
+  font-weight: 500;
+}
+
+.context-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.context-item {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.context-item-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.context-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.context-item-text {
+  font-size: 13px;
+  color: #303133;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.context-section {
+  margin-bottom: 16px;
+}
+
+.context-section:last-child {
+  margin-bottom: 0;
+}
+
+.context-section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.context-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.context-section-text {
+  font-size: 13px;
   color: #606266;
   line-height: 1.8;
   margin: 0;
-  background: #f5f7fa;
-  padding: 12px 16px;
+  background: #fafafa;
+  padding: 12px 14px;
   border-radius: 8px;
+}
+
+.atmosphere-text {
+  background: linear-gradient(135deg, #fef0f0 0%, #fdf2ec 100%);
+  color: #c0392b;
+  font-style: italic;
+}
+
+.character-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.character-card {
+  background: #fafafa;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #ebeef5;
+}
+
+.character-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px dashed #e4e7ed;
+}
+
+.character-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.character-basic {
+  flex: 1;
+}
+
+.character-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 2px;
+}
+
+.character-role {
+  font-size: 12px;
+  color: #909399;
+}
+
+.character-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.character-detail-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.character-detail-label {
+  font-weight: 600;
+  color: #606266;
+  flex-shrink: 0;
+  min-width: 42px;
+}
+
+.character-detail-value {
+  color: #303133;
+  flex: 1;
 }
 
 .dialog-list {
@@ -1066,6 +1313,25 @@ function nextScenario() {
   
   .dialog-content {
     max-width: 85%;
+  }
+  
+  .context-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .context-tip {
+    margin-left: 0;
+    margin-top: 8px;
+    width: 100%;
+  }
+  
+  .section-label {
+    flex-wrap: wrap;
+  }
+  
+  .character-detail-row {
+    flex-direction: column;
+    gap: 2px;
   }
 }
 </style>
