@@ -10,6 +10,8 @@ export interface DimensionScore {
 }
 
 export interface PhotoCritique {
+  style: string;
+  styleName: string;
   overallScore: number;
   maxScore: number;
   overallGrade: string;
@@ -23,11 +25,31 @@ export interface PhotoCritique {
   postProcessingTips: string[];
   learningPath: string[];
   suitableScenarios: string[];
+  styleNote: string;
+}
+
+interface StyleConfig {
+  key: string;
+  name: string;
+  description: string;
+  dimensionWeights: Record<string, number>;
+  dimensionNameOverrides?: Record<string, string>;
+  descriptions: Record<string, string[]>;
+  highlights: Record<string, string[]>;
+  improvements: Record<string, string[]>;
+  compositionInsights: string[];
+  technicalSuggestions: string[];
+  creativeAdvice: string[];
+  postProcessingTips: string[];
+  learningPath: string[];
+  suitableScenarios: string[];
+  overallComments: Record<string, string>;
+  styleNote: string;
 }
 
 @Injectable()
 export class PhotoCritiqueService {
-  private readonly dimensionTemplates = {
+  private readonly baseDimensionTemplates = {
     composition: {
       name: '构图',
       descriptions: [
@@ -176,7 +198,7 @@ export class PhotoCritiqueService {
     }
   };
 
-  private readonly scenarioTemplates = [
+  private readonly baseScenarioTemplates = [
     '摄影学习阶段的作品自评，快速发现个人短板',
     '摄影比赛投稿前的质量评估，提高获奖概率',
     '社交媒体发布前的作品筛选，确保最佳呈现效果',
@@ -187,7 +209,7 @@ export class PhotoCritiqueService {
     '风光摄影作品优化建议，提升大片质感'
   ];
 
-  private readonly learningPathTemplates = [
+  private readonly baseLearningPathTemplates = [
     '系统学习摄影构图法则：三分法、黄金分割、引导线、框架构图等',
     '深入理解曝光三角：光圈、快门、ISO的关系与运用',
     '研究色彩理论：色彩搭配、色温色调、色彩情感表达',
@@ -200,7 +222,7 @@ export class PhotoCritiqueService {
     '建立个人作品集，定期复盘总结成长轨迹'
   ];
 
-  private readonly postProcessingTips = [
+  private readonly basePostProcessingTips = [
     '建议使用Lightroom进行基础调整：曝光、对比度、高光阴影、白色黑色色阶',
     '色调曲线可精细控制明暗对比，打造个性化影调',
     'HSL/混色器单独调整各颜色，让主体色彩更加突出',
@@ -209,15 +231,858 @@ export class PhotoCritiqueService {
     '校准面板微调三原色，获得独特的色彩风格',
     '转换配置文件可快速尝试不同色彩风格',
     '暗角效果增加画面聚焦感，让视线集中在主体',
-    ' Dehaze工具增强画面通透感和空气透视',
+    'Dehaze工具增强画面通透感和空气透视',
     '最后适度降噪，平衡细节保留和画面纯净度'
   ];
 
-  critiquePhoto(imagesBase64: string[]): PhotoCritique {
-    return this.generateCritique(imagesBase64);
+  private readonly styleConfigs: Record<string, StyleConfig> = {
+    standard: {
+      key: 'standard',
+      name: '通用标准',
+      description: '均衡的综合评价标准，适用于大多数摄影作品',
+      dimensionWeights: {
+        composition: 1.0,
+        exposure: 1.0,
+        color: 1.0,
+        themeExpression: 1.0,
+        emotion: 1.0,
+        technicalExecution: 1.0
+      },
+      descriptions: {},
+      highlights: {},
+      improvements: {},
+      compositionInsights: [],
+      technicalSuggestions: [],
+      creativeAdvice: [],
+      postProcessingTips: [],
+      learningPath: [],
+      suitableScenarios: [],
+      overallComments: {},
+      styleNote: '本点评基于通用摄影美学标准，兼顾技术与艺术的均衡评价。不同风格流派可能有不同的评价侧重。'
+    },
+    street: {
+      key: 'street',
+      name: '街头纪实',
+      description: '强调决定性瞬间、真实情感和故事叙事，对技术完美度包容度高',
+      dimensionWeights: {
+        composition: 1.2,
+        exposure: 0.7,
+        color: 0.6,
+        themeExpression: 1.3,
+        emotion: 1.3,
+        technicalExecution: 0.7
+      },
+      descriptions: {
+        technicalExecution: [
+          '技术服务于内容，虽然不一定完美，但不影响画面的真实表达和故事张力，这种"不完美"正是街头摄影的魅力所在。',
+          '技术基本够用，略有瑕疵但不影响内容传递，街头摄影中真实感比画质更重要。',
+          '技术存在明显瑕疵，部分影响了画面可读性，建议在保证捕捉瞬间的前提下适当注意技术控制。',
+          '技术问题较为严重，影响了画面的基本观看，建议先确保基础的对焦和曝光，再追求瞬间的捕捉。'
+        ]
+      },
+      highlights: {
+        themeExpression: [
+          '决定性瞬间捕捉精准，故事感十足',
+          '街头真实情感记录到位，有温度',
+          '人物互动关系自然，叙事感强',
+          '城市环境与人物融合巧妙'
+        ],
+        emotion: [
+          '真实生活气息浓郁，代入感强',
+          '人物表情生动自然，毫无摆拍痕迹',
+          '街头氛围感营造出色'
+        ]
+      },
+      improvements: {
+        technicalExecution: [
+          '街头摄影可适当提高ISO换取安全快门，保证画面不虚',
+          '使用区域对焦和超焦距，减少对焦时间错过瞬间',
+          '提前测光设置好参数，等待时机按快门即可',
+          '使用连拍模式提高成功率，但后期精选最佳瞬间'
+        ]
+      },
+      compositionInsights: [
+        '街头摄影构图可以"不完美"，但要有视觉焦点或引导线',
+        '善用框架构图：门、窗、镜子、人群间隙都是天然画框',
+        '层叠构图增加街头画面的深度和信息密度',
+        '尝试靠近拍摄，让画面更有冲击力和代入感',
+        '寻找光影对比，用光线切割街头画面'
+      ],
+      technicalSuggestions: [
+        '使用小光圈f/5.6-f/8配合区域对焦，快速抓拍不犹豫',
+        'ISO自动设置上限，保证最低安全快门速度',
+        '随身携带小型相机或手机，减少对被摄者的干扰',
+        '练习盲拍和腰平取景，更自然地捕捉街头瞬间'
+      ],
+      creativeAdvice: [
+        '街头摄影的灵魂是"好奇心"，保持对日常的观察敏感度',
+        '尝试长期拍摄同一个地点或主题，形成系列作品',
+        '不要害怕靠近，保持尊重和微笑，大多数人不会拒绝',
+        '关注光影和天气变化，不同时段的街头气质完全不同',
+        '向布列松、马克·吕布、森山大道等街头大师学习'
+      ],
+      postProcessingTips: [
+        '街头摄影后期不宜过度，保持真实感是首要原则',
+        '可以适当提高对比度和颗粒感，增强质感',
+        '黑白转换是街头摄影的经典选择，专注光影和内容',
+        '适当的暗角可以让视线集中在画面中心',
+        '矫枉过正的HDR会破坏街头真实感，慎用'
+      ],
+      learningPath: [
+        '阅读《摄影构图艺术》，理解街头摄影的视觉组织',
+        '观看经典街头摄影作品，培养视觉直觉',
+        '坚持"每日一拍"练习，在街头保持相机随身',
+        '学习如何在公共空间拍摄时保持尊重和自然',
+        '尝试完成一个街头长期项目，如"城市面孔"系列',
+        '研究区域对焦、超焦距等快速拍摄技术',
+        '学习图片编辑，从大量照片中选出最好的瞬间'
+      ],
+      suitableScenarios: [
+        '街头摄影作品自评，提升瞬间捕捉能力',
+        '纪实摄影项目选片，确保叙事完整性',
+        '街头摄影比赛投稿前评估',
+        '城市街拍日常练习复盘'
+      ],
+      overallComments: {
+        high: '作为街头摄影作品，本作品展现了出色的瞬间捕捉能力和叙事感。真实的情感、生动的瞬间是街头摄影最宝贵的品质，技术上的"不完美"反而增加了作品的现场感和真实魅力。继续保持对生活的敏感和好奇心，你的镜头会讲述越来越动人的城市故事。',
+        mid: '这幅街头作品有不错的观察和记录意识，捕捉到了有价值的瞬间或情绪。街头摄影的核心在于"时机"和"内容"，建议更主动地接近拍摄对象，耐心等待最佳瞬间的出现。技术层面可以通过区域对焦、盲拍等技巧来提高抓拍效率。',
+        low: '这张街头照片有基本的记录意识，但在瞬间的把握和内容的选择上还有提升空间。街头摄影需要大量的练习和观察，建议从每天带相机开始，在熟悉的街区反复练习拍摄，培养发现"决定性瞬间"的直觉。'
+      },
+      styleNote: '街头纪实摄影以真实、瞬间、故事为核心价值。本点评在此标准下，更看重瞬间的捕捉、情感的传递和叙事能力，对曝光、画质等技术因素的要求相对宽容，因为"拍到"永远比"拍好"更重要。'
+    },
+    landscape: {
+      key: 'landscape',
+      name: '风光摄影',
+      description: '侧重构图的精致、光影的魅力、色彩的和谐和画质的极致',
+      dimensionWeights: {
+        composition: 1.3,
+        exposure: 1.3,
+        color: 1.2,
+        themeExpression: 0.9,
+        emotion: 1.0,
+        technicalExecution: 1.2
+      },
+      descriptions: {
+        composition: [
+          '风光构图精湛，前景中景远景层次丰富，空间纵深感和形式美感兼具，展现了对自然景观的深刻理解和成熟把控。',
+          '风光构图良好，元素安排合理，画面有层次感，在视觉引导和画面张力方面仍有提升空间。',
+          '风光构图基本可行，主体景观得以呈现，但层次不够丰富，视觉冲击力稍弱。',
+          '风光构图需要加强，画面元素安排较为平淡，缺少纵深感和视觉焦点。'
+        ],
+        exposure: [
+          '曝光控制出色，天空和地面细节均得到良好保留，动态范围利用充分，展现了专业的风光曝光技术。',
+          '曝光整体准确，大部分明暗细节保留良好，局部可能有轻微溢出但不影响整体。',
+          '曝光基本可用，主体景观可见，但天空或地面存在一定的细节丢失。',
+          '曝光存在明显问题，高光或暗部细节损失严重，影响风光作品的视觉效果。'
+        ]
+      },
+      highlights: {
+        composition: [
+          '前景运用出色，有效增强了画面纵深感',
+          '引导线自然流畅，视线被有效引导至主体',
+          '三分法与黄金比例运用得当，画面平衡舒适',
+          '层次感丰富，前中远景安排井然有序'
+        ],
+        exposure: [
+          '长曝光运用得当，流水或云雾呈现丝滑质感',
+          '蓝调时刻或黄金时段光线选择精准',
+          '渐变滤镜使用合理，天地曝光平衡'
+        ],
+        color: [
+          '日落/日出色彩浓郁饱满，氛围感强',
+          '色彩过渡自然，天空层次丰富',
+          '后期调色风格统一，不突兀'
+        ],
+        technicalExecution: [
+          '长曝光稳定无模糊，画质出色',
+          '景深控制到位，从前景到远景全程锐利',
+          '低ISO拍摄，画面纯净细节丰富'
+        ]
+      },
+      improvements: {
+        composition: [
+          '寻找有趣的前景元素，避免"明信片"式的平淡构图',
+          '尝试更低或更高的拍摄角度，创造独特视角',
+          '关注天空与地面的比例，一般避免地平线居中',
+          '利用自然框架（山洞、树枝、拱门）增强画面趣味'
+        ],
+        exposure: [
+          '风光摄影务必使用三脚架，保证低ISO长曝光画质',
+          '使用中灰渐变滤镜平衡天地光比，优于单靠后期',
+          '蓝调时刻（日出前/日落后30分钟）光线最柔和梦幻',
+          '曝光包围+后期合成HDR，应对大光比场景'
+        ],
+        technicalExecution: [
+          '使用小光圈f/8-f/16获得最大景深，但注意过小光圈的衍射问题',
+          '开启反光板预升或使用电子前帘，减少机震',
+          '使用定时快门或快门线，避免按快门造成的抖动',
+          '关注天气预报和气象条件，云海、星空、极光需要特定条件'
+        ]
+      },
+      compositionInsights: [
+        '风光构图三要素：前景、引导线、主体，缺一不可',
+        '避免天空和地面各占一半的"切半"构图',
+        '极简风光也是力量，大面积天空或水面反而更有氛围',
+        '善用逆光拍摄，营造轮廓光和丁达尔效应',
+        '风光不是越广越好，适当裁切可能效果更佳'
+      ],
+      technicalSuggestions: [
+        '风光必备三件套：三脚架、渐变灰滤镜、快门线',
+        '中灰密度镜（ND）实现白天长曝光，丝滑流水和云彩',
+        '拍摄风光建议使用RAW格式，后期调整空间更大',
+        '全景接片技巧：使用手动曝光+手动白平衡，保证画面一致'
+      ],
+      creativeAdvice: [
+        '风光摄影的灵魂是"等待"，耐心守候最佳光线和天气',
+        '同一个地点四季各有魅力，不要只去一次就放弃',
+        '尝试加入人的元素，给风光作品增加尺度感和故事',
+        '关注极端天气：雨后、暴风雨前后、雪后往往出大片',
+        '学习安塞尔·亚当斯的区域曝光法，理解影调控制'
+      ],
+      postProcessingTips: [
+        '风光后期核心是"通透感"：适当 Dehaze + 对比度',
+        '利用渐变滤镜蒙版分别调整天空和地面',
+        'HSL工具分别调整蓝天、绿草、黄土的颜色',
+        '适度锐化前中远景，但天空部分要少锐化避免噪点',
+        '风光色彩不要过度饱和，保持自然感最重要',
+        '尝试转换黑白，专注光影和影调的魅力'
+      ],
+      learningPath: [
+        '系统学习风光构图：前景运用、引导线、三分法、极简构图',
+        '掌握风光曝光：长曝光、滤镜使用、包围曝光HDR',
+        '深入学习后期：Lightroom全局调整+Photoshop精修',
+        '研究天气预报和日出日落时间，规划拍摄行程',
+        '向安塞尔·亚当斯、迈克尔·肯纳等风光大师学习',
+        '坚持在同一地点反复拍摄，感受不同季节和光线的变化',
+        '建立风光拍摄清单：瀑布、雪山、湖泊、星空、海岸线'
+      ],
+      suitableScenarios: [
+        '风光大片创作自评，追求极致画质',
+        '风光摄影比赛投稿评估',
+        '旅行风光选片精选',
+        '自然风景壁纸级作品筛选'
+      ],
+      overallComments: {
+        high: '作为风光摄影作品，本作品展现了出色的专业水准！精美的构图、恰到好处的光线、丰富的细节层次，共同构成了一幅具有视觉冲击力的风光佳作。继续保持对自然的敬畏和耐心等待，你的镜头会捕捉到更多大自然令人叹为观止的瞬间。',
+        mid: '这幅风光作品有不错的基础，画面的基本元素都具备了。风光摄影讲究"天时地利人和"，建议更关注拍摄时机的选择——黄金时段和特殊天气往往能让普通场景焕发生机。构图上可以更多思考前景元素和画面层次的安排，让作品更有深度。',
+        low: '这张风光照片记录了自然景观，但在视觉表达上还有提升空间。风光摄影不仅仅是"看到什么拍什么"，更需要主动的构图思考和对光线的等待。建议从基础的三分法、前景运用开始练习，同时关注拍摄时段的选择。'
+      },
+      styleNote: '风光摄影追求极致的画质、精美的构图和迷人的光影。本点评在此标准下，对曝光控制、构图精致度、画质表现有更高要求，同时重视作品的氛围感和视觉冲击力。'
+    },
+    portrait: {
+      key: 'portrait',
+      name: '人像摄影',
+      description: '侧重人物神态、眼神光、肤色表现和情绪传递',
+      dimensionWeights: {
+        composition: 1.0,
+        exposure: 1.1,
+        color: 1.1,
+        themeExpression: 1.0,
+        emotion: 1.4,
+        technicalExecution: 1.2
+      },
+      descriptions: {
+        emotion: [
+          '人物情感表现极具感染力，眼神和神态生动传神，能够让观者产生强烈的情感共鸣，展现了优秀的人像捕捉能力。',
+          '人物情绪表达较好，神态自然，能够传递一定的性格特征和情感状态。',
+          '人物情绪传递一般，表情基本自然但缺乏独特的个性和感染力。',
+          '人物情感表达不足，表情僵硬或平淡，难以让观者产生情感连接。'
+        ],
+        technicalExecution: [
+          '人像技术精湛，对焦精准（眼睛锐利）、肤质感出色、景深控制恰到好处，展现了扎实的人像基本功。',
+          '人像技术良好，对焦准确、曝光得当，整体画质达标。',
+          '人像技术基本合格，照片可用但在肤色、对焦或噪点方面有可改进之处。',
+          '人像技术需要加强，存在对焦不实（眼睛虚）、肤色异常或画质问题。'
+        ],
+        color: [
+          '人像色彩表现出色，肤色自然红润、白平衡准确、整体色调和谐，有良好的色彩审美。',
+          '人像色彩整体不错，肤色基本正常，色调较为协调。',
+          '人像色彩一般，存在轻微偏色或肤色问题，但不影响整体。',
+          '人像色彩需要优化，肤色偏色明显、饱和度或白平衡有问题。'
+        ]
+      },
+      highlights: {
+        emotion: [
+          '眼神光捕捉精准，人物眼睛有神采',
+          '表情自然生动，没有摆拍痕迹',
+          '人物性格气质呈现到位',
+          '手部姿态优雅自然，为画面加分'
+        ],
+        technicalExecution: [
+          '眼睛对焦精准锐利，人像第一要素达标',
+          '背景虚化自然，焦外柔美（奶油散景）',
+          '光线运用柔和，面部阴影过渡自然'
+        ],
+        color: [
+          '肤色还原自然，白里透红有质感',
+          '整体色调统一，风格鲜明',
+          '背景色彩与主体搭配和谐'
+        ]
+      },
+      improvements: {
+        emotion: [
+          '多与模特沟通，让对方放松，展现真实的自己',
+          '引导时说具体动作而非"笑一个"，如"看向窗外想一件开心的事"',
+          '连拍多张，从中选出表情最生动的瞬间',
+          '关注眼睛：眼神光是人像的灵魂，要有光源反射'
+        ],
+        technicalExecution: [
+          '人像对焦原则：眼睛优先，尤其是最近的那只眼',
+          '大光圈虚化背景时注意景深范围，避免一只眼实一只眼虚',
+          '反光板补光消除面部阴影，尤其是眼窝和鼻下',
+          '人像拍摄适当过曝1/3档，皮肤更通透白皙'
+        ],
+        color: [
+          '人像白平衡宁可偏暖不要偏冷，偏黄比偏蓝好看',
+          'HSL中降低橙色饱和度提高明亮度，皮肤更白皙',
+          '统一画面色调，避免背景有太多杂色干扰',
+          '尝试不同色调风格：日系清新、复古胶片、质感黑白'
+        ]
+      },
+      compositionInsights: [
+        '人像构图核心：视线前方留有空间，不要"顶到"画面边缘',
+        '避免关节处裁切：脖子、手肘、手腕、膝盖等位置',
+        '尝试不同景别：特写（脸部）、肖像（胸以上）、半身、全身、环境人像',
+        '适当的俯拍和仰拍能改变人物脸型和气质',
+        '前景虚化增加人像画面的层次和氛围感'
+      ],
+      technicalSuggestions: [
+        '人像黄金焦段：85mm f/1.4-f/1.8 最佳，50mm和135mm也是经典',
+        '室内光线不足使用大光圈镜头+提高ISO，画质优先',
+        '单灯人像：45度侧光（伦勃朗光）最有立体感',
+        '反光板是最便宜也最实用的人像配件，银色面补光效果好',
+        'RAW格式拍摄，肤色后期调整空间更大'
+      ],
+      creativeAdvice: [
+        '人像摄影拍的是"人"不是"脸"，要展现人物的性格和故事',
+        '让模特动起来，自然走、转头、整理头发，比硬摆姿势生动',
+        '尝试环境人像，用环境交代人物的身份和故事',
+        '拍摄前了解拍摄对象，聊聊天让对方放松，信任是好照片的基础',
+        '向优素福·卡什、安妮·莱博维茨等肖像大师学习'
+      ],
+      postProcessingTips: [
+        '人像后期三步骤：磨皮（保留质感）、精修（眼睛嘴型）、调色（风格统一）',
+        '高低频磨皮法分离皮肤纹理和色块，皮肤细腻又不失质感',
+        '液化瘦脸要适度，保留个人特征比"网红脸"更高级',
+        '眼睛单独加锐和提亮，人像瞬间有神',
+        '牙齿美白和唇色微调，但不要过度',
+        '可选颜色工具精细调整肤色：红+黄通道是肤色关键'
+      ],
+      learningPath: [
+        '学习人像布光基础：伦勃朗光、蝴蝶光、分割光的特点和运用',
+        '掌握人像沟通和引导技巧，让模特自然放松',
+        '系统学习人像后期：磨皮、液化、调色的专业流程',
+        '大量练习不同类型人像：写真、儿童、老人、情侣、团体',
+        '研究不同焦段人像的透视变化，选择最合适的镜头',
+        '建立自己的人像风格，而非盲目跟风流行滤镜'
+      ],
+      suitableScenarios: [
+        '人像写真客片质量自检',
+        '人像摄影比赛投稿评估',
+        '写真选片和后期调色参考',
+        '人像摄影师技能进阶练习'
+      ],
+      overallComments: {
+        high: '作为人像摄影作品，本作品展现了出色的专业水准！传神的眼神、生动的情绪、细腻的肤质和和谐的色调，共同塑造了一个有温度、有性格的人物形象。人像摄影的本质是"看见人"，你做到了。继续探索不同人物的独特魅力，你的镜头会创造更多令人心动的肖像。',
+        mid: '这幅人像作品有不错的基础，人物状态基本自然，技术层面也比较到位。人像摄影的核心是"情感传递"，建议在引导模特上下更多功夫——让对方放松、展现真实的自己，比完美的布光更重要。同时可以更多尝试不同角度和景别，丰富画面语言。',
+        low: '这张人像照片记录了人物形象，但在神态捕捉和技术控制上还有提升空间。人像摄影建议从"对焦在眼睛"和"让对方放松"两个最基础的点开始练习，多拍多沟通，逐渐找到与拍摄对象的默契。'
+      },
+      styleNote: '人像摄影以人物为核心，重在传神达意。本点评在此标准下，重点关注眼神光、情绪表达、肤色质感和人物性格的呈现，对焦精准度（特别是眼睛）有严格要求。'
+    },
+    bw: {
+      key: 'bw',
+      name: '黑白摄影',
+      description: '以影调层次、光影对比、质感纹理为核心评价维度，不涉及色彩',
+      dimensionWeights: {
+        composition: 1.2,
+        exposure: 1.3,
+        color: 0.0,
+        themeExpression: 1.1,
+        emotion: 1.1,
+        technicalExecution: 1.2
+      },
+      dimensionNameOverrides: {
+        color: '影调层次'
+      },
+      descriptions: {
+        color: [
+          '黑白影调极为丰富，从纯白到纯黑过渡细腻，灰阶层次分明，展现了对黑白影调控制的深厚功力。',
+          '黑白影调表现良好，明暗对比得当，主要灰阶层次完整。',
+          '黑白影调基本可用，但灰阶层次不够丰富，对比或平淡或过硬。',
+          '黑白影调需要优化，存在灰阶丢失、对比失衡等明显问题。'
+        ],
+        exposure: [
+          '黑白曝光控制精湛，高光暗部细节完整，区域曝光法运用得当，各阶调各得其所。',
+          '黑白曝光整体准确，关键明暗区域保留良好。',
+          '黑白曝光基本可用，部分区域有细节损失。',
+          '黑白曝光需要调整，高光溢出或暗部死黑较严重。'
+        ]
+      },
+      highlights: {
+        color: [
+          '黑白灰阶过渡自然，从亮到暗层次丰富',
+          '高调/低调风格鲜明统一',
+          '高反差运用恰到好处，视觉冲击力强',
+          '中间灰层次细腻，质感出众'
+        ],
+        exposure: [
+          '区域曝光法运用熟练，各亮度区域控制精准',
+          '高光保留得当，白中有细节',
+          '暗部层次丰富，黑中有内容'
+        ],
+        composition: [
+          '黑白光影构图出色，用光线作画',
+          '剪影效果运用精准，轮廓感强',
+          '明暗对比形成天然视觉引导'
+        ],
+        technicalExecution: [
+          '噪点颗粒感恰到好处，增加画面质感',
+          '细节锐度充足，纹理清晰',
+          '低ISO拍摄保证灰阶纯净度'
+        ]
+      },
+      improvements: {
+        color: [
+          '黑白转换不要直接去饱和，用通道混合器控制各颜色灰阶亮度',
+          '红色通道提亮肤色压暗蓝天，绿色通道肤色自然，蓝色通道反差最大',
+          '使用黑白渐变滤镜（红/橙/黄/绿），在前期就控制天空和植物的影调',
+          '曲线工具精细调整黑白灰各阶调的对比度'
+        ],
+        exposure: [
+          '黑白摄影曝光原则：向右曝光，保证暗部层次，后期再压暗',
+          '学习区域曝光法，理解10个区域的灰阶分布',
+          '拍摄时使用相机黑白预览，但保留RAW格式便于后期调整',
+          '反差过大时使用偏振镜或补光手段减少对比'
+        ]
+      },
+      compositionInsights: [
+        '黑白摄影靠"光影"构图，寻找强烈的明暗对比和线条',
+        '剪影是黑白摄影的有力语言，简洁而有力量',
+        '高调摄影（大面积亮调）适合纯净、优雅的主题',
+        '低调摄影（大面积暗调）适合神秘、戏剧性的主题',
+        '关注画面中的"形状"：几何形态在黑白中更突出'
+      ],
+      technicalSuggestions: [
+        '黑白摄影使用RAW格式拍摄，后期转换空间更大',
+        '尝试在镜头前加装红镜/黄镜/橙镜，改变景物明暗关系',
+        '适当使用高ISO，颗粒感可以增强黑白照片的质感',
+        '区域曝光法是黑白摄影的必修课，建议系统学习',
+        '黑白照片的锐化可以比彩色更"狠"一些'
+      ],
+      creativeAdvice: [
+        '黑白不是"去色"，而是"抽象"——剥离色彩后专注光影、形状、质感',
+        '高反差适合街头、建筑、戏剧感强的题材',
+        '低反差柔和影调适合人像、自然、诗意的表达',
+        '向安塞尔·亚当斯、亨利·卡蒂埃-布列松、罗伯特·卡帕等黑白大师学习',
+        '尝试长期坚持只拍黑白，训练自己的"单色之眼"'
+      ],
+      postProcessingTips: [
+        '使用Lightroom黑白面板或Photoshop通道混合器进行专业黑白转换',
+        '调整各颜色通道的亮度值，精细控制不同颜色转为灰阶后的明暗',
+        '曲线S型增加对比，让黑白更有"力度"',
+        '色阶工具检查黑白场是否到位：纯黑和纯白要有但不溢出',
+        '适度增加颗粒感，赋予黑白照片胶片质感',
+        '分离色调可以在黑白基础上加非常淡的冷暖倾向，增加高级感'
+      ],
+      learningPath: [
+        '系统学习区域曝光法，理解黑白影调的10个区域',
+        '掌握专业黑白转换技术：通道混合器和黑白调整层',
+        '大量练习观察"光影"而非"颜色"，培养单色视觉思维',
+        '研究黑白大师的作品：亚当斯的风光、布列松的街头、卡什的肖像',
+        '尝试不同风格的黑白：高反差、低反差、高调、低调、中间调',
+        '学习暗房工艺思维，理解"区域曝光+暗房局部控制"的传统精髓'
+      ],
+      suitableScenarios: [
+        '黑白艺术摄影创作自评',
+        '黑白影调后期调色参考',
+        '纪实/新闻黑白作品评估',
+        '黑白摄影比赛投稿选片'
+      ],
+      overallComments: {
+        high: '作为黑白摄影作品，本作品展现了出色的单色影像驾驭能力！丰富的灰阶层次、有力的光影对比、精准的影调控制，证明你真正理解了"黑白不是去色，而是抽象"的艺术本质。继续在光影的世界里深耕，你的黑白作品将拥有更持久的艺术生命力。',
+        mid: '这幅黑白作品有不错的基础，基本的影调对比和画面内容都具备了。黑白摄影的灵魂是"影调控制"，建议系统学习区域曝光法，有意识地规划画面中从纯白到纯黑的各个灰阶层次，让作品的黑白语言更加丰富有力。',
+        low: '这张黑白照片有基本的影像记录，但在影调控制上还有较大提升空间。建议从"什么适合拍成黑白"开始思考——强烈的光影、明确的形状、丰富的质感，这些是黑白的好素材，然后学习专业的黑白转换技巧而非简单去饱和。'
+      },
+      styleNote: '黑白摄影剥离了色彩，专注于光影、影调、形状和质感的表达。本点评在此标准下，将"色彩"维度替换为"影调层次"，重点评价灰阶过渡、明暗对比和区域曝光控制的质量。'
+    },
+    minimalist: {
+      key: 'minimalist',
+      name: '极简主义',
+      description: '以少胜多，重视负空间、简洁构图和纯粹的视觉表达',
+      dimensionWeights: {
+        composition: 1.5,
+        exposure: 1.0,
+        color: 1.0,
+        themeExpression: 1.0,
+        emotion: 1.1,
+        technicalExecution: 1.0
+      },
+      descriptions: {
+        composition: [
+          '极简构图极其出色，元素精简而有力，负空间运用精妙，展现了"少即是多"的极简美学精髓。',
+          '极简构图良好，画面简洁主体明确，留白运用得当。',
+          '极简构图基本可行，但元素还可以更精简，或留白还不够充分。',
+          '极简构图需要加强，画面元素不够纯粹，干扰元素影响了极简表达。'
+        ]
+      },
+      highlights: {
+        composition: [
+          '大面积负空间运用得当，给人强烈的呼吸感',
+          '主体极简但不单调，形态或色彩有吸引力',
+          '几何构成感强，点线面安排恰到好处',
+          '画面干净纯粹，没有多余干扰元素'
+        ],
+        color: [
+          '色彩方案极简统一，1-2种主色调高级和谐',
+          '单色调处理纯粹，视觉集中',
+          '色彩对比点到为止，不喧宾夺主'
+        ],
+        emotion: [
+          '极简带来的宁静感和冥想感出色',
+          '画面留白给观者充分想象空间',
+          '简约而不简单，有余味'
+        ]
+      },
+      improvements: {
+        composition: [
+          '极简的关键是"做减法"，每个元素都问自己：真的需要吗？',
+          '尝试靠近再靠近，让主体在画面中占比更小，留白更大',
+          '寻找纯净的背景：天空、纯色墙面、水面倒影',
+          '极简构图可以利用对称，增强画面的秩序感'
+        ],
+        color: [
+          '极简配色控制在3种以内，1-2种最佳',
+          '统一色调可以用后期降低饱和度、统一色温实现',
+          '单色系（不同深浅的同一色相）是高级的极简配色方案'
+        ]
+      },
+      compositionInsights: [
+        '极简摄影三问：主体明确吗？元素够少吗？留白够吗？',
+        '负空间不是"空白"，而是画面的积极组成部分',
+        '极简摄影的主体可以很小，甚至只是一个点',
+        '极简不是空无一物，而是每一样东西都有意义',
+        '几何极简：寻找建筑和自然中的线条、形状、图案'
+      ],
+      technicalSuggestions: [
+        '极简对画面纯净度要求高，注意除尘和后期修补瑕疵',
+        '曝光可以适当过曝一些，让背景更干净纯白',
+        '方画幅（1:1）非常适合极简构图，画面更集中',
+        '后期裁剪是极简摄影的重要工具，大胆裁掉多余部分'
+      ],
+      creativeAdvice: [
+        '极简摄影需要"克制"，拍之前先观察，不要急着按快门',
+        '从平凡中发现美：一面墙、一个影子、一根线条',
+        '向Michael Kenna、Hiroshi Sugimoto等极简大师学习',
+        '极简可以是色彩的极简、内容的极简、形式的极简',
+        '长期练习"每天只拍一张"的摄影练习，培养筛选能力'
+      ],
+      postProcessingTips: [
+        '极简后期核心：统一色调+纯净背景+精准构图裁剪',
+        '使用仿制图章或修复画笔去除背景的干扰点',
+        '可尝试将背景提亮到接近纯白，或压暗到接近纯黑',
+        '极简照片对构图位置极为敏感，后期微调几像素都有影响',
+        '适当增加对比度，让主体在简洁背景中更突出'
+      ],
+      learningPath: [
+        '学习极简艺术的美学理念：少即是多（Less is More）',
+        '大量练习构图做减法，每拍一张都问自己还能去掉什么',
+        '研究色彩理论中的单色系和低对比配色方案',
+        '观察日常生活中的几何和抽象之美',
+        '尝试长期项目：如"每日一极简"摄影日记',
+        '向极简主义绘画和设计学习，培养视觉审美'
+      ],
+      suitableScenarios: [
+        '极简艺术摄影创作自评',
+        '建筑极简摄影练习',
+        '极简风格手机摄影训练',
+        '简约审美培养和视觉训练'
+      ],
+      overallComments: {
+        high: '作为极简摄影作品，本作品出色地诠释了"少即是多"的美学理念！精简到极致的元素、恰到好处的留白、纯粹和谐的视觉语言，共同构成了一幅耐人寻味的佳作。极简不是空，而是每一处都恰到好处，你已经掌握了这种克制之美。',
+        mid: '这幅极简作品有不错的意识和方向，画面主体和留白基本到位。极简摄影的核心是"极致的克制"，建议更严格地审视画面中的每一个元素——如果去掉它画面会不会更好？同时可以在色彩统一和构图位置上做更精细的调整。',
+        low: '这张照片有极简的初步尝试，但在"减法"上还做得不够彻底。极简摄影建议从"纯色背景+单一主体"开始练习，有意识地做减法，让画面中的每个元素都有其存在的必然性。'
+      },
+      styleNote: '极简主义摄影追求"少即是多"的美学，以简约、留白、纯粹为核心价值。本点评在此标准下，大幅提高构图权重，重点评价负空间运用、元素精简度和画面纯粹性。'
+    },
+    commercial: {
+      key: 'commercial',
+      name: '商业产品',
+      description: '以产品展示为核心，极致的技术控制和专业的布光是评价重点',
+      dimensionWeights: {
+        composition: 1.1,
+        exposure: 1.3,
+        color: 1.2,
+        themeExpression: 1.0,
+        emotion: 0.8,
+        technicalExecution: 1.5
+      },
+      descriptions: {
+        technicalExecution: [
+          '商业摄影技术执行精湛，布光专业、对焦精准、画质出色，每一个细节都经过精心控制，达到了商业出片的专业水准。',
+          '商业摄影技术表现良好，产品清晰、曝光准确，整体画质符合商用标准。',
+          '商业摄影技术基本可用，产品主体基本达标，但在细节或布光上有可改进之处。',
+          '商业摄影技术需要加强，存在布光不均、对焦不实、反光控制不当等明显问题。'
+        ],
+        exposure: [
+          '商业曝光控制极为精准，产品各区域曝光均匀、材质质感呈现完美、无死黑无溢出，展现了专业布光水准。',
+          '商业曝光整体准确，产品主体曝光正确，质感呈现良好。',
+          '商业曝光基本可用，产品可见，但局部质感或细节表现不足。',
+          '商业曝光存在明显问题，产品质感丢失严重或反光控制不当。'
+        ]
+      },
+      highlights: {
+        technicalExecution: [
+          '产品布光专业，立体感和材质感呈现出色',
+          '产品100%放大清晰锐利，达到商用印刷级别',
+          '反光和高光控制精准，金属/玻璃等材质表现到位',
+          '白平衡精准，产品色彩还原真实可用于电商'
+        ],
+        exposure: [
+          '产品各部分曝光均匀，没有过暗过亮区域',
+          '柔光运用得当，产品质感细腻',
+          '暗部细节保留，阴影过渡自然'
+        ],
+        composition: [
+          '产品构图专业，突出主体且信息完整',
+          '产品角度标准，适合电商/广告使用',
+          '环境搭配合理，不喧宾夺主'
+        ],
+        color: [
+          '产品色彩还原真实，可作为电商标准展示图',
+          '背景色彩与产品搭配和谐，品牌调性统一',
+          '色彩一致性好，系列产品图风格统一'
+        ]
+      },
+      improvements: {
+        technicalExecution: [
+          '商业产品拍摄布光是关键：柔光箱+硫酸纸是最基础配置',
+          '金属/反光产品使用"帐篷布光法"消除环境反光',
+          '玻璃/透明产品逆光或侧逆光打透，边缘轮廓光勾勒',
+          '对焦在产品最前端/Logo上，使用小光圈保证全程清晰',
+          '使用三脚架+定时快门，保证最大锐度'
+        ],
+        exposure: [
+          '产品摄影使用手动曝光，确保同系列产品亮度一致',
+          '灰卡校准白平衡，保证产品色彩还原准确',
+          '包围曝光拍摄，后期合成获取产品各区域完美曝光',
+          '注意控制光比，产品暗部不要死黑要保留层次'
+        ],
+        color: [
+          '使用色卡或灰卡进行色彩校准，电商产品色彩必须准确',
+          '同一系列产品图要统一白平衡和曝光参数',
+          '背景色选择要衬托产品，对比色或邻近色搭配合理',
+          '后期调色以"还原真实"为第一原则，不要添加个人风格'
+        ]
+      },
+      compositionInsights: [
+        '电商产品图标准角度：正面45度（主图）+ 正面 + 侧面 + 顶部 + 细节',
+        '产品在画面中占比约70%，四周留有适量呼吸空间',
+        '产品摄影构图的核心是"信息完整"——让买家看清每个细节',
+        '创意产品图可以使用场景搭配和道具点缀，但产品永远是主角',
+        '保持产品水平垂直端正，建筑透视和产品畸变后期校正'
+      ],
+      technicalSuggestions: [
+        '商业产品摄影三件套：柔光箱、三脚架、灰卡/色卡',
+        '拍摄使用50mm或100mm微距镜头，畸变小画质高',
+        'f/8-f/11是产品摄影的最佳光圈，兼顾锐度和景深',
+        'ISO100保证最低噪点和最佳画质',
+        '产品除尘是前期重要工作：气吹+镜头布，避免后期逐张修图'
+      ],
+      creativeAdvice: [
+        '商业摄影的本质是"卖货"，画面要服务于产品卖点',
+        '先理解产品的核心卖点是什么，再决定怎么拍',
+        '创意产品图可以讲故事，但产品的清晰度是底线',
+        '建立自己的产品布光方案库：不同材质对应不同布光',
+        '研究顶级品牌的产品广告，分析其布光和构图'
+      ],
+      postProcessingTips: [
+        '商业后期流程：RAW校准→瑕疵修复→光影精修→色彩统一→锐化出图',
+        '产品修图重点：除尘、修划痕、统一亮度、校正畸变',
+        '使用蒙版对产品各部位分别调整，精细控制',
+        'USM锐化三参数：数量100-150%，半径1.0-1.5，阈值3-5',
+        '保存为Adobe RGB或sRGB色彩空间，根据用途选择',
+        '批量产品图使用预设+同步，保证风格一致性'
+      ],
+      learningPath: [
+        '系统学习商业布光：柔光、硬光、轮廓光、产品光位',
+        '掌握不同材质的布光方案：金属、玻璃、塑料、布料、食品',
+        '学习产品修图专业流程，达到电商出片标准',
+        '练习产品360度拍摄和多图系列的一致性控制',
+        '研究电商平台主图规范，了解商业摄影的行业标准',
+        '建立自己的产品拍摄SOP，提高工作效率和质量稳定性'
+      ],
+      suitableScenarios: [
+        '电商产品图质量自检',
+        '商业广告片出片前评估',
+        '产品摄影师技能训练',
+        '产品图后期修图标准参考'
+      ],
+      overallComments: {
+        high: '作为商业产品摄影作品，本作品展现了专业级的技术水准！精准的布光、出色的质感还原、无可挑剔的画质，完全达到商用出片标准。商业摄影的核心是"让产品好看又好卖"，你做到了。继续打磨不同材质和场景的布光方案，建立自己的专业标准流程。',
+        mid: '这幅产品照片整体不错，基本满足商用需求。商业产品摄影的核心竞争力在于"布光的控制力"，建议系统学习不同材质（金属、玻璃、织物等）的专业布光方案，同时注意产品系列图的色彩和曝光一致性，这在商业项目中至关重要。',
+        low: '这张产品照片有基本的记录，但距离商业出片标准还有差距。建议从商业摄影最基础的三点开始：1.使用三脚架保证锐度；2.用柔光箱获得均匀光照；3.用灰卡校准白平衡和色彩。打好这三个基础，产品照片品质会有质的飞跃。'
+      },
+      styleNote: '商业产品摄影以产品展示效果为核心，追求极致的技术控制。本点评在此标准下，大幅提高技术执行权重，重点评价布光质量、画质表现、产品色彩还原准确度，要求达到商业出片标准。'
+    },
+    artistic: {
+      key: 'artistic',
+      name: '艺术创意',
+      description: '以创意表达和艺术观念为核心，技术标准服务于艺术表达，鼓励突破常规',
+      dimensionWeights: {
+        composition: 1.0,
+        exposure: 0.7,
+        color: 1.1,
+        themeExpression: 1.4,
+        emotion: 1.3,
+        technicalExecution: 0.8
+      },
+      descriptions: {
+        themeExpression: [
+          '艺术创意表达极为出色，作品有独特的观念和鲜明的个人风格，能够引发观者深度思考，展现了成熟的艺术创造力。',
+          '艺术创意表现良好，有明确的表达方向和一定的个人风格，作品有可圈可点的创意亮点。',
+          '艺术创意基本可行，有表达意识但观念不够鲜明或呈现方式不够到位。',
+          '艺术创意需要加强，作品停留在技术层面，缺乏独特的艺术观念和表达。'
+        ],
+        emotion: [
+          '艺术感染力极强，作品能触动观者内心，引发强烈的情感共鸣或哲学思考，展现了艺术作品应有的精神力量。',
+          '艺术情感表达较好，作品有一定的情绪感染力，能让观者感受到创作意图。',
+          '艺术情感传递一般，有氛围但不够深入，难以引起深层共鸣。',
+          '艺术情感表达不足，作品停留在视觉表面，缺乏精神层面的感染力。'
+        ],
+        technicalExecution: [
+          '技术手段服务于艺术表达，无论是精湛还是刻意的"不完美"，都精准地服务于作品的整体意图。',
+          '技术运用整体得当，与艺术表达基本匹配。',
+          '技术基本可用但与艺术表达的结合度还可以提升。',
+          '技术选择与艺术意图存在脱节，建议让技术更多地服务于表达。'
+        ]
+      },
+      highlights: {
+        themeExpression: [
+          '艺术观念独特鲜明，有个人风格辨识度',
+          '视觉符号运用巧妙，隐喻和象征意味深长',
+          '创意概念完整，从构思到呈现一气呵成',
+          '突破常规视角和手法，作品有新鲜感'
+        ],
+        emotion: [
+          '艺术氛围营造出色，能引发观者情绪',
+          '作品有余味，看完仍有想象空间',
+          '视觉诗意浓郁，有文学性和哲理性'
+        ],
+        color: [
+          '色彩风格大胆独特，艺术表现力强',
+          '色调与主题高度契合，增强作品表达',
+          '色彩运用有画家般的审美意识'
+        ]
+      },
+      improvements: {
+        themeExpression: [
+          '创作前先想清楚"我要表达什么"，再决定"怎么拍"',
+          '尝试系列创作，让观念在一组作品中更完整地呈现',
+          '多从绘画、电影、音乐、文学中汲取灵感，艺术是相通的',
+          '建立个人视觉语言，而不是追随当下流行的滤镜和风格'
+        ],
+        technicalExecution: [
+          '艺术摄影中"不完美"可以是表达手段——失焦、过曝、噪点都可以有目的地使用',
+          '尝试多重曝光、长时间光绘、拼贴、针孔等实验性手法',
+          '后期可以更大胆：色彩分离、极端对比、双重曝光等',
+          '打破"正确曝光""正确对焦"的束缚，为表达服务'
+        ],
+        emotion: [
+          '问自己：这张作品想让观者感受到什么？',
+          '适当的模糊、留白、暗示比直白呈现更有艺术张力',
+          '艺术不是"美"，是"真"——真诚地表达自己的内心',
+          '向当代艺术和摄影史学习，理解艺术观念的演变脉络'
+        ]
+      },
+      compositionInsights: [
+        '艺术摄影构图可以打破所有规则，只要服务于你的表达',
+        '尝试不平衡构图，制造视觉张力和心理不安感',
+        '故意的倾斜、模糊、裁切都可以是艺术表达的一部分',
+        '模糊的边界和不确定的意义，让作品更有解读空间'
+      ],
+      technicalSuggestions: [
+        '艺术创作不要局限于相机，可以结合扫描仪、物影成像、手工暗房等',
+        '尝试过期胶卷、便宜镜头、针孔相机等"不完美"工具',
+        '后期尝试：色调分离、颗粒化、像素化、拼贴合成',
+        '记录创作过程的草图和笔记，艺术作品背后的思考很重要'
+      ],
+      creativeAdvice: [
+        '艺术摄影最重要的是"你是谁"——你的经历、思考、敏感点',
+        '建立长期艺术项目，用几年时间完成一个主题',
+        '多看展览和摄影画册，了解当代摄影在做什么',
+        '不要怕"看不懂"，好的艺术作品往往有多层解读',
+        '向杉本博司、辛迪·谢尔曼、杰夫·沃尔等当代艺术家学习'
+      ],
+      postProcessingTips: [
+        '艺术后期没有规则，只有"是否表达了你想要的感觉"',
+        '尝试极端的色彩：完全去饱和或极度饱和',
+        '使用混合媒介：照片+绘画+文字的拼贴实验',
+        '故意制造"瑕疵"：暗角、漏光、划痕、颗粒',
+        '考虑输出方式：艺术微喷、手工相纸、特殊材质印刷，也是作品的一部分'
+      ],
+      learningPath: [
+        '研读摄影史：从画意摄影到当代摄影，理解艺术语言的演变',
+        '学习艺术理论和视觉文化，建立自己的批评框架',
+        '参观美术馆和摄影展览，感受原作的魅力',
+        '进行长期艺术项目创作，而非零散的单张照片',
+        '尝试写艺术家陈述，清晰表达自己的创作理念',
+        '跨学科学习：绘画、电影、哲学、文学、心理学都可以滋养摄影'
+      ],
+      suitableScenarios: [
+        '艺术摄影创作自评和方向探索',
+        '艺术展览投稿作品评估',
+        '个人艺术项目推进参考',
+        '创意摄影训练和视觉实验'
+      ],
+      overallComments: {
+        high: '作为艺术创作，本作品展现了出色的创意能力和艺术思考！独特的观念、鲜明的风格、触动人心的表达，证明摄影不仅仅是记录，更是创造。艺术的道路是孤独而漫长的，保持真诚，坚持表达，你的作品会拥有越来越独立的精神力量。',
+        mid: '这幅作品有不错的艺术意识和表达方向，能感受到创作的意图和态度。艺术创作建议从"建立个人视角"开始——不是"拍得好看"，而是"用我独特的方式看待世界"。可以尝试做一个长期的艺术项目，在持续创作中找到自己的语言。',
+        low: '这张照片在技术层面有基本完成，但作为艺术表达还需要更多的思考。建议先问自己一个问题：除了记录这个画面，我还想说什么？艺术创作从"观念"开始，技术只是实现它的手段。'
+      },
+      styleNote: '艺术创意摄影以观念表达和个性创造为最高价值。本点评在此标准下，大幅提高主题表达和情感传递的权重，对"技术正确"的标准更加灵活——只要服务于艺术表达，任何技术选择都是合理的，包括刻意的"不完美"。'
+    }
+  };
+
+  critiquePhoto(imagesBase64: string[], style: string = 'standard'): PhotoCritique {
+    return this.generateCritique(imagesBase64, style);
   }
 
-  private generateCritique(_imagesBase64: string[]): PhotoCritique {
+  private getStyleConfig(style: string): StyleConfig {
+    return this.styleConfigs[style] || this.styleConfigs.standard;
+  }
+
+  private getDimensionName(dimKey: string, styleConfig: StyleConfig): string {
+    if (styleConfig.dimensionNameOverrides && styleConfig.dimensionNameOverrides[dimKey]) {
+      return styleConfig.dimensionNameOverrides[dimKey];
+    }
+    return this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].name;
+  }
+
+  private getDimensionDescriptions(dimKey: string, styleConfig: StyleConfig): string[] {
+    if (styleConfig.descriptions[dimKey] && styleConfig.descriptions[dimKey].length > 0) {
+      return styleConfig.descriptions[dimKey];
+    }
+    return this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].descriptions;
+  }
+
+  private getDimensionHighlights(dimKey: string, styleConfig: StyleConfig): string[] {
+    if (styleConfig.highlights[dimKey] && styleConfig.highlights[dimKey].length > 0) {
+      const base = this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].highlights;
+      return [...styleConfig.highlights[dimKey], ...base];
+    }
+    return this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].highlights;
+  }
+
+  private getDimensionImprovements(dimKey: string, styleConfig: StyleConfig): string[] {
+    if (styleConfig.improvements[dimKey] && styleConfig.improvements[dimKey].length > 0) {
+      const base = this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].improvements;
+      return [...styleConfig.improvements[dimKey], ...base];
+    }
+    return this.baseDimensionTemplates[dimKey as keyof typeof this.baseDimensionTemplates].improvements;
+  }
+
+  private generateCritique(_imagesBase64: string[], style: string): PhotoCritique {
+    const styleConfig = this.getStyleConfig(style);
     const imageCount = _imagesBase64.length;
     const seed = this.hashImages(_imagesBase64);
     const random = this.seededRandom(seed);
@@ -225,35 +1090,51 @@ export class PhotoCritiqueService {
     const dimensions: DimensionScore[] = [];
     const dimensionKeys = ['composition', 'exposure', 'color', 'themeExpression', 'emotion', 'technicalExecution'];
 
+    let weightedScoreSum = 0;
+    let weightSum = 0;
+
     dimensionKeys.forEach((key) => {
-      const template = this.dimensionTemplates[key as keyof typeof this.dimensionTemplates];
+      const baseTemplate = this.baseDimensionTemplates[key as keyof typeof this.baseDimensionTemplates];
+      const weight = styleConfig.dimensionWeights[key] ?? 1.0;
+
+      if (weight === 0) {
+        return;
+      }
+
       const baseScore = 65 + random() * 30;
       const score = Math.round(baseScore * 10) / 10;
 
+      weightedScoreSum += score * weight;
+      weightSum += weight;
+
       const descIndex = this.scoreToDescriptionIndex(score);
+      const descriptions = this.getDimensionDescriptions(key, styleConfig);
 
       const highlightCount = 1 + Math.floor(random() * 3);
       const improveCount = 1 + Math.floor(random() * 3);
 
-      const highlights = this.pickRandom(template.highlights, highlightCount, random);
-      const improvements = this.pickRandom(template.improvements, improveCount, random);
+      const highlightsPool = this.getDimensionHighlights(key, styleConfig);
+      const improvementsPool = this.getDimensionImprovements(key, styleConfig);
+
+      const highlights = this.pickRandom(highlightsPool, highlightCount, random);
+      const improvements = this.pickRandom(improvementsPool, improveCount, random);
 
       dimensions.push({
-        name: template.name,
+        name: this.getDimensionName(key, styleConfig),
         score,
         maxScore: 100,
-        description: template.descriptions[descIndex],
+        description: descriptions[descIndex] || baseTemplate.descriptions[descIndex],
         highlights,
         improvements
       });
     });
 
-    const overallScore = Math.round(
-      dimensions.reduce((sum, d) => sum + d.score, 0) / dimensions.length * 10
-    ) / 10;
+    const overallScore = weightSum > 0
+      ? Math.round((weightedScoreSum / weightSum) * 10) / 10
+      : 0;
 
     const overallGrade = this.scoreToGrade(overallScore);
-    const overallComment = this.generateOverallComment(overallScore, overallGrade, imageCount);
+    const overallComment = this.generateOverallComment(overallScore, overallGrade, imageCount, styleConfig);
 
     const allHighlights = dimensions.flatMap(d => d.highlights);
     const allImprovements = dimensions.flatMap(d => d.improvements);
@@ -261,29 +1142,39 @@ export class PhotoCritiqueService {
     const strengths = this.pickRandom(allHighlights, Math.min(5, allHighlights.length), random);
     const weaknesses = this.pickRandom(allImprovements, Math.min(5, allImprovements.length), random);
 
-    const compositionInsights = this.pickRandom(
-      [...this.dimensionTemplates.composition.highlights, ...this.dimensionTemplates.composition.improvements],
-      3,
-      random
-    );
+    const compositionPool = styleConfig.compositionInsights.length > 0
+      ? styleConfig.compositionInsights
+      : [...this.baseDimensionTemplates.composition.highlights, ...this.baseDimensionTemplates.composition.improvements];
+    const compositionInsights = this.pickRandom(compositionPool, 3, random);
 
-    const technicalSuggestions = this.pickRandom(
-      [...this.dimensionTemplates.exposure.improvements, ...this.dimensionTemplates.technicalExecution.improvements],
-      3,
-      random
-    );
+    const technicalPool = styleConfig.technicalSuggestions.length > 0
+      ? styleConfig.technicalSuggestions
+      : [...this.baseDimensionTemplates.exposure.improvements, ...this.baseDimensionTemplates.technicalExecution.improvements];
+    const technicalSuggestions = this.pickRandom(technicalPool, 3, random);
 
-    const creativeAdvice = this.pickRandom(
-      [...this.dimensionTemplates.themeExpression.improvements, ...this.dimensionTemplates.emotion.improvements],
-      3,
-      random
-    );
+    const creativePool = styleConfig.creativeAdvice.length > 0
+      ? styleConfig.creativeAdvice
+      : [...this.baseDimensionTemplates.themeExpression.improvements, ...this.baseDimensionTemplates.emotion.improvements];
+    const creativeAdvice = this.pickRandom(creativePool, 3, random);
 
-    const postProcessingTips = this.pickRandom(this.postProcessingTips, 5, random);
-    const learningPath = this.pickRandom(this.learningPathTemplates, 5, random);
-    const suitableScenarios = this.pickRandom(this.scenarioTemplates, 4, random);
+    const postProcessingPool = styleConfig.postProcessingTips.length > 0
+      ? styleConfig.postProcessingTips
+      : this.basePostProcessingTips;
+    const postProcessingTips = this.pickRandom(postProcessingPool, 5, random);
+
+    const learningPathPool = styleConfig.learningPath.length > 0
+      ? styleConfig.learningPath
+      : this.baseLearningPathTemplates;
+    const learningPath = this.pickRandom(learningPathPool, 5, random);
+
+    const scenariosPool = styleConfig.suitableScenarios.length > 0
+      ? styleConfig.suitableScenarios
+      : this.baseScenarioTemplates;
+    const suitableScenarios = this.pickRandom(scenariosPool, 4, random);
 
     return {
+      style: styleConfig.key,
+      styleName: styleConfig.name,
       overallScore,
       maxScore: 100,
       overallGrade,
@@ -296,57 +1187,24 @@ export class PhotoCritiqueService {
       weaknesses,
       postProcessingTips,
       learningPath,
-      suitableScenarios
+      suitableScenarios,
+      styleNote: styleConfig.styleNote
     };
   }
 
-  private hashImages(images: string[]): number {
-    let hash = 0;
-    const sample = images.map(img => img.substring(0, 100)).join('|');
-    for (let i = 0; i < sample.length; i++) {
-      const char = sample.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    return Math.abs(hash) || Date.now();
-  }
-
-  private seededRandom(seed: number) {
-    let s = seed;
-    return function() {
-      s = (s * 9301 + 49297) % 233280;
-      return s / 233280;
-    };
-  }
-
-  private pickRandom<T>(arr: T[], count: number, random: () => number): T[] {
-    const shuffled = [...arr].sort(() => random() - 0.5);
-    return shuffled.slice(0, Math.min(count, shuffled.length));
-  }
-
-  private scoreToDescriptionIndex(score: number): number {
-    if (score >= 85) return 0;
-    if (score >= 70) return 1;
-    if (score >= 55) return 2;
-    return 3;
-  }
-
-  private scoreToGrade(score: number): string {
-    if (score >= 90) return 'S (卓越)';
-    if (score >= 85) return 'A+ (优秀)';
-    if (score >= 80) return 'A (良好)';
-    if (score >= 75) return 'B+ (较好)';
-    if (score >= 70) return 'B (不错)';
-    if (score >= 65) return 'C+ (合格)';
-    if (score >= 60) return 'C (一般)';
-    if (score >= 50) return 'D (待提升)';
-    return 'E (需努力)';
-  }
-
-  private generateOverallComment(score: number, grade: string, imageCount: number): string {
+  private generateOverallComment(score: number, grade: string, imageCount: number, styleConfig: StyleConfig): string {
     const imageNote = imageCount > 1
-      ? `本次点评了你的 ${imageCount} 张作品，`
-      : '本次点评了你的作品，';
+      ? `本次点评了你的 ${imageCount} 张${styleConfig.name}作品，`
+      : `本次点评了你的${styleConfig.name}作品，`;
+
+    const comments = styleConfig.overallComments;
+    let levelKey = 'mid';
+    if (score >= 80) levelKey = 'high';
+    else if (score < 65) levelKey = 'low';
+
+    if (comments && comments[levelKey]) {
+      return imageNote + comments[levelKey];
+    }
 
     if (score >= 90) {
       return `${imageNote}综合评级为「${grade}」，达到了准专业水准！作品在各维度均有出色表现，展现了扎实的摄影技术功底和成熟的艺术审美。继续保持这种创作状态，尝试更多风格突破，你的作品将具有更强的艺术感染力和市场价值。`;
@@ -359,5 +1217,58 @@ export class PhotoCritiqueService {
     } else {
       return `${imageNote}综合评级为「${grade}」，作品还有较大提升空间。摄影是一门需要长期积累的艺术，建议你从基础的曝光、构图开始系统学习，保持热情坚持练习，每一次拍摄都是进步的机会。`;
     }
+  }
+
+  private hashImages(images: string[]): number {
+    let hash = 0;
+    const sample = images.map(img => img.substring(0, 100)).join('|');
+    for (let i = 0; i < sample.length; i++) {
+      const char = sample.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+
+  private seededRandom(seed: number) {
+    let s = seed;
+    return function() {
+      s = (s * 9301 + 49297) % 233280;
+      return s / 233280;
+    };
+  }
+
+  private scoreToDescriptionIndex(score: number): number {
+    if (score >= 85) return 0;
+    if (score >= 72) return 1;
+    if (score >= 60) return 2;
+    return 3;
+  }
+
+  private scoreToGrade(score: number): string {
+    if (score >= 95) return 'S+';
+    if (score >= 90) return 'S';
+    if (score >= 85) return 'A+';
+    if (score >= 80) return 'A';
+    if (score >= 75) return 'B+';
+    if (score >= 70) return 'B';
+    if (score >= 65) return 'C+';
+    if (score >= 60) return 'C';
+    if (score >= 50) return 'D';
+    return 'E';
+  }
+
+  private pickRandom<T>(pool: T[], count: number, random: () => number): T[] {
+    const result: T[] = [];
+    const used = new Set<number>();
+    const actualCount = Math.min(count, pool.length);
+    while (result.length < actualCount) {
+      const idx = Math.floor(random() * pool.length);
+      if (!used.has(idx)) {
+        used.add(idx);
+        result.push(pool[idx]);
+      }
+    }
+    return result;
   }
 }

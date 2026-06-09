@@ -198,9 +198,51 @@
             </el-upload>
           </div>
 
+          <el-divider />
+
+          <div class="style-section">
+            <div class="section-title">
+              <el-icon :size="16" color="#165DFF"><Aim /></el-icon>
+              <span>选择摄影风格</span>
+              <el-tag size="small" type="primary" effect="light" class="section-tag">
+                不同风格采用不同评价标准
+              </el-tag>
+            </div>
+            <div class="style-grid">
+              <div
+                class="style-option"
+                v-for="style in photoStyles"
+                :key="style.key"
+                :class="{ active: selectedStyle === style.key }"
+                :style="{ '--style-color': style.color }"
+                @click="selectedStyle = style.key"
+              >
+                <div class="style-icon">
+                  <el-icon :size="22" :color="selectedStyle === style.key ? '#fff' : style.color">
+                    <component :is="getStyleIcon(style.icon)" />
+                  </el-icon>
+                </div>
+                <div class="style-name">{{ style.name }}</div>
+                <div class="style-desc">{{ style.description }}</div>
+                <div class="style-check" v-if="selectedStyle === style.key">
+                  <el-icon><CircleCheck /></el-icon>
+                </div>
+              </div>
+            </div>
+            <div class="style-hint">
+              <el-alert
+                :title="currentStyleHint"
+                type="info"
+                :closable="false"
+                show-icon
+                class="style-alert"
+              />
+            </div>
+          </div>
+
           <el-divider v-if="uploadedImages.length > 0" />
 
-          <div class="tips-section">
+          <div class="tips-section" v-if="uploadedImages.length === 0">
             <div class="section-title">
               <el-icon :size="16" color="#67c23a"><Medal /></el-icon>
               <span>点评小贴士</span>
@@ -213,7 +255,7 @@
             </div>
           </div>
 
-          <el-divider />
+          <el-divider v-if="uploadedImages.length === 0" />
 
           <div class="capability-section">
             <div class="section-title">
@@ -274,6 +316,14 @@
           <span>点评报告</span>
           <el-tag
             size="small"
+            type="primary"
+            effect="plain"
+            class="header-tag"
+          >
+            {{ critiqueResult.styleName }}
+          </el-tag>
+          <el-tag
+            size="small"
             :type="getGradeType(critiqueResult.overallGrade)"
             class="header-tag"
             effect="dark"
@@ -288,6 +338,14 @@
           </div>
         </div>
       </template>
+
+      <el-alert
+        :title="critiqueResult.styleNote"
+        type="info"
+        :closable="false"
+        show-icon
+        class="style-note-alert"
+      />
 
       <div class="overall-section">
         <div class="overall-score-card">
@@ -547,11 +605,15 @@ import {
   Trophy,
   Reading,
   Sunny,
-  ChatDotRound
+  ChatDotRound,
+  Camera,
+  Mountain,
+  User,
+  Goods
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
-import { photoCritiqueApi, type PhotoCritique, type DimensionScore } from '@/api/photoCritique'
+import { photoCritiqueApi, photoStyles, type PhotoCritique, type DimensionScore } from '@/api/photoCritique'
 
 interface UploadedImage {
   dataUrl: string
@@ -576,9 +638,38 @@ const progressPercent = ref(0)
 const progressStatus = ref('准备中...')
 const critiqueResult = ref<PhotoCritique | null>(null)
 const activeTab = ref('composition')
+const selectedStyle = ref<string>('standard')
 
 const critiqueHistory = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
+
+const iconComponents: Record<string, any> = {
+  Aim,
+  Camera,
+  Mountain,
+  User,
+  Sunny,
+  Picture,
+  Goods,
+  MagicStick
+}
+
+const getStyleIcon = (iconName: string) => {
+  return iconComponents[iconName] || Aim
+}
+
+const currentStyleHint = computed(() => {
+  const style = photoStyles.find(s => s.key === selectedStyle.value)
+  if (!style) return ''
+  if (style.key === 'street') return '街头摄影：瞬间的捕捉比画质的完美更重要'
+  if (style.key === 'landscape') return '风光摄影：构图精致、光影迷人、画质极致'
+  if (style.key === 'portrait') return '人像摄影：传神的眼神和情绪是灵魂'
+  if (style.key === 'bw') return '黑白摄影：影调层次和光影对比为核心'
+  if (style.key === 'minimalist') return '极简主义：少即是多，每个元素都应有意义'
+  if (style.key === 'commercial') return '商业摄影：产品展示效果和技术控制为第一优先级'
+  if (style.key === 'artistic') return '艺术创意：观念表达高于技术正确，鼓励突破常规'
+  return '通用标准：均衡评价技术与艺术，适合大多数场景'
+})
 
 const currentStep = computed(() => {
   if (critiqueResult.value) return 2
@@ -768,7 +859,7 @@ const startCritique = async () => {
 
   try {
     const imagesBase64 = uploadedImages.value.map(img => img.dataUrl)
-    const { data } = await photoCritiqueApi.critiquePhotos(imagesBase64)
+    const { data } = await photoCritiqueApi.critiquePhotos(imagesBase64, selectedStyle.value)
     critiqueResult.value = data
 
     clearInterval(progressTimer)
@@ -884,6 +975,98 @@ onMounted(() => {
   margin-left: auto;
   display: flex;
   gap: 8px;
+}
+
+.section-tag {
+  margin-left: 8px;
+}
+
+.style-section {
+  margin-bottom: 8px;
+}
+
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.style-option {
+  position: relative;
+  padding: 12px;
+  border: 2px solid #ebeef5;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #fff;
+}
+
+.style-option:hover {
+  border-color: var(--style-color, #165DFF);
+  background: linear-gradient(135deg, #fff 0%, #f5f7fa 100%);
+  transform: translateY(-2px);
+}
+
+.style-option.active {
+  border-color: var(--style-color, #165DFF);
+  background: linear-gradient(135deg, var(--style-color, #165DFF) 0%, var(--style-color, #165DFF)dd 100%);
+  color: #fff;
+}
+
+.style-option.active .style-desc {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.style-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--style-color, #165DFF);
+  background-opacity: 0.1;
+  background-color: var(--style-color, #165DFF)15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.style-option.active .style-icon {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.style-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.style-desc {
+  font-size: 11px;
+  color: #909399;
+  line-height: 1.5;
+}
+
+.style-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.style-hint {
+  margin-top: 4px;
+}
+
+.style-alert {
+  --el-alert-padding: 10px 12px;
+  font-size: 12px;
+}
+
+.style-note-alert {
+  margin-bottom: 20px;
+  --el-alert-padding: 12px 16px;
 }
 
 .scenario-item {

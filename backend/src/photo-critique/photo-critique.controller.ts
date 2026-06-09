@@ -15,7 +15,7 @@ export class PhotoCritiqueController {
       if (dto.images.length > 9) {
         throw new HttpException('单次最多上传9张作品', HttpStatus.BAD_REQUEST);
       }
-      return this.photoCritiqueService.critiquePhoto(dto.images);
+      return this.photoCritiqueService.critiquePhoto(dto.images, dto.style || 'standard');
     } catch (error: any) {
       throw new HttpException(
         error.message || '摄影作品点评失败',
