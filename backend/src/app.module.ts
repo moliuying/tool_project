@@ -8,6 +8,7 @@ import { WhoisModule } from './whois/whois.module';
 import { HttpHeadersModule } from './http-headers/http-headers.module';
 import { CrxDownloaderModule } from './crx-downloader/crx-downloader.module';
 import { FitnessModule } from './fitness/fitness.module';
+import { FoodRecognitionModule } from './food-recognition/food-recognition.module';
 import * as path from 'path';
 
 @Module({
@@ -25,6 +26,7 @@ import * as path from 'path';
     HttpHeadersModule,
     CrxDownloaderModule,
     FitnessModule,
+    FoodRecognitionModule,
   ],
 })
 export class AppModule {}

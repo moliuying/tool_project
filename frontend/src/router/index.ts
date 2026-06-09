@@ -182,6 +182,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/FoodRecommender.vue')
       },
       {
+        path: '/food-recognition',
+        name: 'FoodImageRecognition',
+        component: () => import('@/views/FoodImageRecognition.vue')
+      },
+      {
         path: '/file-hash',
         name: 'FileHashCalculator',
         component: () => import('@/views/FileHashCalculator.vue')
