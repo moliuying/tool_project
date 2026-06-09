@@ -41,6 +41,154 @@
       </el-row>
     </el-card>
 
+    <el-card class="shooting-guide-card" v-if="!sourceImage">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="20" color="#e6a23c">
+            <Light />
+          </el-icon>
+          <span>拍摄指南</span>
+          <el-tag size="small" type="warning" class="header-tag">
+            识别准确率提升 80% 的秘诀
+          </el-tag>
+          <div class="header-actions">
+            <el-icon :size="18" color="#909399">
+              <QuestionFilled />
+            </el-icon>
+          </div>
+        </div>
+      </template>
+
+      <div class="guide-section">
+        <div class="guide-section-title">
+          <el-icon :size="18" color="#f56c6c"><Cherry /></el-icon>
+          <span>拍哪些部位？按识别优先级排序</span>
+        </div>
+        <el-row :gutter="12">
+          <el-col :span="8" v-for="part in shootingGuide.parts" :key="part.name">
+            <div class="part-card">
+              <div class="part-header" :style="{ borderColor: part.color }">
+                <el-icon :size="24" :color="part.color">
+                  <component :is="part.icon" />
+                </el-icon>
+                <div class="part-info">
+                  <span class="part-name">{{ part.name }}</span>
+                  <span class="part-importance">{{ part.importance }}</span>
+                </div>
+              </div>
+              <p class="part-desc">{{ part.desc }}</p>
+              <div class="part-tip">
+                <el-icon :size="14" color="#e6a23c"><Promotion /></el-icon>
+                <span>{{ part.tip }}</span>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
+      <el-divider />
+
+      <el-row :gutter="16">
+        <el-col :span="10">
+          <div class="guide-section">
+            <div class="guide-section-title">
+              <el-icon :size="18" color="#165DFF"><Aim /></el-icon>
+              <span>推荐拍摄角度</span>
+            </div>
+            <div class="angle-list">
+              <div class="angle-item" v-for="angle in shootingGuide.angles" :key="angle.name">
+                <div class="angle-icon">
+                  <el-icon :size="20" color="#165DFF">
+                    <component :is="angle.icon" />
+                  </el-icon>
+                </div>
+                <div class="angle-content">
+                  <div class="angle-name">{{ angle.name }}</div>
+                  <div class="angle-desc">{{ angle.desc }}</div>
+                  <el-tag size="small" type="info">适合：{{ angle.suitable }}</el-tag>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-col>
+
+        <el-col :span="14">
+          <div class="guide-section">
+            <div class="guide-section-title">
+              <el-icon :size="18" color="#e6a23c"><SunnyFilled /></el-icon>
+              <span>光线选择</span>
+            </div>
+            <div class="light-list">
+              <div class="light-item" v-for="light in shootingGuide.light" :key="light.type">
+                <div class="light-status" :class="light.status">
+                  <el-icon v-if="light.status === 'best' || light.status === 'good'" :size="16" color="#fff">
+                    <CircleCheck />
+                  </el-icon>
+                  <el-icon v-else :size="16" color="#fff">
+                    <CircleClose />
+                  </el-icon>
+                </div>
+                <div class="light-content">
+                  <div class="light-type">
+                    {{ light.type }}
+                    <el-tag v-if="light.status === 'best'" size="small" type="success" effect="light">最佳</el-tag>
+                    <el-tag v-else-if="light.status === 'good'" size="small" type="primary" effect="light">推荐</el-tag>
+                    <el-tag v-else size="small" type="danger" effect="light">避免</el-tag>
+                  </div>
+                  <div class="light-desc">{{ light.desc }}</div>
+                  <div class="light-tip">{{ light.tip }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </el-col>
+      </el-row>
+
+      <el-divider />
+
+      <div class="guide-section">
+        <div class="guide-section-title">
+          <el-icon :size="18" color="#67c23a"><ZoomIn /></el-icon>
+          <span>对/错示例对照</span>
+          <span class="section-subtitle">看看这些常见问题你有没有中招</span>
+        </div>
+        <el-row :gutter="12">
+          <el-col :span="12" v-for="item in shootingGuide.dosAndDonts" :key="item.good">
+            <div class="compare-card">
+              <div class="compare-row good">
+                <div class="compare-icon good-icon">
+                  <el-icon :size="18"><CircleCheck /></el-icon>
+                </div>
+                <div class="compare-content">
+                  <span class="compare-label">推荐 ✓</span>
+                  <span class="compare-text">{{ item.good }}</span>
+                </div>
+              </div>
+              <div class="compare-divider"></div>
+              <div class="compare-row bad">
+                <div class="compare-icon bad-icon">
+                  <el-icon :size="18"><CircleClose /></el-icon>
+                </div>
+                <div class="compare-content">
+                  <span class="compare-label bad-label">避免 ✗</span>
+                  <span class="compare-text">{{ item.bad }}</span>
+                </div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+
+      <div class="guide-summary">
+        <el-alert type="success" :closable="false" show-icon>
+          <template #title>
+            <strong>拍一张好照片的黄金法则：</strong>
+            「<span class="highlight">花 + 叶 + 整株</span>」三件套，<span class="highlight">光线柔和</span>、<span class="highlight">对焦清晰</span>、<span class="highlight">背景干净</span>，AI 识别准确率最高！
+          </template>
+        </el-alert>
+      </div>
+    </el-card>
+
     <el-row :gutter="24">
       <el-col :span="14">
         <el-card class="preview-card">
@@ -68,7 +216,7 @@
             <el-icon class="placeholder-icon"><UploadFilled /></el-icon>
             <div class="placeholder-text">点击上传植物照片</div>
             <div class="placeholder-subtext">或使用 Ctrl+V 粘贴图片</div>
-            <div class="placeholder-tip">支持 JPG、PNG、WEBP 格式，建议使用清晰的植物特写照片</div>
+            <div class="placeholder-tip">支持 JPG、PNG、WEBP 格式 · 建议拍摄花朵+叶片+整株 · 光线柔和对焦清晰 · 识别准确率更高</div>
             <el-upload
               ref="uploadRef"
               :auto-upload="false"
@@ -423,7 +571,20 @@ import {
   Clock,
   Connection,
   Location,
-  Sunny
+  Sunny,
+  Cherry,
+  Leaf,
+  Grape,
+  View,
+  Aim,
+  Top,
+  Bottom,
+  ZoomIn,
+  CircleCheck,
+  CircleClose,
+  QuestionFilled,
+  Light,
+  SunnyFilled
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -482,12 +643,88 @@ const scenarios = [
 ]
 
 const recognitionTips = [
-  '使用清晰明亮的植物特写照片，避免模糊和反光',
-  '尽量拍摄完整的植株，包括叶片、花朵、果实',
-  '光线均匀充足，避免阴影遮挡植物细节',
-  '单一主体效果更佳，减少其他植物干扰',
-  '尽量拍摄具有明显特征的部分（花、果、叶等）'
+  '对焦清晰，避免模糊、手抖，尽量使用手机微距模式',
+  '有花先拍花：花朵是识别度最高的部位，尽量拍正面特写',
+  '有果拍果实：果实形状、颜色是重要分类依据',
+  '叶片正反面都拍：叶形、叶缘、叶脉是植物分类的关键特征',
+  '拍摄整株全貌：了解植物的高度、形态（直立/匍匐/攀援）',
+  '光线充足均匀：自然光最佳，避开正午强光和夜间闪光灯',
+  '保持背景简洁：减少无关杂物干扰，突出植物主体',
+  '草本植物需带基部：区分从生还是直立生长很重要'
 ]
+
+const shootingGuide = {
+  parts: [
+    {
+      name: '花朵',
+      icon: 'Cherry',
+      color: '#f56c6c',
+      importance: '⭐⭐⭐⭐⭐',
+      desc: '植物识别最重要的依据，花瓣数量、形状、颜色、排列方式、雌雄蕊结构都是分类关键特征。',
+      tip: '尽量正面拍摄，同时拍一张侧面展示花的整体结构'
+    },
+    {
+      name: '叶片',
+      icon: 'Leaf',
+      color: '#67c23a',
+      importance: '⭐⭐⭐⭐⭐',
+      desc: '叶形、叶缘（全缘/锯齿/裂片）、叶脉、叶序（互生/对生/轮生）是植物分类学的核心特征。',
+      tip: '建议同时拍摄叶片正面和背面，以及枝条上叶的排列方式'
+    },
+    {
+      name: '果实/种子',
+      icon: 'Grape',
+      color: '#e6a23c',
+      importance: '⭐⭐⭐⭐',
+      desc: '果实类型（浆果/核果/蒴果/荚果等）、形状、颜色、开裂方式是重要的识别依据。',
+      tip: '拍成熟的果实，如有开裂也拍下开裂状态'
+    },
+    {
+      name: '茎干/枝条',
+      icon: 'Connection',
+      color: '#909399',
+      importance: '⭐⭐⭐',
+      desc: '区分草质茎还是木质茎，枝条颜色、是否有刺/毛/翅、节间特征都有参考价值。',
+      tip: '木本植物拍树皮纹路，草本拍茎的横断面形状'
+    },
+    {
+      name: '整株形态',
+      icon: 'Picture',
+      color: '#165DFF',
+      importance: '⭐⭐⭐',
+      desc: '了解植物整体生长形态（乔木/灌木/草本/藤本）、高度、冠幅，有助于缩小识别范围。',
+      tip: '退后几步拍全貌，旁边放个参照物（如手、笔）更有利于判断大小'
+    },
+    {
+      name: '特殊特征',
+      icon: 'MagicStick',
+      color: '#9b59b6',
+      importance: '⭐⭐⭐⭐',
+      desc: '刺、毛、乳汁、卷须、气味等特殊特征是某些植物科属的标志性特点。',
+      tip: '有乳汁的植物折断小枝观察，有毛的用特写拍清楚'
+    }
+  ],
+  angles: [
+    { name: '正面平视', icon: 'View', desc: '适合拍花朵正面、叶片正面，展示平面形态特征', suitable: '花朵、叶片' },
+    { name: '45°侧俯', icon: 'Aim', desc: '最常用的拍摄角度，兼顾正面和侧面特征，立体感强', suitable: '整株、枝条、花序' },
+    { name: '垂直俯拍', icon: 'Top', desc: '适合拍叶序、伞形花序、基生叶丛的排列方式', suitable: '叶丛、花簇、低矮植物' },
+    { name: '侧面仰视', icon: 'Bottom', desc: '适合拍高大乔木、下垂的花序/果实、树冠形态', suitable: '乔木、高大花卉' }
+  ],
+  light: [
+    { type: '散射自然光', status: 'best', desc: '阴天或树荫下，光线柔和均匀，色彩还原准确，无强烈阴影', tip: '识别效果最佳，首推这种光线' },
+    { type: '侧光', status: 'good', desc: '上午9-10点或下午3-4点的阳光，能突出植物纹理和立体感', tip: '适合拍摄叶片脉络、树皮纹理' },
+    { type: '正午强光', status: 'bad', desc: '光照过强，高光过曝阴影过重，色彩偏白，细节丢失严重', tip: '尽量避免，可移到树荫下拍摄' },
+    { type: '闪光灯', status: 'bad', desc: '近距离闪光会导致反光、色彩失真、背景全黑', tip: '不要使用闪光灯，改用手电筒补光' },
+    { type: '夜间灯光', status: 'bad', desc: '光线不足、偏色严重，植物细节难以辨识', tip: '尽量白天拍摄，或用多个光源补光' }
+  ],
+  dosAndDonts: [
+    { good: '近距离微距拍摄花朵细节', bad: '距离太远，植物只占画面一小部分', icon: 'ZoomIn' },
+    { good: '对焦清晰，轮廓分明', bad: '手抖、虚焦，模糊不清', icon: 'Aim' },
+    { good: '拍多个部位（花+叶+整株）', bad: '只拍一个局部，缺少关键信息', icon: 'Picture' },
+    { good: '单一主体，背景简洁', bad: '杂乱背景，多种植物混在一起', icon: 'MagicStick' },
+    { good: '光线均匀柔和', bad: '强光逆光、阴影浓重', icon: 'Sunny' }
+  ]
+}
 
 const capabilities = [
   '中文学名识别',
@@ -708,6 +945,284 @@ onMounted(() => {
 
 .scenario-card {
   margin-bottom: 24px;
+}
+
+.shooting-guide-card {
+  margin-bottom: 24px;
+  background: linear-gradient(180deg, #fffdf5 0%, #ffffff 40%);
+}
+
+.guide-section {
+  margin-bottom: 8px;
+}
+
+.guide-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 16px;
+}
+
+.section-subtitle {
+  font-size: 12px;
+  color: #909399;
+  font-weight: normal;
+  margin-left: 8px;
+}
+
+.part-card {
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+}
+
+.part-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+.part-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 2px solid;
+}
+
+.part-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.part-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.part-importance {
+  font-size: 12px;
+  letter-spacing: -1px;
+}
+
+.part-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+  margin: 0 0 10px 0;
+}
+
+.part-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #b88230;
+  line-height: 1.5;
+}
+
+.part-tip > span {
+  flex: 1;
+}
+
+.angle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.angle-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #ecf5ff;
+  border-radius: 8px;
+  border: 1px solid #d9ecff;
+}
+
+.angle-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.angle-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.angle-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.angle-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.light-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.light-item {
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+}
+
+.light-status {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.light-status.best {
+  background: linear-gradient(135deg, #67c23a 0%, #529b2e 100%);
+}
+
+.light-status.good {
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
+}
+
+.light-status.bad {
+  background: linear-gradient(135deg, #f56c6c 0%, #d64545 100%);
+}
+
+.light-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.light-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.light-desc {
+  font-size: 12px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.light-tip {
+  font-size: 11px;
+  color: #909399;
+  padding-left: 4px;
+}
+
+.compare-card {
+  border: 1px solid #ebeef5;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.compare-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.compare-row.good {
+  background: #f0f9eb;
+}
+
+.compare-row.bad {
+  background: #fef0f0;
+}
+
+.compare-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.good-icon {
+  background: #67c23a;
+  color: #fff;
+}
+
+.bad-icon {
+  background: #f56c6c;
+  color: #fff;
+}
+
+.compare-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.compare-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #529b2e;
+}
+
+.compare-label.bad-label {
+  color: #d64545;
+}
+
+.compare-text {
+  font-size: 13px;
+  color: #303133;
+}
+
+.compare-divider {
+  height: 1px;
+  background: #dcdfe6;
+}
+
+.guide-summary {
+  margin-top: 16px;
+}
+
+.guide-summary .highlight {
+  color: #e6a23c;
+  font-weight: 600;
 }
 
 .guide-steps {
