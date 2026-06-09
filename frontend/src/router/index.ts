@@ -330,6 +330,11 @@ const routes: RouteRecordRaw[] = [
         path: '/car-knowledge',
         name: 'CarKnowledgeAdvisor',
         component: () => import('@/views/CarKnowledgeAdvisor.vue')
+      },
+      {
+        path: '/photo-critique',
+        name: 'PhotoCritique',
+        component: () => import('@/views/PhotoCritique.vue')
       }
     ]
   }
