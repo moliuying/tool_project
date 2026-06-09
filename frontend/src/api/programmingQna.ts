@@ -58,6 +58,79 @@ export const languageOptions: string[] = [
   'Kotlin',
 ]
 
+export interface LanguageInfo {
+  name: string
+  icon: string
+  color: string
+  level: '精通' | '熟练' | '熟悉'
+  description: string
+}
+
+export const supportedLanguages: LanguageInfo[] = [
+  { name: 'TypeScript', icon: '🟦', color: '#3178c6', level: '精通', description: '前端全栈、类型系统、工程化' },
+  { name: 'JavaScript', icon: '🟨', color: '#f7df1e', level: '精通', description: '浏览器API、Node.js、ES新特性' },
+  { name: 'Python', icon: '🐍', color: '#3776ab', level: '精通', description: '数据处理、Web开发、自动化脚本' },
+  { name: 'Go', icon: '🐹', color: '#00add8', level: '熟练', description: '微服务、高并发、CLI工具' },
+  { name: 'Java', icon: '☕', color: '#007396', level: '熟练', description: 'Spring生态、后端服务、Android' },
+  { name: 'Rust', icon: '🦀', color: '#ce422b', level: '熟悉', description: '系统编程、WebAssembly、高性能' },
+  { name: 'C/C++', icon: '⚙️', color: '#00599c', level: '熟悉', description: '底层开发、算法优化、嵌入式' },
+  { name: 'SQL', icon: '🗃️', color: '#00758f', level: '精通', description: 'MySQL、PostgreSQL、查询优化' },
+  { name: 'Shell/Bash', icon: '💻', color: '#4eaa25', level: '熟练', description: 'Linux运维、自动化部署、脚本编写' },
+  { name: 'C#', icon: '💜', color: '#68217a', level: '熟悉', description: '.NET生态、Unity游戏开发' },
+  { name: 'PHP', icon: '🐘', color: '#777bb4', level: '熟悉', description: 'Laravel、WordPress、Web后端' },
+  { name: 'Swift', icon: '🍎', color: '#fa7343', level: '熟悉', description: 'iOS/macOS应用开发' },
+  { name: 'Kotlin', icon: '🟣', color: '#7f52ff', level: '熟悉', description: 'Android开发、后端服务' },
+]
+
+export interface FrameworkInfo {
+  name: string
+  icon: string
+  color: string
+  category: '前端' | '后端' | '全栈' | '移动端' | '运维' | '数据库'
+  description: string
+}
+
+export const supportedFrameworks: FrameworkInfo[] = [
+  { name: 'Vue.js', icon: '💚', color: '#42b883', category: '前端', description: '组合式API、Pinia、Vue Router、Nuxt' },
+  { name: 'React', icon: '⚛️', color: '#61dafb', category: '前端', description: 'Hooks、Redux/Zustand、Next.js' },
+  { name: 'Angular', icon: '🅰️', color: '#dd0031', category: '前端', description: '企业级前端框架、RxJS' },
+  { name: 'Node.js', icon: '🟢', color: '#339933', category: '后端', description: 'Express、Koa、NestJS、SSR' },
+  { name: 'NestJS', icon: '🐱', color: '#e0234e', category: '后端', description: '企业级Node框架、TypeScript' },
+  { name: 'Django', icon: '🎸', color: '#092e20', category: '后端', description: 'Python Web框架、ORM、Admin' },
+  { name: 'Spring Boot', icon: '🌱', color: '#6db33f', category: '后端', description: 'Java微服务、Spring Cloud' },
+  { name: 'Gin', icon: '🍸', color: '#00add8', category: '后端', description: 'Go高性能Web框架' },
+  { name: 'Flutter', icon: '🦋', color: '#0175c2', category: '移动端', description: '跨平台移动应用、Dart' },
+  { name: 'React Native', icon: '📱', color: '#61dafb', category: '移动端', description: '跨平台移动应用' },
+  { name: 'Docker', icon: '🐳', color: '#2496ed', category: '运维', description: '容器化部署、镜像构建' },
+  { name: 'Kubernetes', icon: '☸️', color: '#326ce5', category: '运维', description: '容器编排、微服务治理' },
+  { name: 'MySQL', icon: '🐬', color: '#4479a1', category: '数据库', description: '关系型数据库、性能优化' },
+  { name: 'PostgreSQL', icon: '🐘', color: '#336791', category: '数据库', description: '高级关系型数据库、扩展' },
+  { name: 'Redis', icon: '🔴', color: '#dc382d', category: '数据库', description: '缓存、消息队列、数据结构' },
+  { name: 'MongoDB', icon: '🍃', color: '#47a248', category: '数据库', description: '文档数据库、灵活Schema' },
+  { name: 'Vite', icon: '⚡', color: '#646cff', category: '前端', description: '前端构建工具、开发服务器' },
+  { name: 'Webpack', icon: '📦', color: '#8dd6f9', category: '前端', description: '前端打包构建、插件生态' },
+]
+
+export interface DomainArea {
+  name: string
+  icon: string
+  color: string
+  description: string
+}
+
+export const expertiseAreas: DomainArea[] = [
+  { name: 'Web前端开发', icon: '🎨', color: '#165DFF', description: 'Vue/React/Angular全栈开发、工程化、性能优化' },
+  { name: '后端服务开发', icon: '🛠️', color: '#00b42a', description: 'API设计、微服务架构、数据库设计' },
+  { name: '算法与数据结构', icon: '🧮', color: '#f53f3f', description: 'LeetCode题解、系统设计、复杂度分析' },
+  { name: '调试与问题排查', icon: '🐞', color: '#722ed1', description: '错误分析、性能调优、内存泄漏排查' },
+  { name: 'DevOps与部署', icon: '🚀', color: '#ff7d00', description: 'CI/CD、容器化、服务器运维、自动化' },
+  { name: '数据库与存储', icon: '🗄️', color: '#14c9c9', description: 'SQL优化、索引设计、缓存策略、分库分表' },
+  { name: '系统架构设计', icon: '🏗️', color: '#86909c', description: '高并发、高可用、分布式系统设计模式' },
+  { name: '代码质量与重构', icon: '✨', color: '#eb2f96', description: '设计模式、最佳实践、Code Review指导' },
+  { name: '面试与求职', icon: '💼', color: '#ffc53d', description: '技术面试题、简历优化、职业规划' },
+  { name: '跨端与移动端', icon: '📱', color: '#0fc6c2', description: '小程序、H5、Flutter、React Native' },
+]
+
 export interface AskQuestionDto {
   question: string
   category?: ProgrammingCategory

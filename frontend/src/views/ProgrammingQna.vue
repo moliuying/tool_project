@@ -21,9 +21,9 @@
       </div>
       <el-divider />
       <div class="intro-sections">
-        <div class="intro-section">
+        <div class="intro-section full-width">
           <h4 class="section-label">
-            <el-icon><User /></el-icon>
+            <el-icon color="#165DFF"><User /></el-icon>
             适用人群
           </h4>
           <div class="audience-tags">
@@ -54,13 +54,94 @@
             </div>
           </div>
         </div>
-        <div class="intro-section">
+
+        <div class="intro-section full-width">
           <h4 class="section-label">
-            <el-icon><WarningFilled /></el-icon>
+            <el-icon color="#00b42a"><Guide /></el-icon>
+            擅长的技术领域
+          </h4>
+          <div class="expertise-grid">
+            <div
+              v-for="area in expertiseAreas"
+              :key="area.name"
+              class="expertise-card"
+              :style="{ '--expertise-color': area.color }"
+            >
+              <div class="ec-icon">{{ area.icon }}</div>
+              <div class="ec-content">
+                <div class="ec-name">{{ area.name }}</div>
+                <div class="ec-desc">{{ area.description }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-section full-width">
+          <h4 class="section-label">
+            <el-icon color="#f53f3f"><EditPen /></el-icon>
+            精通 / 熟练的编程语言
+            <el-tag size="small" type="info" effect="plain" class="section-hint">按掌握程度排序</el-tag>
+          </h4>
+          <div class="language-grid">
+            <div
+              v-for="lang in supportedLanguages"
+              :key="lang.name"
+              class="lang-card"
+              :style="{ '--lang-color': lang.color }"
+            >
+              <div class="lang-icon">{{ lang.icon }}</div>
+              <div class="lang-info">
+                <div class="lang-name">{{ lang.name }}</div>
+                <div class="lang-desc">{{ lang.description }}</div>
+              </div>
+              <el-tag
+                size="small"
+                :type="lang.level === '精通' ? 'danger' : lang.level === '熟练' ? 'warning' : 'info'"
+                effect="dark"
+                round
+                class="lang-level"
+              >
+                {{ lang.level }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-section full-width">
+          <h4 class="section-label">
+            <el-icon color="#722ed1"><Grid /></el-icon>
+            熟悉的技术框架与工具
+            <el-tag size="small" type="info" effect="plain" class="section-hint">按类别分组</el-tag>
+          </h4>
+          <div class="framework-groups">
+            <div v-for="group in ['前端', '后端', '移动端', '数据库', '运维']" :key="group" class="framework-group">
+              <div class="fg-title">
+                <el-icon><Collection /></el-icon>
+                {{ group }}
+              </div>
+              <div class="fg-list">
+                <div
+                  v-for="fw in supportedFrameworks.filter(f => f.category === group)"
+                  :key="fw.name"
+                  class="fw-tag"
+                  :style="{ '--fw-color': fw.color }"
+                  :title="fw.description"
+                >
+                  <span class="fw-icon">{{ fw.icon }}</span>
+                  <span class="fw-name">{{ fw.name }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-section full-width">
+          <h4 class="section-label">
+            <el-icon color="#14c9c9"><WarningFilled /></el-icon>
             支持的问题类型
           </h4>
           <div class="scene-tags">
-            <el-tag v-for="cat in categoryOptions" :key="cat.value" size="large" effect="plain">
+            <el-tag v-for="cat in categoryOptions" :key="cat.value" size="large" effect="plain" class="scene-tag">
               {{ cat.icon }} {{ cat.label }}
             </el-tag>
           </div>
@@ -470,6 +551,8 @@ import {
   CircleCheckFilled,
   CircleCloseFilled,
   Link,
+  Guide,
+  Collection,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -478,6 +561,9 @@ import {
   difficultyOptions,
   languageOptions,
   quickQuestions,
+  supportedLanguages,
+  supportedFrameworks,
+  expertiseAreas,
   type ProgrammingAnswer,
   type ProgrammingCategory,
   type DifficultyLevel,
@@ -771,6 +857,181 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.scene-tag {
+  font-size: 14px !important;
+  padding: 6px 14px !important;
+}
+
+.section-hint {
+  margin-left: 10px;
+  font-weight: normal;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2129;
+  margin-bottom: 10px;
+}
+
+.expertise-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.expertise-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  border-left: 3px solid var(--expertise-color, #165DFF);
+  transition: all 0.25s;
+  cursor: default;
+}
+
+.expertise-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.ec-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.ec-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ec-name {
+  font-weight: 600;
+  color: #1d2129;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.ec-desc {
+  font-size: 12px;
+  color: #86909c;
+  line-height: 1.5;
+}
+
+.language-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.lang-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  transition: all 0.25s;
+  border-top: 3px solid var(--lang-color, #165DFF);
+}
+
+.lang-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.lang-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.lang-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.lang-name {
+  font-weight: 600;
+  color: #1d2129;
+  font-size: 14px;
+  margin-bottom: 3px;
+}
+
+.lang-desc {
+  font-size: 12px;
+  color: #86909c;
+  line-height: 1.4;
+}
+
+.lang-level {
+  flex-shrink: 0;
+  font-size: 11px !important;
+}
+
+.framework-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.framework-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fg-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4e5969;
+  padding-left: 2px;
+}
+
+.fg-list {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fw-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #fff;
+  border: 1px solid var(--fw-color, #165DFF);
+  border-radius: 20px;
+  font-size: 13px;
+  color: var(--fw-color, #165DFF);
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.fw-tag:hover {
+  background: var(--fw-color, #165DFF);
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.fw-icon {
+  font-size: 16px;
+}
+
+.fw-name {
+  white-space: nowrap;
+}
+
 .card-header {
   display: flex;
   align-items: center;
@@ -784,16 +1045,6 @@ onMounted(() => {
   margin-left: auto;
   display: flex;
   gap: 8px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #1d2129;
-  margin-bottom: 10px;
 }
 
 .required-tag {
