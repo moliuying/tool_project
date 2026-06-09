@@ -38,21 +38,54 @@
         <div class="intro-section">
           <h4 class="section-label">
             <el-icon><Collection /></el-icon>
-            智慧流派一览
+            智慧流派一览（含适用边界）
           </h4>
+          <el-alert
+            type="info"
+            :closable="false"
+            show-icon
+            title="各家智慧产生于特定历史语境，各有侧重与局限"
+            description="请根据具体情境灵活参考，切勿生搬硬套"
+            class="school-alert"
+          />
           <div class="school-grid">
             <div
               v-for="school in wisdomSchools"
               :key="school.value"
-              class="school-card"
+              class="school-card school-card-detailed"
               :style="{ borderColor: school.color }"
             >
               <div class="school-header" :style="{ backgroundColor: school.color }">
                 <span class="school-emoji">{{ school.emoji }}</span>
                 <span class="school-name">{{ school.label }}</span>
+                <span class="school-sage-inline">· {{ school.sage }}</span>
               </div>
               <div class="school-quote">"{{ school.quote }}"</div>
-              <div class="school-sage">—— {{ school.sage }}</div>
+              <div class="school-background">
+                <span class="bg-label">历史背景：</span>
+                <span class="bg-text">{{ school.background }}</span>
+              </div>
+              <el-divider class="school-divider" />
+              <div class="school-boundaries">
+                <div class="boundary-col boundary-suitable">
+                  <div class="boundary-col-title">
+                    <el-icon color="#67c23a"><CircleCheck /></el-icon>
+                    <span>适合参考</span>
+                  </div>
+                  <ul>
+                    <li v-for="(s, i) in school.suitable" :key="i">{{ s }}</li>
+                  </ul>
+                </div>
+                <div class="boundary-col boundary-unsuitable">
+                  <div class="boundary-col-title">
+                    <el-icon color="#f56c6c"><CircleClose /></el-icon>
+                    <span>不宜直接套用</span>
+                  </div>
+                  <ul>
+                    <li v-for="(u, i) in school.unsuitable" :key="i">{{ u }}</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -106,6 +139,59 @@
               <div class="exp-label">可操作的行动方案</div>
             </div>
           </div>
+        </div>
+      </div>
+      <el-divider />
+      <div class="boundary-section">
+        <h4 class="expectation-title">
+          <el-icon color="#f56c6c"><WarningFilled /></el-icon>
+          ⚠️ 适用边界与重要提示
+        </h4>
+        <el-alert
+          type="warning"
+          :closable="false"
+          show-icon
+          title="古人智慧源自特定历史语境，绝非万能药方"
+          description="以下边界说明，请务必认真阅读"
+          class="boundary-alert"
+        />
+        <div class="boundary-grid">
+          <div class="boundary-item boundary-do">
+            <div class="boundary-icon">✅</div>
+            <div class="boundary-content">
+              <div class="boundary-title">适合参考的场景</div>
+              <ul class="boundary-list">
+                <li>需要换个视角审视问题时，打破思维定式</li>
+                <li>心态调整、情绪平复、人生方向的哲学思考</li>
+                <li>人际关系中「道」的层面：原则、格局、胸怀</li>
+                <li>重大决策前的冷静思考与自我反省</li>
+                <li>作为多种参考意见之一，结合实际情况综合判断</li>
+              </ul>
+            </div>
+          </div>
+          <div class="boundary-item boundary-dont">
+            <div class="boundary-icon">❌</div>
+            <div class="boundary-content">
+              <div class="boundary-title">不建议直接套用的场景</div>
+              <ul class="boundary-list">
+                <li>涉及法律纠纷、劳动仲裁等需专业法律意见的问题</li>
+                <li>严重心理疾病、抑郁倾向等需专业医疗干预的情况</li>
+                <li>现代企业管理中的具体制度、合同、财务决策</li>
+                <li>紧急突发事件（如安全事故、危机公关）需要立即响应时</li>
+                <li>涉及医疗诊断、投资理财等高风险专业领域</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="boundary-tips">
+          <el-icon color="#e6a23c"><InfoFilled /></el-icon>
+          <span>
+            <strong>核心原则：</strong>
+            古人智慧提供的是「心法」与「思路」，而非「操作手册」。
+            古代社会结构（宗法制度、等级秩序、农耕经济）与现代社会（法治、平等、市场经济）存在根本差异。
+            请将先贤教诲作为启发思考的参照，结合你的具体处境、法律规范、专业意见，做出最适合自己的判断与选择。
+            如遇重大决策或心理困扰，强烈建议寻求专业人士帮助。
+          </span>
         </div>
       </div>
     </el-card>
@@ -319,6 +405,28 @@
           <h3 class="result-section-title">心境寄语</h3>
           <div class="mindset-text">{{ generatedResult.mindset }}</div>
         </div>
+
+        <el-alert
+          type="warning"
+          :closable="false"
+          show-icon
+          class="result-disclaimer"
+        >
+          <template #title>
+            <span class="disclaimer-title">⚠️ 重要免责声明</span>
+          </template>
+          <div class="disclaimer-content">
+            <p>
+              <strong>本功能提供的所有智慧解答、格言典故、行动建议均基于古人历史智慧的整理与解读，仅供参考与启发思考之用，不构成任何专业意见。</strong>
+            </p>
+            <ul class="disclaimer-list">
+              <li>涉及法律、财务、医疗、心理等专业领域的问题，请务必咨询持证专业人士</li>
+              <li>古代智慧产生于宗法等级社会，与现代法治平等社会存在本质差异，不可生搬硬套</li>
+              <li>所有建议请结合自身实际情况、法律法规、公序良俗综合判断，自行承担决策后果</li>
+              <li>如您正在经历严重情绪困扰、心理危机或人身安全威胁，请立即拨打当地心理援助热线或报警求助</li>
+            </ul>
+          </div>
+        </el-alert>
       </div>
     </el-card>
 
@@ -380,7 +488,10 @@ import {
   Promotion,
   EditPen,
   Grid,
-  Collection
+  Collection,
+  WarningFilled,
+  CircleCheck,
+  CircleClose
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -460,7 +571,20 @@ const wisdomSchools = [
     emoji: '📜',
     color: '#8B4513',
     sage: '孔子',
-    quote: '己所不欲，勿施于人'
+    quote: '己所不欲，勿施于人',
+    background: '源于周代礼乐制度，以伦理道德为核心，强调修身齐家治国平天下的入世哲学',
+    suitable: [
+      '人际关系中的品德修养、诚信待人',
+      '职场中责任感、敬业精神的建立',
+      '家庭伦理、孝悌之道的思考',
+      '需要反求诸己、自我反省时'
+    ],
+    unsuitable: [
+      '需要直接竞争、利益博弈的商业谈判',
+      '面对恶意伤害需要强硬反击时',
+      '现代法治社会中的权益维护（不能寄望于"以德报怨"）',
+      '需要快速决策、效率优先的紧急事务'
+    ]
   },
   {
     value: 'daojia',
@@ -468,7 +592,20 @@ const wisdomSchools = [
     emoji: '☯️',
     color: '#2E8B57',
     sage: '老子',
-    quote: '上善若水，水善利万物而不争'
+    quote: '上善若水，水善利万物而不争',
+    background: '崇尚自然无为，主张顺应规律、以柔克刚，追求精神自由与超越',
+    suitable: [
+      '心态调整、缓解焦虑、接受无法改变的现实',
+      '需要韬光养晦、积蓄力量的蛰伏期',
+      '处理需要"以退为进""以柔克刚"的复杂局面',
+      '对人生意义、生命本质的哲学思考'
+    ],
+    unsuitable: [
+      '需要主动出击、积极争取的机会窗口',
+      '必须明确表态、承担责任的关键时刻',
+      '现代职场中完全"不争"可能导致被边缘化',
+      '涉及具体项目管理、目标达成的执行层面'
+    ]
   },
   {
     value: 'fojia',
@@ -476,7 +613,20 @@ const wisdomSchools = [
     emoji: '🪷',
     color: '#DAA520',
     sage: '释迦牟尼',
-    quote: '一切有为法，如梦幻泡影'
+    quote: '一切有为法，如梦幻泡影',
+    background: '源于古印度，强调因果、空性、慈悲，追求解脱烦恼的心灵修行',
+    suitable: [
+      '面对失去、痛苦、无常时的心灵慰藉',
+      '需要放下执念、减少欲望时的自我调节',
+      '培养慈悲心、同理心、宽容品格',
+      '对自我欲望、情绪根源的深度观照'
+    ],
+    unsuitable: [
+      '需要采取实际行动解决现实问题时（不能仅靠"放下"）',
+      '面对不公、伤害需要维护正当权益时',
+      '现实目标的规划与执行层面',
+      '抑郁症等严重心理疾病（佛学智慧不能替代专业治疗）'
+    ]
   },
   {
     value: 'fajia',
@@ -484,7 +634,20 @@ const wisdomSchools = [
     emoji: '⚖️',
     color: '#4682B4',
     sage: '韩非子',
-    quote: '法不阿贵，绳不挠曲'
+    quote: '法不阿贵，绳不挠曲',
+    background: '主张以法治国，强调法、术、势结合，注重制度建设与务实功利',
+    suitable: [
+      '团队管理中的制度建设、规则制定',
+      '需要理性分析、不讲情面的问题处理',
+      '组织流程优化、权责清晰化',
+      '需要按规则办事、杜绝人情干扰时'
+    ],
+    unsuitable: [
+      '处理家庭、亲密关系等情感主导的场合',
+      '需要人情味、灵活性的日常人际交往',
+      '教育子女时过度强调"奖惩"可能伤害感情',
+      '朋友相处中过于功利算计会破坏关系'
+    ]
   },
   {
     value: 'bingjia',
@@ -492,7 +655,20 @@ const wisdomSchools = [
     emoji: '⚔️',
     color: '#B22222',
     sage: '孙子',
-    quote: '知己知彼，百战不殆'
+    quote: '知己知彼，百战不殆',
+    background: '源于春秋战国战争实践，研究战略战术、敌我形势，强调谋定后动',
+    suitable: [
+      '商业竞争、市场布局等战略层面的思考',
+      '需要分析形势、权衡利弊的重大决策',
+      '谈判策略、资源博弈中的战术运用',
+      '项目风险管理、预案制定'
+    ],
+    unsuitable: [
+      '与家人朋友相处时把对方当"对手"来算计',
+      '恋爱婚姻等亲密关系中使用"兵法谋略"',
+      '日常人际交往过于工于心计会失去真心',
+      '合作共赢场景下零和博弈思维会适得其反'
+    ]
   }
 ]
 
@@ -1584,5 +1760,211 @@ onMounted(() => {
   text-align: center;
   padding-top: 12px;
   border-top: 1px solid #ebeef5;
+}
+
+.boundary-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.boundary-alert {
+  margin-bottom: 8px;
+}
+
+.boundary-alert :deep(.el-alert__title) {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.boundary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.boundary-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+}
+
+.boundary-do {
+  background: #f0f9eb;
+  border-color: #e1f3d8;
+}
+
+.boundary-dont {
+  background: #fef0f0;
+  border-color: #fde2e2;
+}
+
+.boundary-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.boundary-content {
+  flex: 1;
+}
+
+.boundary-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #303133;
+}
+
+.boundary-list {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.boundary-list li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #606266;
+}
+
+.boundary-tips {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #fdf6ec;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #606266;
+}
+
+.boundary-tips strong {
+  color: #e6a23c;
+}
+
+.school-alert {
+  margin-bottom: 12px;
+}
+
+.school-card-detailed {
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s;
+}
+
+.school-sage-inline {
+  font-size: 12px;
+  opacity: 0.85;
+  font-weight: 400;
+}
+
+.school-background {
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #909399;
+}
+
+.bg-label {
+  font-weight: 600;
+  color: #606266;
+}
+
+.school-divider {
+  margin: 10px 12px;
+}
+
+.school-boundaries {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.boundary-col {
+  font-size: 12px;
+}
+
+.boundary-col-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.boundary-col ul {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.boundary-col li {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #606266;
+}
+
+.boundary-suitable .boundary-col-title {
+  color: #67c23a;
+}
+
+.boundary-unsuitable .boundary-col-title {
+  color: #f56c6c;
+}
+
+.result-disclaimer {
+  margin-top: 8px;
+}
+
+.disclaimer-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #e6a23c;
+}
+
+.disclaimer-content {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.disclaimer-content p {
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+
+.disclaimer-content strong {
+  color: #e6a23c;
+}
+
+.disclaimer-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.disclaimer-list li {
+  color: #606266;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .boundary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .school-boundaries {
+    flex-direction: column;
+  }
 }
 </style>
