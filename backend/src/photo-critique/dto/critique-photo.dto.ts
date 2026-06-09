@@ -9,6 +9,6 @@ export class CritiquePhotoDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['standard', 'street', 'landscape', 'portrait', 'bw', 'minimalist', 'commercial', 'artistic'])
+  @IsIn(['standard', 'street', 'landscape', 'portrait', 'bw', 'minimalist', 'commercial', 'dark', 'artistic'])
   style?: string;
 }

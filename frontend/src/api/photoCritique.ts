@@ -92,6 +92,13 @@ export const photoStyles: PhotoStyleOption[] = [
     color: '#f56c6c'
   },
   {
+    key: 'dark',
+    name: '暗黑低调',
+    description: '刻意压低亮度、高对比的暗黑美学，重视氛围、情绪和戏剧性',
+    icon: 'Moon',
+    color: '#1a1a2e'
+  },
+  {
     key: 'artistic',
     name: '艺术创意',
     description: '以创意表达和艺术观念为核心，鼓励突破常规',

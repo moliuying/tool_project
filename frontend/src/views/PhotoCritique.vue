@@ -200,12 +200,26 @@
 
           <el-divider />
 
+          <el-alert
+            type="warning"
+            :closable="false"
+            show-icon
+            class="style-warning-alert"
+          >
+            <template #title>
+              <div class="warning-content">
+                <el-icon :size="16" color="#e6a23c"><Warning /></el-icon>
+                <span><strong>请务必选择正确的摄影风格！</strong>不同风格的评价标准差异极大，选错风格会导致点评结果与你的创作意图相悖。</span>
+              </div>
+            </template>
+          </el-alert>
+
           <div class="style-section">
             <div class="section-title">
-              <el-icon :size="16" color="#165DFF"><Aim /></el-icon>
+              <el-icon :size="16" color="#e6a23c"><Aim /></el-icon>
               <span>选择摄影风格</span>
-              <el-tag size="small" type="primary" effect="light" class="section-tag">
-                不同风格采用不同评价标准
+              <el-tag size="small" type="warning" effect="dark" class="section-tag">
+                ⚠ 必选
               </el-tag>
             </div>
             <div class="style-grid">
@@ -609,7 +623,8 @@ import {
   Camera,
   Mountain,
   User,
-  Goods
+  Goods,
+  Moon
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
@@ -651,7 +666,8 @@ const iconComponents: Record<string, any> = {
   Sunny,
   Picture,
   Goods,
-  MagicStick
+  MagicStick,
+  Moon
 }
 
 const getStyleIcon = (iconName: string) => {
@@ -667,6 +683,7 @@ const currentStyleHint = computed(() => {
   if (style.key === 'bw') return '黑白摄影：影调层次和光影对比为核心'
   if (style.key === 'minimalist') return '极简主义：少即是多，每个元素都应有意义'
   if (style.key === 'commercial') return '商业摄影：产品展示效果和技术控制为第一优先级'
+  if (style.key === 'dark') return '暗黑低调：刻意压暗、高对比是美学追求，氛围和情绪胜过亮度'
   if (style.key === 'artistic') return '艺术创意：观念表达高于技术正确，鼓励突破常规'
   return '通用标准：均衡评价技术与艺术，适合大多数场景'
 })
@@ -1067,6 +1084,22 @@ onMounted(() => {
 .style-note-alert {
   margin-bottom: 20px;
   --el-alert-padding: 12px 16px;
+}
+
+.style-warning-alert {
+  margin-bottom: 16px;
+  --el-alert-padding: 14px 16px;
+}
+
+.style-warning-alert :deep(.el-alert__title) {
+  font-size: 13px;
+}
+
+.warning-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  line-height: 1.6;
 }
 
 .scenario-item {
