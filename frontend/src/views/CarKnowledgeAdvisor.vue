@@ -228,6 +228,141 @@
         </div>
       </div>
 
+      <div class="vehicle-info-section" :class="{ 'section-highlight': !hasVehicleInfo }">
+        <div class="section-title">
+          <el-icon color="#e6a23c"><Van /></el-icon>
+          <span>填写车辆信息</span>
+          <el-tag size="small" :type="vehicleInfoCompleteness >= 4 ? 'success' : 'warning'" effect="dark" class="hint-tag">
+            🎯 精准度 {{ vehicleInfoCompleteness }}/6 - {{ vehicleInfoCompleteness >= 4 ? '优秀，解答将非常精准' : vehicleInfoCompleteness >= 2 ? '一般，建议补充更多信息' : '偏低，建议填写以提升准确性' }}
+          </el-tag>
+        </div>
+        <el-alert
+          v-if="vehicleInfoCompleteness < 3"
+          type="warning"
+          :closable="false"
+          show-icon
+          class="vehicle-hint-alert vehicle-hint-important"
+        >
+          <template #title>
+            <span>💡 为什么填写车辆信息如此重要？</span>
+          </template>
+          <template #default>
+            <div class="vehicle-hint-detail">
+              <div class="vh-item"><strong>同款车不同年款差异巨大：</strong>例如 2019款 大众迈腾用DQ380变速箱，2023款已升级为DQ381，在平顺性和可靠性上有明显区别</div>
+              <div class="vh-item"><strong>高低配技术路线可能完全不同：</strong>例如 丰田凯美瑞 2.0L 用传统CVT，2.5L混动则用E-CVT行星齿轮结构，原理天差地别</div>
+              <div class="vh-item"><strong>里程影响问题判断：</strong>同样是变速箱顿挫，3万公里可能是调校问题，10万公里则可能是磨损或需要换油</div>
+            </div>
+          </template>
+        </el-alert>
+
+        <div class="quick-brand-section" v-if="!vehicleInfo.brand">
+          <span class="qb-label">🚗 热门品牌快速选择：</span>
+          <el-tag
+            v-for="brand in hotBrands"
+            :key="brand"
+            class="qb-tag"
+            effect="plain"
+            size="small"
+            @click="vehicleInfo.brand = brand"
+          >
+            {{ brand }}
+          </el-tag>
+        </div>
+
+        <el-form :inline="true" label-position="top" class="vehicle-form">
+          <el-form-item label="品牌/车系" :required="true">
+            <el-input
+              v-model="vehicleInfo.brand"
+              placeholder="如：丰田、大众、比亚迪、特斯拉"
+              :disabled="isGenerating"
+              clearable
+              style="width: 180px"
+            />
+          </el-form-item>
+          <el-form-item label="具体车型" :required="true">
+            <el-input
+              v-model="vehicleInfo.model"
+              placeholder="如：凯美瑞、迈腾、汉EV、Model 3"
+              :disabled="isGenerating"
+              clearable
+              style="width: 180px"
+            />
+          </el-form-item>
+          <el-form-item label="年款" :required="true">
+            <el-select
+              v-model="vehicleInfo.year"
+              placeholder="选择年份"
+              :disabled="isGenerating"
+              clearable
+              style="width: 120px"
+            >
+              <el-option
+                v-for="y in yearOptions"
+                :key="y"
+                :label="y + '款'"
+                :value="y"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="排量/动力版本">
+            <el-input
+              v-model="vehicleInfo.displacement"
+              placeholder="如：2.0L、1.5T、DM-i、长续航版"
+              :disabled="isGenerating"
+              clearable
+              style="width: 180px"
+            />
+          </el-form-item>
+          <el-form-item label="变速箱类型">
+            <el-select
+              v-model="vehicleInfo.transmission"
+              placeholder="选择类型"
+              :disabled="isGenerating"
+              clearable
+              style="width: 140px"
+            >
+              <el-option label="手动MT" value="MT" />
+              <el-option label="自动AT" value="AT" />
+              <el-option label="CVT无级" value="CVT" />
+              <el-option label="双离合DCT" value="DCT" />
+              <el-option label="单速变速箱(纯电)" value="SingleSpeed" />
+              <el-option label="E-CVT(混动)" value="ECVT" />
+              <el-option label="不清楚" value="unknown" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="行驶里程">
+            <el-input
+              v-model="vehicleInfo.mileage"
+              placeholder="如：3.5万"
+              :disabled="isGenerating"
+              clearable
+              style="width: 120px"
+            />
+          </el-form-item>
+        </el-form>
+
+        <div class="vehicle-progress">
+          <el-progress
+            :percentage="Math.round(vehicleInfoCompleteness / 6 * 100)"
+            :status="vehicleInfoCompleteness >= 4 ? 'success' : vehicleInfoCompleteness >= 2 ? '' : 'warning'"
+            :stroke-width="8"
+            :text-inside="true"
+          />
+          <span class="progress-hint">
+            {{ vehicleInfoCompleteness >= 4 ? '✅ 信息足够充分，将生成精准解答' : vehicleInfoCompleteness >= 2 ? 'ℹ️ 信息较完整，补充后效果更佳' : '⚠️ 信息较少，建议补充品牌/车型/年款' }}
+          </span>
+        </div>
+
+        <div class="vehicle-summary" v-if="hasVehicleInfo">
+          <el-icon color="#67c23a"><CircleCheck /></el-icon>
+          <span>已识别车辆：</span>
+          <span class="vs-text">{{ vehicleSummaryText }}</span>
+          <el-tag v-if="vehicleBrandInsights.type" size="small" effect="plain" type="primary" class="vs-insight">
+            {{ vehicleBrandInsights.label }}
+          </el-tag>
+        </div>
+      </div>
+
       <div class="input-section">
         <div class="section-title">
           <el-icon><EditPen /></el-icon>
@@ -336,6 +471,14 @@
             {{ getExpertLabel(selectedExpert || generatedResult.expert) }}
           </el-tag>
           <el-tag size="small" type="success">{{ getCategoryLabel(generatedResult.category) }}</el-tag>
+          <el-tag
+            v-if="generatedResult.vehicleInfo && generatedResult.vehicleInfo.summary"
+            size="small"
+            type="warning"
+            effect="plain"
+          >
+            🚗 {{ generatedResult.vehicleInfo.summary }}
+          </el-tag>
           <div class="header-actions">
             <el-button size="small" type="primary" link :icon="CopyDocument" @click="copyResult">
               复制全部内容
@@ -345,6 +488,31 @@
       </template>
 
       <div class="result-content">
+        <div v-if="generatedResult.vehicleInfo && generatedResult.vehicleInfo.summary" class="result-section vehicle-info-section-result">
+          <div class="section-icon">🚗</div>
+          <h3 class="result-section-title">分析车辆</h3>
+          <div class="vehicle-info-badges">
+            <el-tag v-if="generatedResult.vehicleInfo.brand" effect="plain">{{ generatedResult.vehicleInfo.brand }}</el-tag>
+            <el-tag v-if="generatedResult.vehicleInfo.model" effect="plain" type="primary">{{ generatedResult.vehicleInfo.model }}</el-tag>
+            <el-tag v-if="generatedResult.vehicleInfo.year" effect="plain" type="success">{{ generatedResult.vehicleInfo.year }}款</el-tag>
+            <el-tag v-if="generatedResult.vehicleInfo.displacement" effect="plain" type="warning">{{ generatedResult.vehicleInfo.displacement }}</el-tag>
+            <el-tag v-if="generatedResult.vehicleInfo.transmission" effect="plain" type="danger">{{ getTransmissionLabel(generatedResult.vehicleInfo.transmission) }}</el-tag>
+            <el-tag v-if="generatedResult.vehicleInfo.mileage" effect="plain" type="info">里程：{{ generatedResult.vehicleInfo.mileage }}</el-tag>
+          </div>
+          <div class="vehicle-context-tip">
+            <el-icon color="#e6a23c"><InfoFilled /></el-icon>
+            <span>以下解答已结合您提供的上述车辆信息进行针对性分析</span>
+          </div>
+        </div>
+
+        <div v-if="generatedResult.brandTechInsights" class="result-section brand-tech-section">
+          <div class="section-icon">🏭</div>
+          <h3 class="result-section-title">{{ generatedResult.brandTechInsights.title }}</h3>
+          <div class="brand-tech-content">
+            <div class="bt-text">{{ generatedResult.brandTechInsights.content }}</div>
+          </div>
+        </div>
+
         <div class="result-section answer-main">
           <div class="section-icon">💡</div>
           <h3 class="result-section-title">专业解答</h3>
@@ -485,6 +653,9 @@
           <div class="history-time">{{ formatTime(item.time) }}</div>
           <div class="history-question">
             <el-tag size="small" type="info">{{ getCategoryLabel(item.category) }}</el-tag>
+            <el-tag v-if="item.vehicleInfo && item.vehicleInfo.summary" size="small" type="warning" effect="plain">
+              🚗 {{ item.vehicleInfo.summary }}
+            </el-tag>
             <span class="history-text">{{ truncateText(item.description, 40) }}</span>
           </div>
           <div class="history-meta">
@@ -525,17 +696,33 @@ import {
   Warning,
   DataLine,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Van
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+
+interface VehicleInfo {
+  brand: string
+  model: string
+  year: number | string
+  displacement: string
+  transmission: string
+  mileage: string
+  summary?: string
+}
 
 interface AnswerResult {
   category: string
   expert: string
+  vehicleInfo?: VehicleInfo
   answer: string
   principle: {
     title: string
     detail: string
+  }
+  brandTechInsights?: {
+    title: string
+    content: string
   }
   comparison?: {
     title: string
@@ -555,6 +742,7 @@ interface AnswerResult {
 interface HistoryItem {
   category: string
   expert: string
+  vehicleInfo?: VehicleInfo
   description: string
   result: AnswerResult
   time: string
@@ -565,6 +753,7 @@ interface QuickSample {
   category: string
   description: string
   expert?: string
+  vehicle?: Partial<VehicleInfo>
 }
 
 const STORAGE_KEY = 'car_knowledge_history'
@@ -754,37 +943,43 @@ const quickSamples: QuickSample[] = [
     label: '涡轮和自吸怎么选',
     category: 'engine',
     description: '想买一台家用轿车，预算15万左右，现在大部分都是1.5T涡轮增压，但老一辈都说自然吸气更省心耐用。请问从技术角度分析，涡轮增压和自然吸气到底各有什么优缺点？家用应该怎么选？',
-    expert: 'powertrain'
+    expert: 'powertrain',
+    vehicle: { brand: '大众', model: '朗逸', year: 2023, displacement: '1.5L/1.5T' }
   },
   {
     label: 'CVT和双离合哪个好',
     category: 'transmission',
     description: '最近在看SUV，同一款车有的配置用CVT变速箱，有的用7速湿式双离合。听说CVT打滑、双离合顿挫，想知道这两种变速箱在技术原理、可靠性、平顺性、保养成本方面各有什么特点？',
-    expert: 'powertrain'
+    expert: 'powertrain',
+    vehicle: { brand: '日产', model: '奇骏', year: 2024, displacement: '2.0L' }
   },
   {
     label: '比亚迪DM-i和丰田混动对比',
     category: 'nev',
     description: '预算20万想买混动SUV，在比亚迪宋PLUS DM-i和本田CR-V e:HEV之间纠结。请问这两套混动系统在技术路线、工作原理、可靠性、油耗表现方面有什么差异？各有什么优缺点？',
-    expert: 'nev'
+    expert: 'nev',
+    vehicle: { brand: '比亚迪', model: '宋PLUS DM-i', year: 2024, displacement: '110KM旗舰型', transmission: 'ECVT' }
   },
   {
     label: '纯电还是插混',
     category: 'nev',
     description: '家里有车位可以装充电桩，通勤单程30公里，偶尔跑长途（每年3-4次，单程500公里左右）。一直在纯电动车和插电混动之间犹豫，能不能从技术和使用场景角度给点建议？',
-    expert: 'nev'
+    expert: 'nev',
+    vehicle: { brand: '特斯拉/理想', model: 'Model 3/L7', year: 2024 }
   },
   {
     label: '保养必须去4S店吗',
     category: 'maintenance',
     description: '车出了保修期，4S店保养比外面修理厂贵不少。但又担心外面用的机油配件不靠谱。请问脱保后到底应该继续在4S店保养还是去靠谱的维修厂？有什么需要注意的？',
-    expert: 'maintenance'
+    expert: 'maintenance',
+    vehicle: { brand: '丰田', model: '凯美瑞', year: 2020, displacement: '2.5L', mileage: '6.8万' }
   },
   {
     label: '麦弗逊和双叉臂区别',
     category: 'chassis',
     description: '看车的时候经常看到前悬挂是麦弗逊式独立悬挂，高配上是双叉臂或者多连杆。请问麦弗逊、双叉臂、多连杆这些悬挂类型在结构和实际驾驶感受上有什么区别？真的越复杂越好吗？',
-    expert: 'chassis'
+    expert: 'chassis',
+    vehicle: { brand: '宝马', model: '3系', year: 2023, displacement: '325Li' }
   }
 ]
 
@@ -1210,6 +1405,245 @@ const generalAnswerBank: Record<string, AnswerResult[]> = {
   ]
 }
 
+const currentYear = new Date().getFullYear()
+const yearOptions = Array.from({ length: 25 }, (_, i) => currentYear - i)
+
+const hotBrands = ['丰田', '大众', '比亚迪', '特斯拉', '本田', '宝马', '奔驰', '奥迪', '吉利', '长安', '哈弗', '日产', '别克', '小鹏', '理想', '蔚来']
+
+interface BrandKnowledge {
+  type: 'fuel' | 'nev' | 'hybrid' | 'luxury' | 'economy' | 'unknown'
+  label: string
+  powertrain: string
+  commonTech: string[]
+  knownIssues: {
+    range: string
+    issues: string[]
+  }[]
+  maintenance: {
+    oilType: string
+    oilInterval: string
+    gearboxOil: string
+    gearboxInterval: string
+    tips: string[]
+  }
+}
+
+const brandKnowledgeBank: Record<string, BrandKnowledge> = {
+  '丰田': {
+    type: 'hybrid',
+    label: '丰田·混动技术标杆',
+    powertrain: 'THS II混动系统 / M20系列自然吸气发动机',
+    commonTech: ['THS行星齿轮混动系统（功率分流）', 'M20C/D 2.0L自然吸气（高速燃烧技术）', 'A25系列2.5L混动专用发动机（41%热效率）', 'Direct Shift CVT（带起步齿轮）', 'TNGA架构（低重心、高刚性）'],
+    knownIssues: [
+      { range: '2019-2021款', issues: ['部分车型机油乳化增多（低温短途行驶明显）', '车机系统反应偏慢'] },
+      { range: '2018款以前', issues: ['1.2T发动机正时链条张紧器异响', '老款CVT变速箱低温保护逻辑保守'] }
+    ],
+    maintenance: {
+      oilType: '0W-20/5W-30 全合成',
+      oilInterval: '10000公里/12个月',
+      gearboxOil: '原厂CVT TF / 混动无需更换',
+      gearboxInterval: '40000-60000公里（CVT）',
+      tips: ['混动车型无需刻意磨合，但首保前避免持续地板油', '建议每2万公里清洗节气门，预防直喷发动机积碳', 'THS系统电池为镍氢，无需特别维护，设计寿命与车辆同步']
+    }
+  },
+  '本田': {
+    type: 'hybrid',
+    label: '本田·发动机技术专家',
+    powertrain: 'i-MMD混动系统 / 地球梦发动机',
+    commonTech: ['第三代i-MMD混动（大部分工况电机直驱）', 'L15BN 1.5T涡轮增压（VTEC+直喷）', 'K24系列2.0L混动专用发动机', 'CVT变速箱（G-Design Shift）', 'FUNTEC架构'],
+    knownIssues: [
+      { range: '2018-2020款', issues: ['1.5T发动机机油增多（CR-V/思域）', '高压油泵异响'] },
+      { range: '通用问题', issues: ['直喷发动机进气门积碳需定期清理', '隔音降噪水平同级别中等'] }
+    ],
+    maintenance: {
+      oilType: '0W-20 全合成（推荐紫桶）',
+      oilInterval: '5000-10000公里（视工况）',
+      gearboxOil: '本田原厂CVT HCF-2',
+      gearboxInterval: '40000-60000公里',
+      tips: ['1.5T直喷发动机建议每5000公里使用燃油添加剂', 'i-MMD混动系统建议每3个月做一次电池校准（慢充充满）', 'CVT变速箱油必须用原厂，严禁使用通用型号']
+    }
+  },
+  '大众': {
+    type: 'fuel',
+    label: '大众·涡轮增压+双离合标杆',
+    powertrain: 'EA系列发动机 + DQ系列双离合',
+    commonTech: ['EA211 1.4T/1.5T EVO（米勒循环）', 'EA888 2.0T（三代半，混合喷射）', 'DQ200（7速干式）/ DQ381（7速湿式）双离合', 'MQB平台（模块化架构）', '48V轻混系统'],
+    knownIssues: [
+      { range: '2019款以前', issues: ['DQ200干式双离合城市拥堵路况易过热顿挫', 'EA888三代部分车型油气分离器导致烧机油'] },
+      { range: '通用问题', issues: ['颗粒捕捉器堵塞（低速短途行驶）', '车机偶发卡顿黑屏'] }
+    ],
+    maintenance: {
+      oilType: '5W-30/0W-40 全合成（VW 502 00认证）',
+      oilInterval: '10000公里/12个月',
+      gearboxOil: 'DQ381: VW G 055 529 / DQ200: G 052 512',
+      gearboxInterval: '60000-80000公里（湿式）',
+      tips: ['干式双离合在拥堵路段建议切手动模式/S档，减少半联动', '颗粒捕捉器车辆建议每月跑1-2次高速（100km/h以上持续30分钟）', '必须使用符合VW 502 00/504 00认证的机油']
+    }
+  },
+  '比亚迪': {
+    type: 'nev',
+    label: '比亚迪·新能源领导者',
+    powertrain: 'DM-i/DM-p超级混动 / e平台3.0',
+    commonTech: ['DM-i超级混动（以电为主，亏电油耗低）', 'DM-p插混（性能取向，前后双电机）', 'e平台3.0（纯电专属，八合一电动力总成）', '刀片电池（磷酸铁锂，高安全性）', 'DiPilot智能驾驶辅助'],
+    knownIssues: [
+      { range: '2021-2022款 DM-i', issues: ['部分车型高速失速（高压油泵/电控问题，现已OTA修复）', '车机系统偶发卡顿'] },
+      { range: '通用问题', issues: ['底盘调校偏软忽，操控性一般', '高速风噪路噪偏大'] }
+    ],
+    maintenance: {
+      oilType: 'DM-i: 0W-20全合成 / 纯电: 无需机油',
+      oilInterval: 'DM-i: 5000-10000公里（HEV里程）',
+      gearboxOil: 'DM-i: 专用齿轮油 / E-CVT免维护',
+      gearboxInterval: 'DM-i: 40000-60000公里',
+      tips: ['插混车型建议有充电条件的多用纯电模式，能显著降低使用成本', '磷酸铁锂电池建议定期满充满放校准SOC（每月1次）', '纯电车型常规保养仅检查三电和底盘，成本极低']
+    }
+  },
+  '特斯拉': {
+    type: 'nev',
+    label: '特斯拉·纯电科技先锋',
+    powertrain: '纯电驱动 / 4680/2170电池',
+    commonTech: ['永磁同步电机（后驱）+ 感应异步电机（四驱）', '4680/2170圆柱电芯（松下/LG/宁德时代）', 'HW 4.0自动驾驶硬件', '热泵空调系统（八通阀Octovalve）', 'CTC电池底盘一体化'],
+    knownIssues: [
+      { range: '2019-2021款 Model 3/Y', issues: ['早期FSD Beta版本功能不稳定', '部分车型装配工艺问题（缝隙不均、漆面瑕疵）'] },
+      { range: '通用问题', issues: ['动能回收在低温下受限明显', '冬季续航打折较大（磷酸铁锂版尤其明显）'] }
+    ],
+    maintenance: {
+      oilType: '无需机油',
+      oilInterval: '无需更换',
+      gearboxOil: '减速器齿轮油（官方推荐首次8万检查）',
+      gearboxInterval: '80000-120000公里（建议检查后更换）',
+      tips: ['建议每周至少一次慢充充满，校准电池容量', '夏季避免长时间暴晒快充，高温会加速电池衰减', '轮胎建议每10000公里前后对调，减少偏磨']
+    }
+  },
+  '宝马': {
+    type: 'luxury',
+    label: '宝马·豪华运动标杆',
+    powertrain: 'B系列发动机 + ZF 8AT',
+    commonTech: ['B38 1.5T/B48 2.0T/B58 3.0T 直列发动机', 'ZF 8HP系列8速手自一体变速箱（业界标杆）', 'CLAR后驱平台（50:50前后配重）', 'xDrive智能四驱系统', 'VALVETRONIC电子气门升程'],
+    knownIssues: [
+      { range: '2019-2020款 B48', issues: ['部分车型冷却液泄漏（水管接头设计问题）', '正时链条张紧器异响（已改进）'] },
+      { range: '通用问题', issues: ['气门室盖渗漏机油（老化后）', 'idrive系统偶发卡顿'] }
+    ],
+    maintenance: {
+      oilType: '0W-30/5W-30 全合成（LL-01 FE认证）',
+      oilInterval: '10000-12000公里/CBS提示',
+      gearboxOil: 'ZF 8HP专用（建议使用ZF原厂）',
+      gearboxInterval: '60000-80000公里',
+      tips: ['B48发动机建议6万公里更换火花塞（比官方建议早）', 'ZF 8AT变速箱油建议循环机更换，更彻底', '长保养周期车型建议每5000公里检查机油液位']
+    }
+  },
+  '奔驰': {
+    type: 'luxury',
+    label: '奔驰·豪华舒适典范',
+    powertrain: 'M系列发动机 + 9G-Tronic变速箱',
+    commonTech: ['M254/M260/M264 直列涡轮增压发动机', '9G-Tronic 9速自动变速箱', '4MATIC四驱系统', 'MRA后驱平台/MMA前驱平台', 'ISG集成式启动发电一体机（48V轻混）'],
+    knownIssues: [
+      { range: '2019-2021款 48V轻混', issues: ['ISG电机故障（C级/E级部分车辆）', '48V电池寿命问题'] },
+      { range: '通用问题', issues: ['老款M274发动机凸轮轴调节器故障', '车机系统黑屏偶发'] }
+    ],
+    maintenance: {
+      oilType: '0W-40/5W-40 全合成（MB 229.5/229.51认证）',
+      oilInterval: '10000公里/12个月',
+      gearboxOil: '奔驰原厂 9G-Tronic专用',
+      gearboxInterval: '60000-80000公里',
+      tips: ['48V轻混系统电池需定期检查，出保后更换成本较高', '建议每4万公里清洗积碳（直喷+涡轮增压）', '注意冷却液液位，部分车型冷却液消耗偏快']
+    }
+  },
+  '奥迪': {
+    type: 'luxury',
+    label: '奥迪·科技豪华代表',
+    powertrain: 'EA系列发动机 + S tronic双离合',
+    commonTech: ['EA888 Gen3 BZ/Gen4 2.0T涡轮增压', 'EA839 3.0T V6涡轮增压', 'DL382/DL501 7速湿式双离合（S tronic）', 'quattro ultra智能四驱（适时四驱）', 'MLB Evo纵置平台'],
+    knownIssues: [
+      { range: '2018-2020款', issues: ['部分车型车机MMI系统卡顿黑屏', 'DL382变速箱低速偶发顿挫'] },
+      { range: '通用问题', issues: ['烧机油（老款EA888三代前期）', '颗粒捕捉器堵塞（低速短途行驶）'] }
+    ],
+    maintenance: {
+      oilType: '0W-30/5W-40 全合成（VW 502 00/504 00）',
+      oilInterval: '10000公里/12个月',
+      gearboxOil: 'DL382/DL501 原厂专用',
+      gearboxInterval: '60000公里',
+      tips: ['四驱车型注意分动箱和差速器油的更换', 'quattro ultra后差速器油建议6万公里更换', '必须使用502 00认证的机油，避免颗粒捕捉器堵塞']
+    }
+  }
+}
+
+const transmissionMap: Record<string, string> = {
+  MT: '手动MT',
+  AT: '自动AT',
+  CVT: 'CVT无级',
+  DCT: '双离合DCT',
+  SingleSpeed: '单速变速箱(纯电)',
+  ECVT: 'E-CVT(混动)',
+  unknown: '变速箱类型未知'
+}
+
+const vehicleInfo = ref<VehicleInfo>({
+  brand: '',
+  model: '',
+  year: '',
+  displacement: '',
+  transmission: '',
+  mileage: ''
+})
+
+const hasVehicleInfo = computed(() => {
+  const v = vehicleInfo.value
+  return !!(v.brand || v.model || v.year || v.displacement || v.transmission || v.mileage)
+})
+
+const vehicleInfoCompleteness = computed(() => {
+  const v = vehicleInfo.value
+  let count = 0
+  if (v.brand) count++
+  if (v.model) count++
+  if (v.year) count++
+  if (v.displacement) count++
+  if (v.transmission && v.transmission !== 'unknown') count++
+  if (v.mileage) count++
+  return count
+})
+
+const vehicleBrandInsights = computed((): { type: string; label: string; knowledge?: BrandKnowledge } => {
+  const brand = vehicleInfo.value.brand
+  if (!brand) return { type: '', label: '' }
+  const knowledge = brandKnowledgeBank[brand]
+  if (knowledge) {
+    return { type: knowledge.type, label: knowledge.label, knowledge }
+  }
+  if (/比亚迪|特斯拉|蔚来|小鹏|理想|哪吒|零跑|问界|极氪|埃安/.test(brand)) {
+    return { type: 'nev', label: `${brand}·新能源品牌` }
+  }
+  if (/宝马|奔驰|奥迪|保时捷|路虎|凯迪拉克|雷克萨斯|沃尔沃|林肯|捷豹/.test(brand)) {
+    return { type: 'luxury', label: `${brand}·豪华品牌` }
+  }
+  if (/丰田|本田|日产|马自达|福特|大众|别克|雪佛兰|斯柯达|起亚|现代|吉利|长安|哈弗|奇瑞|荣威/.test(brand)) {
+    return { type: 'fuel', label: `${brand}·主流乘用车品牌` }
+  }
+  return { type: 'unknown', label: `${brand}` }
+})
+
+const vehicleSummaryText = computed(() => {
+  const v = vehicleInfo.value
+  const parts: string[] = []
+  if (v.brand) parts.push(v.brand)
+  if (v.model) parts.push(v.model)
+  if (v.year) parts.push(v.year + '款')
+  if (v.displacement) parts.push(v.displacement)
+  if (v.transmission) parts.push(transmissionMap[v.transmission] || v.transmission)
+  if (v.mileage) parts.push(v.mileage + '公里')
+  return parts.length > 0 ? parts.join(' · ') : ''
+})
+
+const buildVehicleInfoWithSummary = (): VehicleInfo | undefined => {
+  if (!hasVehicleInfo.value) return undefined
+  return {
+    ...vehicleInfo.value,
+    summary: vehicleSummaryText.value
+  }
+}
+
+const getTransmissionLabel = (v: string) => transmissionMap[v] || v
+
 const selectedCategory = ref('engine')
 const questionDescription = ref('')
 const selectedExpert = ref('')
@@ -1243,7 +1677,17 @@ const applySample = (sample: QuickSample) => {
   selectedCategory.value = sample.category
   questionDescription.value = sample.description
   if (sample.expert) selectedExpert.value = sample.expert
-  ElMessage.success('已载入示例问题')
+  if (sample.vehicle) {
+    vehicleInfo.value = {
+      brand: sample.vehicle.brand || '',
+      model: sample.vehicle.model || '',
+      year: sample.vehicle.year || '',
+      displacement: sample.vehicle.displacement || '',
+      transmission: sample.vehicle.transmission || '',
+      mileage: sample.vehicle.mileage || ''
+    }
+  }
+  ElMessage.success('已载入示例问题（含车辆信息）')
 }
 
 const toggleExpert = (value: string) => {
@@ -1265,6 +1709,18 @@ const formatTime = (time: string) => {
   return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
+const buildVehicleContextText = (vInfo: VehicleInfo | undefined) => {
+  if (!vInfo || !vInfo.summary) return ''
+  const parts: string[] = []
+  if (vInfo.brand) parts.push(`品牌：${vInfo.brand}`)
+  if (vInfo.model) parts.push(`车型：${vInfo.model}`)
+  if (vInfo.year) parts.push(`年款：${vInfo.year}款`)
+  if (vInfo.displacement) parts.push(`配置：${vInfo.displacement}`)
+  if (vInfo.transmission) parts.push(`变速箱：${getTransmissionLabel(vInfo.transmission)}`)
+  if (vInfo.mileage) parts.push(`里程：${vInfo.mileage}公里`)
+  return parts.length > 0 ? parts.join(' | ') : ''
+}
+
 const generateAnswer = () => {
   if (!canGenerate.value) {
     ElMessage.warning('请先详细描述你的问题（至少10个字以上）')
@@ -1281,6 +1737,9 @@ const generateAnswer = () => {
       const expertKeys = Object.keys(generalAnswerBank)
       expert = expertKeys[Math.floor(Math.random() * expertKeys.length)]
     }
+
+    const vInfo = buildVehicleInfoWithSummary()
+    const vehicleContext = buildVehicleContextText(vInfo)
 
     let result: AnswerResult
 
@@ -1304,15 +1763,174 @@ const generateAnswer = () => {
       }
     }
 
+    let personalizedAnswer = result.answer
+    let personalizedPrincipleDetail = result.principle.detail
+    const extraSuggestions: string[] = []
+    const extraWarnings: string[] = []
+    const extraMaintenanceTips: string[] = []
+    let brandTechInsights: { title: string; content: string } | null = null
+    let brandKnownIssues: { range: string; issues: string[] }[] = []
+    let brandMaintenancePlan: { oilType: string; oilInterval: string; gearboxOil: string; gearboxInterval: string; tips: string[] } | null = null
+
+    if (vInfo && vInfo.summary) {
+      const brandKnowledge = vInfo.brand ? brandKnowledgeBank[vInfo.brand] : undefined
+      personalizedAnswer = `针对你提到的「${vInfo.summary}」，结合你描述的问题，我来为你做一个针对性的技术分析。\n\n` + personalizedAnswer
+
+      if (brandKnowledge) {
+        brandTechInsights = {
+          title: `${vInfo.brand}品牌技术特点`,
+          content: `该车型搭载${brandKnowledge.powertrain}。核心技术包括：\n${brandKnowledge.commonTech.map((t, i) => `${i + 1}. ${t}`).join('\n')}`
+        }
+        brandKnownIssues = brandKnowledge.knownIssues || []
+        brandMaintenancePlan = brandKnowledge.maintenance || null
+
+        if (brandKnowledge.type === 'hybrid') {
+          extraSuggestions.push(`作为${vInfo.brand}混动车型，建议充分利用混动系统特性：市区尽量用电驱，高速让发动机高效工作，这样能获得最佳燃油经济性`)
+        } else if (brandKnowledge.type === 'nev') {
+          extraSuggestions.push(`作为纯电/新能源车型，建议规划好出行路线和充电策略，日常通勤尽量用慢充，长途出行前充满电并查询沿途充电桩分布`)
+        } else if (brandKnowledge.type === 'luxury') {
+          extraSuggestions.push(`${vInfo.brand}作为豪华品牌，建议使用原厂指定油品和配件，出保后也尽量选择品牌专修店，避免非专业操作造成隐藏故障`)
+        }
+      }
+
+      if (vInfo.year && typeof vInfo.year === 'number') {
+        const age = currentYear - vInfo.year
+        if (age > 8) {
+          extraWarnings.push(`您的${vInfo.year}款车辆已使用${age}年，属于较老车型。橡胶密封件、避震器衬套、刹车油管等老化件建议重点检查，这些部件的老化会显著影响驾驶质感和行车安全`)
+          extraMaintenanceTips.push(`车龄${age}年的老车建议每2万公里做一次全面深度检查，包括底盘橡胶件、悬挂系统、刹车系统、冷却系统、电气线路和燃油系统`)
+        } else if (age > 5) {
+          extraSuggestions.push(`您的${vInfo.year}款车辆已使用${age}年，已进入故障高发前期，建议关注易损件状态，出现异常及时检查，避免小问题拖成大故障`)
+          extraMaintenanceTips.push(`车龄${age}年建议每年做一次全面体检，重点关注刹车系统、冷却系统、悬挂系统和电气线路`)
+        } else {
+          extraSuggestions.push(`您的${vInfo.year}款车辆为${age}年新车，正处于最佳状态期，按原厂保养手册正常维护即可，无需过度保养`)
+        }
+
+        if (brandKnownIssues.length > 0) {
+          const matchedIssues = brandKnownIssues.filter(ki => {
+            const rangeMatch = ki.range.match(/(\d{4})-(\d{4})款/)
+            if (rangeMatch) {
+              return vInfo.year >= parseInt(rangeMatch[1]) && vInfo.year <= parseInt(rangeMatch[2])
+            }
+            return ki.range === '通用问题'
+          })
+          if (matchedIssues.length > 0) {
+            matchedIssues.forEach(mi => {
+              mi.issues.forEach(issue => {
+                extraWarnings.push(`【${vInfo.year}款${vInfo.model}潜在问题提醒】${issue}（${mi.range}）`)
+              })
+            })
+          }
+        }
+      }
+
+      if (vInfo.mileage) {
+        const mileageNum = parseFloat(vInfo.mileage.replace(/[^0-9.]/g, ''))
+        if (!isNaN(mileageNum)) {
+          if (mileageNum >= 15) {
+            extraWarnings.push(`您的车辆已行驶${vInfo.mileage}公里，属于超高里程车辆。变速箱油、正时皮带/链条、火花塞、积碳、悬挂球头、避震器等问题的发生概率会大幅上升，建议做一次系统性的全面检查`)
+            extraMaintenanceTips.push(`超高里程车辆建议大幅缩短保养周期，机油更换周期建议缩短至5000公里，并使用厂家推荐的高粘度机油（如5W-40/0W-40）`)
+            extraSuggestions.push(`15万公里以上的车辆，建议重点检查变速箱状态、发动机缸压、底盘悬挂、刹车系统，这些部位的故障可能直接影响行车安全`)
+          } else if (mileageNum >= 10) {
+            extraWarnings.push(`您的车辆已行驶${vInfo.mileage}公里，属于高里程车辆。变速箱油、正时皮带/链条、火花塞、积碳、悬挂衬套等问题的发生概率会显著上升，建议系统性检查`)
+            extraMaintenanceTips.push(`高里程车辆建议缩短保养周期，机油更换周期建议缩短至5000-7500公里，并使用高粘度机油（如厂家推荐5W-40/0W-40）`)
+          } else if (mileageNum >= 6) {
+            extraSuggestions.push(`6万公里是车辆的大保养节点（俗称"大保"），建议检查并更换变速箱油、刹车油、防冻液、火花塞（如未更换过），并做积碳清洗、检查皮带/链条状态`)
+            extraMaintenanceTips.push(`6万公里建议检查刹车片/盘磨损情况（一般前片3-5万公里需换，后片5-8万公里），检查轮胎花纹深度和老化情况`)
+          } else if (mileageNum >= 3) {
+            extraSuggestions.push(`3万公里属于中期保养节点，建议除常规机油机滤外，检查空气滤芯、空调滤芯、汽油滤芯（视情况更换），以及检查刹车油含水量`)
+          } else {
+            extraSuggestions.push(`${vInfo.mileage}公里属于新车阶段，按原厂保养手册正常进行即可，无需额外项目，注意避免激烈驾驶和过载`)
+          }
+        }
+      }
+
+      if (vInfo.transmission === 'CVT') {
+        extraWarnings.push(`CVT变速箱的核心弱点是无法承受大扭矩和激烈驾驶，日常行驶应避免地板油急加速、拖车、满载爬坡等工况`)
+        if (!brandMaintenancePlan) {
+          extraMaintenanceTips.push(`CVT变速箱油必须使用原厂指定型号，严禁使用AT变速箱油或通用变速箱油，更换周期建议4-6万公里`)
+        }
+        extraSuggestions.push(`CVT车型冬季冷车启动后建议低速行驶2-3分钟，等变速箱油温上升后再正常行驶，可有效延长变速箱寿命`)
+      } else if (vInfo.transmission === 'DCT') {
+        extraSuggestions.push(`双离合变速箱在拥堵路段建议切换到手动模式或S档，减少离合器频繁半联动切换，可有效延长离合器寿命20%-30%`)
+        if (!brandMaintenancePlan) {
+          extraMaintenanceTips.push(`湿式双离合变速箱油建议6-8万公里更换，干式双离合则需关注离合器片磨损情况，出现严重顿挫及时检查`)
+        }
+        extraSuggestions.push(`双离合车型等红灯超过30秒建议挂N档拉手刹，避免离合器长时间半联动产生不必要的磨损和发热`)
+      } else if (vInfo.transmission === 'AT') {
+        if (!brandMaintenancePlan) {
+          extraMaintenanceTips.push(`AT变速箱可靠性最好，正常使用下8-10万公里更换变速箱油即可，建议使用循环机更换更彻底（约需12升油）`)
+        }
+      } else if (vInfo.transmission === 'ECVT') {
+        extraSuggestions.push(`E-CVT并非传统CVT，而是行星齿轮功率分流机构，可靠性极高，一般无需单独保养，按混动系统保养即可`)
+      } else if (vInfo.transmission === 'SingleSpeed') {
+        extraSuggestions.push(`纯电车型单速减速器结构简单，可靠性极高，按厂家要求定期检查齿轮油即可（通常6-8万公里检查）`)
+      }
+
+      if (vInfo.displacement) {
+        if (/T|涡轮增压/.test(vInfo.displacement)) {
+          extraSuggestions.push(`您的车型为涡轮增压版本，建议优先使用全合成机油，并严格按保养周期更换。长时间高速行驶后不要立即熄火，建议怠速30秒-1分钟让涡轮充分冷却`)
+          extraMaintenanceTips.push(`涡轮增压发动机建议每5000-10000公里使用一次优质燃油添加剂清除积碳，保持进气系统清洁`)
+        } else if (/L|自然吸气/.test(vInfo.displacement)) {
+          extraSuggestions.push(`自然吸气发动机结构简单可靠性高，正常使用半合成或全合成机油均可，保养成本相对较低`)
+        } else if (/DM-i|i-MMD|混动|HEV|PHEV|EV/.test(vInfo.displacement) || /纯电|长续航|标准续航/.test(vInfo.displacement)) {
+          extraSuggestions.push(`混动/新能源车型日常使用建议关注电池SOC状态，避免长期低电量存放，建议每月至少做一次满充满放校准`)
+          extraMaintenanceTips.push(`混动车型的发动机因工作时间短，机油更换可按HEV行驶里程计算，但时间周期不建议超过12个月`)
+        }
+      }
+
+      if (vInfo.brand && !brandKnowledge && /比亚迪|特斯拉|蔚来|小鹏|理想|哪吒|零跑|问界|极氪|埃安/.test(vInfo.brand)) {
+        extraSuggestions.push(`${vInfo.brand}作为新能源品牌，建议关注电池健康状态，每季度做一次慢充充满校准，有利于保持电池容量`)
+        extraMaintenanceTips.push(`电动车常规保养主要是检查三电系统、刹车系统和轮胎，保养费用比燃油车低很多，通常1-2万公里小保仅需200-500元`)
+      }
+
+      if (brandMaintenancePlan) {
+        extraMaintenanceTips.push(`【${vInfo.brand}原厂保养建议】机油型号：${brandMaintenancePlan.oilType}，更换周期：${brandMaintenancePlan.oilInterval}`)
+        extraMaintenanceTips.push(`【${vInfo.brand}变速箱保养】变速箱油型号：${brandMaintenancePlan.gearboxOil}，更换周期：${brandMaintenancePlan.gearboxInterval}`)
+        brandMaintenancePlan.tips.forEach(tip => extraMaintenanceTips.push(`【${vInfo.brand}专属提示】${tip}`))
+      }
+
+      personalizedPrincipleDetail = (vehicleContext ? `📋 你提供的车辆信息：\n${vehicleContext}\n\n` : '') +
+        (brandTechInsights ? `🏭 ${brandTechInsights.title}：\n${brandTechInsights.content}\n\n` : '') +
+        `你描述的情况是：「${questionDescription.value.substring(0, 80)}${questionDescription.value.length > 80 ? '...' : ''}」\n\n` +
+        personalizedPrincipleDetail
+
+      if (extraSuggestions.length > 0) {
+        personalizedAnswer += `\n\n🏷️ 基于您的车辆信息的专属建议：\n${extraSuggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
+      }
+      if (extraWarnings.length > 0) {
+        personalizedAnswer += `\n\n⚠️ 特别提醒（针对您的车况）：\n${extraWarnings.map((w, i) => `${i + 1}. ${w}`).join('\n')}`
+      }
+      if (extraMaintenanceTips.length > 0) {
+        personalizedAnswer += `\n\n🔧 保养提示（针对您的车况）：\n${extraMaintenanceTips.map((t, i) => `${i + 1}. ${t}`).join('\n')}`
+      }
+    } else {
+      personalizedAnswer = personalizedAnswer + `\n\n📝 重要提示：你提出的「${truncateText(questionDescription.value, 30)}...」这一问题，我目前只能给出通用性解答。由于汽车技术高度依赖具体车型、年款和配置，建议你补充填写【品牌/车型/年款】信息，这样我可以：\n\n1. 🔍 针对你的具体车型给出精准的技术分析和常见故障提醒\n2. 📋 提供品牌专属的保养建议和油品规格\n3. ⚠️ 告知对应年款车型的潜在通病和召回信息\n4. 🎯 给出真正可落地的、符合你车况的实用建议`
+      personalizedPrincipleDetail = `💡 提示：当前为通用性解答。补充品牌、车型、年款信息后可获得专属精准分析。\n\n你描述的情况是：「${questionDescription.value.substring(0, 60)}${questionDescription.value.length > 60 ? '...' : ''}」\n\n` + personalizedPrincipleDetail
+    }
+
+    const mergedSuggestions = [...(result.suggestions || [])]
+    if (extraSuggestions.length > 0) mergedSuggestions.push(...extraSuggestions)
+
+    const mergedWarnings = [...(result.warnings || [])]
+    if (extraWarnings.length > 0) mergedWarnings.push(...extraWarnings)
+
+    const mergedMaintenanceTips = [...(result.maintenanceTips || [])]
+    if (extraMaintenanceTips.length > 0) mergedMaintenanceTips.push(...extraMaintenanceTips)
+
     const personalizedResult: AnswerResult = {
       ...result,
       category,
       expert,
-      answer: result.answer + `\n\n针对你提出的「${truncateText(questionDescription.value, 30)}...」这一问题，以上专业解答供你参考。`,
+      vehicleInfo: vInfo,
+      answer: personalizedAnswer,
       principle: {
         ...result.principle,
-        detail: `你描述的情况是：「${questionDescription.value.substring(0, 60)}${questionDescription.value.length > 60 ? '...' : ''}」\n\n` + result.principle.detail
-      }
+        detail: personalizedPrincipleDetail
+      },
+      brandTechInsights: brandTechInsights || undefined,
+      suggestions: mergedSuggestions,
+      warnings: mergedWarnings.length > 0 ? mergedWarnings : undefined,
+      maintenanceTips: mergedMaintenanceTips.length > 0 ? mergedMaintenanceTips : undefined
     }
 
     generatedResult.value = personalizedResult
@@ -1320,6 +1938,7 @@ const generateAnswer = () => {
     const historyItem: HistoryItem = {
       category,
       expert,
+      vehicleInfo: vInfo,
       description: questionDescription.value,
       result: personalizedResult,
       time: new Date().toISOString()
@@ -1328,8 +1947,8 @@ const generateAnswer = () => {
     saveHistory()
 
     isGenerating.value = false
-    ElMessage.success('专家解答已生成，请查看')
-  }, 2000)
+    ElMessage.success(vInfo ? `已基于「${vInfo.summary}」生成专属解答` : '专家解答已生成，请查看')
+  }, 2500)
 }
 
 const resetAll = () => {
@@ -1337,13 +1956,28 @@ const resetAll = () => {
   questionDescription.value = ''
   selectedExpert.value = ''
   generatedResult.value = null
+  vehicleInfo.value = {
+    brand: '',
+    model: '',
+    year: '',
+    displacement: '',
+    transmission: '',
+    mileage: ''
+  }
   ElMessage.info('已重置')
 }
 
 const copyResult = () => {
   if (!generatedResult.value) return
   const r = generatedResult.value
-  let text = `【${getExpertLabel(r.expert)}专业解答】\n\n💡 专业解答：\n${r.answer}\n\n⚙️ 原理解析：${r.principle.title}\n${r.principle.detail}`
+  let text = `【${getExpertLabel(r.expert)}专业解答】`
+  if (r.vehicleInfo && r.vehicleInfo.summary) {
+    text += `\n\n🚗 分析车辆：${r.vehicleInfo.summary}`
+  }
+  if (r.brandTechInsights) {
+    text += `\n\n🏭 ${r.brandTechInsights.title}：\n${r.brandTechInsights.content}`
+  }
+  text += `\n\n💡 专业解答：\n${r.answer}\n\n⚙️ 原理解析：${r.principle.title}\n${r.principle.detail}`
   if (r.comparison && r.comparison.items && r.comparison.items.length > 0) {
     text += `\n\n📊 ${r.comparison.title}：`
     r.comparison.items.forEach((c, i) => {
@@ -1374,6 +2008,25 @@ const loadFromHistory = (item: HistoryItem) => {
   selectedExpert.value = item.expert
   questionDescription.value = item.description
   generatedResult.value = item.result
+  if (item.vehicleInfo) {
+    vehicleInfo.value = {
+      brand: item.vehicleInfo.brand || '',
+      model: item.vehicleInfo.model || '',
+      year: item.vehicleInfo.year || '',
+      displacement: item.vehicleInfo.displacement || '',
+      transmission: item.vehicleInfo.transmission || '',
+      mileage: item.vehicleInfo.mileage || ''
+    }
+  } else {
+    vehicleInfo.value = {
+      brand: '',
+      model: '',
+      year: '',
+      displacement: '',
+      transmission: '',
+      mileage: ''
+    }
+  }
   ElMessage.success('已载入历史记录')
 }
 
@@ -1740,6 +2393,194 @@ onMounted(() => {
 .category-desc {
   font-size: 12px;
   color: #909399;
+}
+
+.vehicle-info-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e6f7ff 100%);
+  border-radius: 10px;
+  border: 1px dashed #91d5ff;
+}
+
+.vehicle-hint-alert {
+  margin-bottom: 16px;
+}
+
+.vehicle-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.vehicle-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.vehicle-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f0f9eb;
+  border: 1px solid #c2e7b0;
+  border-radius: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #67c23a;
+}
+
+.vs-text {
+  font-weight: 600;
+  color: #529b2e;
+}
+
+.vehicle-info-section-result {
+  background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%);
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #1890ff;
+}
+
+.vehicle-info-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.vehicle-context-tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fdf6ec;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #b88230;
+}
+
+.brand-tech-section {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
+  padding: 16px;
+  border-radius: 10px;
+  border-left: 4px solid #fa8c16;
+}
+
+.brand-tech-content {
+  margin-top: 10px;
+}
+
+.bt-text {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #606266;
+  white-space: pre-line;
+}
+
+.section-highlight {
+  background: linear-gradient(135deg, #fffbe6 0%, #ffffff 100%);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  border: 1px dashed #ffe58f;
+  animation: pulse-highlight 2s ease-in-out infinite;
+}
+
+@keyframes pulse-highlight {
+  0%, 100% {
+    border-color: #ffe58f;
+    box-shadow: 0 0 0 0 rgba(250, 173, 20, 0.1);
+  }
+  50% {
+    border-color: #ffd666;
+    box-shadow: 0 0 0 8px rgba(250, 173, 20, 0);
+  }
+}
+
+.vehicle-hint-important {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.vehicle-hint-detail {
+  margin-top: 8px;
+}
+
+.vh-item {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #606266;
+  padding: 4px 0;
+}
+
+.vh-item strong {
+  color: #e6a23c;
+  font-weight: 600;
+}
+
+.quick-brand-section {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.qb-label {
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.qb-tag {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qb-tag:hover {
+  background: #e6a23c;
+  color: #fff;
+  border-color: #e6a23c;
+  transform: translateY(-1px);
+}
+
+.vehicle-progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 8px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.vehicle-progress :deep(.el-progress) {
+  flex: 1;
+  max-width: 300px;
+}
+
+.progress-hint {
+  font-size: 13px;
+  color: #606266;
+}
+
+.vs-insight {
+  margin-left: 8px;
+  font-weight: 500;
+}
+
+.vehicle-hint-alert {
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.vehicle-form {
+  margin-top: 8px;
 }
 
 .input-section {
