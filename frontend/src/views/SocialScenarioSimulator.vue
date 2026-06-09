@@ -215,10 +215,40 @@
           <p class="context-section-text atmosphere-text">{{ currentScenario.context.atmosphere }}</p>
         </div>
 
+        <div class="context-section relationship-section">
+          <div class="context-section-header">
+            <el-icon color="#F56C6C"><Connection /></el-icon>
+            <span class="context-section-title">人物关系解读</span>
+            <el-tag type="danger" effect="light" size="small" class="relationship-warning">
+              <el-icon><WarningFilled /></el-icon>
+              <span>关系决定潜台词！同一句话不同关系含义完全不同</span>
+            </el-tag>
+          </div>
+          <div class="relationship-note-list">
+            <div
+              v-for="(note, idx) in currentScenario.relationshipNotes"
+              :key="idx"
+              class="relationship-note-card"
+            >
+              <div class="relationship-note-header">
+                <span class="relationship-note-title">{{ note.title }}</span>
+                <el-tag size="small" effect="dark">{{ note.description }}</el-tag>
+              </div>
+              <div class="relationship-note-impact">
+                <div class="relationship-note-impact-label">
+                  <el-icon><Lightning /></el-icon>
+                  <span>对对话的影响：</span>
+                </div>
+                <p class="relationship-note-impact-text">{{ note.impact }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="context-section">
           <div class="context-section-header">
             <el-icon color="#909399"><User /></el-icon>
-            <span class="context-section-title">关键人物</span>
+            <span class="context-section-title">关键人物档案</span>
           </div>
           <div class="character-list">
             <div
@@ -258,6 +288,10 @@
         <div class="section-label">
           <el-icon color="#67C23A"><ChatDotRound /></el-icon>
           <span>对话还原</span>
+          <el-tag type="success" effect="light" size="small" class="dialog-tip">
+            <el-icon><View /></el-icon>
+            <span>注意说话人的身份和关系，这是解读潜台词的核心</span>
+          </el-tag>
         </div>
         <div class="dialog-list">
           <div
@@ -273,11 +307,30 @@
               <div class="dialog-meta">
                 <span class="speaker-name">{{ line.speaker }}</span>
                 <span class="speaker-role">{{ line.role }}</span>
+                <el-tag
+                  v-if="line.relationshipLevel"
+                  size="small"
+                  effect="dark"
+                  :style="{
+                    backgroundColor: relationshipLevelInfo[line.relationshipLevel].color,
+                    opacity: 0.85
+                  }"
+                  class="relationship-tag"
+                >
+                  <el-icon><Connection /></el-icon>
+                  <span>{{ line.relationshipTag || relationshipLevelInfo[line.relationshipLevel].label }}</span>
+                </el-tag>
               </div>
               <div class="dialog-text">{{ line.text }}</div>
-              <div v-if="line.tone" class="dialog-tone">
-                <el-icon :size="12"><MagicStick /></el-icon>
-                <span>语气/动作：{{ line.tone }}</span>
+              <div class="dialog-hints">
+                <div v-if="line.tone" class="dialog-tone">
+                  <el-icon :size="12"><MagicStick /></el-icon>
+                  <span>语气/动作：{{ line.tone }}</span>
+                </div>
+                <div v-if="line.relationshipLevel" class="dialog-relationship-hint" :style="{ color: relationshipLevelInfo[line.relationshipLevel].color }">
+                  <el-icon :size="12"><InfoFilled /></el-icon>
+                  <span>{{ relationshipLevelInfo[line.relationshipLevel].description }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -288,6 +341,10 @@
         <div class="section-label">
           <el-icon color="#E6A23C"><QuestionFilled /></el-icon>
           <span>请仔细分析后作答</span>
+          <el-tag type="warning" effect="light" size="small" class="question-tip">
+            <el-icon><Lightning /></el-icon>
+            <span>务必结合上方的人物关系和背景信息进行分析！</span>
+          </el-tag>
         </div>
         <h3 class="question-text">{{ currentQuestion.text }}</h3>
         <div class="options-list">
@@ -432,8 +489,8 @@
 </template>
 
 <script setup lang="ts">import { ref, computed } from 'vue';
-import { socialScenarios, categoryInfo, difficultyInfo, type SocialScenario, type ScenarioQuestion } from '@/data/socialScenarios';
-import { Grid, ArrowLeft, ArrowRight, VideoPlay, InfoFilled, ChatDotRound, MagicStick, QuestionFilled, CircleCheckFilled, CircleCloseFilled, Reading, Trophy, Bulb, Back, Refresh, Clock, Location, Histogram, Odometer, User, CaretRight } from '@element-plus/icons-vue';
+import { socialScenarios, categoryInfo, difficultyInfo, relationshipLevelInfo, type SocialScenario, type ScenarioQuestion, type RelationshipLevel } from '@/data/socialScenarios';
+import { Grid, ArrowLeft, ArrowRight, VideoPlay, InfoFilled, ChatDotRound, MagicStick, QuestionFilled, CircleCheckFilled, CircleCloseFilled, Reading, Trophy, Bulb, Back, Refresh, Clock, Location, Histogram, Odometer, User, CaretRight, Connection, WarningFilled, Lightning, View } from '@element-plus/icons-vue';
 const selectedCategory = ref<string>('all');
 const selectedDifficulty = ref<string>('all');
 const currentScenario = ref<SocialScenario | null>(null);
@@ -981,6 +1038,110 @@ function nextScenario() {
 .character-detail-value {
   color: #303133;
   flex: 1;
+}
+
+.relationship-section {
+  margin-top: 4px;
+}
+
+.relationship-warning {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+}
+
+.relationship-note-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relationship-note-card {
+  background: linear-gradient(135deg, #fff5f5 0%, #fff0e6 100%);
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #fecaca;
+}
+
+.relationship-note-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.relationship-note-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: #c0392b;
+}
+
+.relationship-note-impact {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.relationship-note-impact-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #e67e22;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.relationship-note-impact-text {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.dialog-tip,
+.question-tip {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.dialog-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  flex-wrap: wrap;
+}
+
+.relationship-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+}
+
+.dialog-hints {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.dialog-relationship-hint {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  background: #f5f7fa;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
 .dialog-list {

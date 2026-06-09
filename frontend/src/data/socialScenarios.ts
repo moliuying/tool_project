@@ -11,10 +11,24 @@ export interface ScenarioOption {
   explanation: string
 }
 
+export type RelationshipLevel = 'stranger' | 'acquaintance' | 'colleague' | 'friend' | 'close_friend' | 'family' | 'lover'
+
+export const relationshipLevelInfo: Record<RelationshipLevel, { label: string; color: string; bgColor: string; description: string }> = {
+  stranger: { label: '陌生人', color: '#909399', bgColor: '#f4f4f5', description: '初次见面，没有任何交情，说话最客气也最有距离感' },
+  acquaintance: { label: '点头之交', color: '#606266', bgColor: '#ecf5ff', description: '见过几次面但不熟，说话比较客套' },
+  colleague: { label: '同事关系', color: '#409EFF', bgColor: '#ecf5ff', description: '工作关系，存在上下级或平级的权力差异，说话讲究分寸和场合' },
+  friend: { label: '普通朋友', color: '#E6A23C', bgColor: '#fdf6ec', description: '认识有一段时间但没有深交，说话会顾及情面' },
+  close_friend: { label: '亲密好友', color: '#E6A23C', bgColor: '#faecd8', description: '关系很铁的朋友，说话比较直接，甚至会互相挖苦' },
+  family: { label: '家人亲属', color: '#67C23A', bgColor: '#f0f9eb', description: '有血缘或姻亲关系，说话夹杂着关心、控制和日常摩擦' },
+  lover: { label: '伴侣/恋人', color: '#F56C6C', bgColor: '#fef0f0', description: '最亲密的关系，包含爱情、依赖、试探、安全感需求等复杂情感' }
+}
+
 export interface CharacterProfile {
   name: string
   role: string
   relationshipWithYou: string
+  relationshipLevel: RelationshipLevel
+  relationshipTag: string
   personality: string
   background: string
 }
@@ -26,6 +40,12 @@ export interface ContextDetail {
   atmosphere: string
 }
 
+export interface RelationshipNote {
+  title: string
+  description: string
+  impact: string
+}
+
 export interface SocialScenario {
   id: string
   category: 'workplace' | 'family' | 'friend' | 'romance' | 'stranger'
@@ -33,6 +53,7 @@ export interface SocialScenario {
   description: string
   background: string
   context: ContextDetail
+  relationshipNotes: RelationshipNote[]
   characters: CharacterProfile[]
   dialog: DialogLine[]
   questions: ScenarioQuestion[]
@@ -44,6 +65,8 @@ export interface SocialScenario {
 export interface DialogLine {
   speaker: string
   role: string
+  relationshipLevel?: RelationshipLevel
+  relationshipTag?: string
   text: string
   tone?: string
   hint?: string
@@ -113,11 +136,25 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '这个项目近两周来客户满意度有所下降，上周客户方的对接人李总在电话里对你的汇报方式提出过"委婉建议"，说"希望沟通能更高效一些"。老李（即对话中的老李）是公司的老员工，工作了8年，之前负责过这个客户，和客户方的几个关键人物关系很好。最近领导已经安排老李参与了两次项目评审会。',
       atmosphere: '表面上很平静，但你能感觉到一丝压抑。领导没有像往常一样开玩笑，表情比较严肃。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 领导',
+        description: '上下级关系，直属上级对你有任免权和考核权',
+        impact: '领导说话不会直接批评你，因为他需要维护自己"好领导"的形象，也需要你继续干活。但他的"建议"其实就是决定，听不出来就是你自己的问题。'
+      },
+      {
+        title: '你 vs 老李',
+        description: '同部门同事，老李资历更深，是你的"前辈"',
+        impact: '领导提到老李"经验丰富"，潜台词是你的经验不够。老李之前负责过这个客户，他的出现意味着领导可能在考虑换人。'
+      }
+    ],
     characters: [
       {
         name: '领导（王总监）',
         role: '部门总监，你的直属上级',
         relationshipWithYou: '共事3年，平时对你不错，但他是典型的"话不说透"型领导，喜欢让下属自己悟。去年有个同事就是因为"听不懂话"被边缘化了。',
+        relationshipLevel: 'colleague',
+        relationshipTag: '直属上级',
         personality: '处事圆滑、善于权谋，从不直接批评人，但他的"建议"几乎就是决定。',
         background: '他最近在竞争副总职位，客户满意度是关键考核指标，他绝对不能在这个时候出问题。'
       },
@@ -125,6 +162,8 @@ export const socialScenarios: SocialScenario[] = [
         name: '你（小王）',
         role: '项目负责人，入职3年',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'colleague',
+        relationshipTag: '本人',
         personality: '做事认真负责，但有时候对人际关系的敏感度不够。',
         background: '你是靠技术能力上来的项目负责人，客户对接经验相对较少，之前一直在做执行层面的工作。'
       },
@@ -132,16 +171,18 @@ export const socialScenarios: SocialScenario[] = [
         name: '老李',
         role: '资深客户经理，入职8年',
         relationshipWithYou: '同事，没有直接竞争关系，但他的资历比你老很多。',
+        relationshipLevel: 'colleague',
+        relationshipTag: '资深前辈',
         personality: '老油条，善于搞人际关系，和客户称兄道弟。',
         background: '他之前就是这个客户的对接人，后来因为要带新人（也就是你）才转做幕后。客户那边的很多人都是他的老关系。'
       }
     ],
     dialog: [
-      { speaker: '领导', role: '部门总监', text: '小王啊，这个项目进展得还不错，你辛苦了。', tone: '面带微笑，语气平和，但没有像往常一样拍你的肩膀' },
-      { speaker: '你', role: '项目负责人', text: '谢谢领导，都是团队的功劳。', tone: '礼貌回应，但心里已经有些打鼓' },
-      { speaker: '领导', role: '部门总监', text: '嗯，不过呢，我最近和客户那边聊了一下，他们反馈说沟通起来还是稍微有点"不顺畅"。', tone: '语气略微加重了"不顺畅"三个字，用手指轻轻敲了一下桌面' },
-      { speaker: '你', role: '项目负责人', text: '啊？可能是我最近太忙，沟通不够及时，我马上改进。', tone: '有些紧张，身体微微前倾' },
-      { speaker: '领导', role: '部门总监', text: '哎呀你也别太紧张，我不是在批评你。我个人建议啊，下次客户沟通的时候，让老李也一起参加吧，他经验丰富一些。', tone: '摆手，语气变得很轻松，像在说一件无关紧要的小事' }
+      { speaker: '领导', role: '部门总监', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '小王啊，这个项目进展得还不错，你辛苦了。', tone: '面带微笑，语气平和，但没有像往常一样拍你的肩膀' },
+      { speaker: '你', role: '项目负责人', relationshipLevel: 'colleague', relationshipTag: '本人', text: '谢谢领导，都是团队的功劳。', tone: '礼貌回应，但心里已经有些打鼓' },
+      { speaker: '领导', role: '部门总监', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '嗯，不过呢，我最近和客户那边聊了一下，他们反馈说沟通起来还是稍微有点"不顺畅"。', tone: '语气略微加重了"不顺畅"三个字，用手指轻轻敲了一下桌面' },
+      { speaker: '你', role: '项目负责人', relationshipLevel: 'colleague', relationshipTag: '本人', text: '啊？可能是我最近太忙，沟通不够及时，我马上改进。', tone: '有些紧张，身体微微前倾' },
+      { speaker: '领导', role: '部门总监', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '哎呀你也别太紧张，我不是在批评你。我个人建议啊，下次客户沟通的时候，让老李也一起参加吧，他经验丰富一些。', tone: '摆手，语气变得很轻松，像在说一件无关紧要的小事' }
     ],
     questions: [
       {
@@ -187,11 +228,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '这已经是小张这个月第四次在下班前找你帮忙了。上周一他让你帮他做PPT，你加班到9点，结果第二天他说"那个方案不用了"；上周三他让你帮他整理数据，你又晚走了一个半小时；更让你不舒服的是，你发现他每次找你帮忙时，自己的电脑上都开着游戏界面。小张这个人平时和你关系还行，中午经常一起吃饭，但你也知道他在部门里出了名的"会做人"，嘴甜但活儿不怎么干。',
       atmosphere: '周五的轻松氛围，但你心里隐隐有些不安——小张每次这个表情出现，你都要倒霉。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 小张',
+        description: '同级同事，表面关系不错，经常一起吃午饭，但小张实际是领导的远房亲戚',
+        impact: '小张利用你们"关系不错"的表面情谊反复找你帮忙，他吃准了你"老好人"不好意思拒绝的性格。同时他有领导这层靠山，你就算拒绝了也怕他在领导面前说你坏话。'
+      },
+      {
+        title: '小张 vs 领导',
+        description: '远房亲戚关系，部门里人尽皆知但没人明说',
+        impact: '小张仗着这层关系干活敷衍、推活儿给别人，就算被发现领导也不会深究。你如果和小张闹僵，领导那边可能也会对你有看法。'
+      },
+      {
+        title: '你 vs 女朋友',
+        description: '恋爱关系，今晚是纪念日晚餐',
+        impact: '小张的请求让你陷入两难——一边是关系到职场人际的同事请求，一边是已经爽约可能引发感情矛盾的约会。这种两难正是小张"欲擒故纵"策略能生效的原因。'
+      }
+    ],
     characters: [
       {
         name: '小张',
         role: '同事，和你同级别，入职比你晚半年',
         relationshipWithYou: '表面上关系不错，经常一起吃午饭、聊天，但你内心深处觉得他有点"油"。',
+        relationshipLevel: 'colleague',
+        relationshipTag: '表面交好的同事',
         personality: '嘴巴特别甜，擅长示弱和道德绑架，典型的"会哭的孩子有奶吃"型。遇到困难第一反应不是自己解决，而是找别人帮忙。',
         background: '他是部门领导的远房亲戚，虽然没人明说，但大家都知道。所以他就算活儿干得不好，领导也不太说他。他摸清了这个规律，越来越"放飞自我"。'
       },
@@ -199,16 +259,18 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '员工，入职2年',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'colleague',
+        relationshipTag: '本人',
         personality: '典型的"老好人"，不太好意思拒绝别人，尤其是对方态度很好的时候。但最近你也在反思，觉得自己的边界感太差了。',
         background: '你平时工作认真，活儿干得又快又好，这也是小张总找你帮忙的原因——你帮他做的东西，质量比他自己做的高多了。'
       }
     ],
     dialog: [
-      { speaker: '小张', role: '同事', text: '嘿，还没走吧？', tone: '笑着走过来，很自然地拍了拍你的肩膀，就像你们关系特别铁一样' },
-      { speaker: '你', role: '员工', text: '正准备走呢，怎么了？', tone: '有些警觉，手里收拾东西的动作放慢了' },
-      { speaker: '小张', role: '同事', text: '哎呀，真不好意思又麻烦你。你看这个报表，我怎么都弄不对，明天早上领导就要用了，你能不能帮我看看？就"几分钟"的事。', tone: '双手合十，做出拜托的手势，特别强调了"几分钟"，表情看起来特别无辜和可怜' },
-      { speaker: '你', role: '员工', text: '嗯……我今晚还有点事。', tone: '犹豫，你看了看表，又想起了女朋友，不太想帮但又不知道怎么说' },
-      { speaker: '小张', role: '同事', text: '没事没事，不方便就算了！我再想想办法，实在不行我就加会儿班。你快回去吧，别耽误你的事。', tone: '立刻摆手，表情有些失落，但语气特别"理解人"，说完就转身准备走，好像真的准备自己解决' }
+      { speaker: '小张', role: '同事', relationshipLevel: 'colleague', relationshipTag: '表面交好的同事', text: '嘿，还没走吧？', tone: '笑着走过来，很自然地拍了拍你的肩膀，就像你们关系特别铁一样' },
+      { speaker: '你', role: '员工', relationshipLevel: 'colleague', relationshipTag: '本人', text: '正准备走呢，怎么了？', tone: '有些警觉，手里收拾东西的动作放慢了' },
+      { speaker: '小张', role: '同事', relationshipLevel: 'colleague', relationshipTag: '表面交好的同事', text: '哎呀，真不好意思又麻烦你。你看这个报表，我怎么都弄不对，明天早上领导就要用了，你能不能帮我看看？就"几分钟"的事。', tone: '双手合十，做出拜托的手势，特别强调了"几分钟"，表情看起来特别无辜和可怜' },
+      { speaker: '你', role: '员工', relationshipLevel: 'colleague', relationshipTag: '本人', text: '嗯……我今晚还有点事。', tone: '犹豫，你看了看表，又想起了女朋友，不太想帮但又不知道怎么说' },
+      { speaker: '小张', role: '同事', relationshipLevel: 'colleague', relationshipTag: '表面交好的同事', text: '没事没事，不方便就算了！我再想想办法，实在不行我就加会儿班。你快回去吧，别耽误你的事。', tone: '立刻摆手，表情有些失落，但语气特别"理解人"，说完就转身准备走，好像真的准备自己解决' }
     ],
     questions: [
       {
@@ -254,11 +316,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '三个月前的春节，你妈给你安排了3场相亲，你一场都没去，你妈气哭了，说"白养你了"。之后你们冷战了两周。上个月你回家，你妈又提了一次，你没忍住和她吵了几句，摔门走了。你后来挺后悔的，所以这次回来特意买了她喜欢的护肤品。你妈这两周和楼下的王阿姨走得特别近，王阿姨的侄子据说条件不错，你妈在你面前提过两次"银行工作稳定"。',
       atmosphere: '餐桌上摆着你最爱吃的红烧肉、糖醋排骨、番茄炒蛋，妈妈看起来很开心，但你总觉得她在"酝酿"什么。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 妈妈',
+        description: '亲生母女/子关系，妈妈非常爱你但表达方式令人窒息，前两次回家都因为催婚闹过不愉快',
+        impact: '妈妈知道直接催婚会引起你的抵触，所以这次改变了策略——先用好吃的和关心铺垫，降低你的防备心，再"不经意"地提出相亲。你也因为前两次吵架有愧疚感，这次更难直接拒绝。'
+      },
+      {
+        title: '妈妈 vs 王阿姨',
+        description: '邻居闺蜜，王阿姨有个待介绍的侄子',
+        impact: '王阿姨的存在给了妈妈"有人帮忙张罗"的底气，也让妈妈有了面子——"不是我女儿没人要，是别人主动找上门的"。妈妈和王阿姨的频繁来往，说明她一直在为你的婚事"布局"。'
+      },
+      {
+        title: '妈妈 vs 小区其他老太太',
+        description: '同龄人的攀比关系，其他人大多已经抱孙子了',
+        impact: '妈妈催婚不完全是为了你，也有她自己的面子压力——小区里和她同龄的人都在晒孙子孙女，她觉得自己"抬不起头"。这种焦虑让她在催婚这件事上格外执着。'
+      }
+    ],
     characters: [
       {
         name: '妈妈',
         role: '母亲，58岁，退休教师',
         relationshipWithYou: '你的亲生母亲，很爱你，但表达方式有时让人窒息。',
+        relationshipLevel: 'family',
+        relationshipTag: '亲生母亲',
         personality: '典型的中国式母亲，把所有希望都寄托在孩子身上。好面子，小区里和她同龄的老太太们大多已经抱孙子了，她压力很大。嘴上不说，但很在意别人的眼光。',
         background: '她年轻的时候条件很好，下嫁给你爸爸，一辈子没享过什么福，所以她最大的心愿就是你能"过得好"——在她的定义里，"过得好"= 有稳定工作 + 结婚 + 生孩子。她觉得30岁不结婚是"不正常"的，会被别人笑话。'
       },
@@ -266,6 +347,8 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '女儿/儿子，30岁',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'family',
+        relationshipTag: '本人',
         personality: '有自己的想法，不想为了结婚而结婚，但也不想让妈妈太伤心。',
         background: '你在一线城市工作，事业刚有起色，你觉得30岁正是打拼的时候。你不是不婚主义，只是还没遇到合适的人。你很孝顺，每次回家都会给爸妈买东西，但一涉及催婚话题就容易控制不住情绪。'
       },
@@ -273,16 +356,18 @@ export const socialScenarios: SocialScenario[] = [
         name: '王阿姨',
         role: '楼下邻居，你妈的好朋友',
         relationshipWithYou: '长辈，关系普通',
+        relationshipLevel: 'acquaintance',
+        relationshipTag: '邻居阿姨',
         personality: '热心肠但爱八卦，特别喜欢给人介绍对象。',
         background: '她有个侄子，32岁，在银行当客户经理，据说有房有车，就是性格有点木讷，一直没找到合适的。王阿姨已经催你妈好几次了，说"这么好的条件别错过了"。'
       }
     ],
     dialog: [
-      { speaker: '妈妈', role: '母亲', text: '来，多吃点，你看你瘦的。', tone: '不停往你碗里夹菜，眼神里满是心疼' },
-      { speaker: '你', role: '女儿/儿子', text: '妈我不瘦，我现在过得挺好的。', tone: '有些无奈，但尽量让自己的语气平和' },
-      { speaker: '妈妈', role: '母亲', text: '好什么呀，一个人在外面，连个做饭的人都没有。', tone: '叹了口气，放下筷子，表情变得有些惆怅' },
-      { speaker: '你', role: '女儿/儿子', text: '我自己会做饭……', tone: '试图辩解，心里已经有点紧张了，怕她又开始催' },
-      { speaker: '妈妈', role: '母亲', text: '哎呀不说这个了。对了，楼下王阿姨她侄子，和你同岁，在银行上班，人特别稳重，你要不要……认识一下？', tone: '装作随口一提的样子，但眼神一直在观察你的反应，筷子都停了下来' }
+      { speaker: '妈妈', role: '母亲', relationshipLevel: 'family', relationshipTag: '亲生母亲', text: '来，多吃点，你看你瘦的。', tone: '不停往你碗里夹菜，眼神里满是心疼' },
+      { speaker: '你', role: '女儿/儿子', relationshipLevel: 'family', relationshipTag: '本人', text: '妈我不瘦，我现在过得挺好的。', tone: '有些无奈，但尽量让自己的语气平和' },
+      { speaker: '妈妈', role: '母亲', relationshipLevel: 'family', relationshipTag: '亲生母亲', text: '好什么呀，一个人在外面，连个做饭的人都没有。', tone: '叹了口气，放下筷子，表情变得有些惆怅' },
+      { speaker: '你', role: '女儿/儿子', relationshipLevel: 'family', relationshipTag: '本人', text: '我自己会做饭……', tone: '试图辩解，心里已经有点紧张了，怕她又开始催' },
+      { speaker: '妈妈', role: '母亲', relationshipLevel: 'family', relationshipTag: '亲生母亲', text: '哎呀不说这个了。对了，楼下王阿姨她侄子，和你同岁，在银行上班，人特别稳重，你要不要……认识一下？', tone: '装作随口一提的样子，但眼神一直在观察你的反应，筷子都停了下来' }
     ],
     questions: [
       {
@@ -328,11 +413,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '上周你们本来约好去看她想看的电影，结果你临时加班又没去成，她当时沉默了很久，最后说"没事，工作重要"。但你后来发现她那天晚上在闺蜜群里说"好像我永远都排在最后一位"。你因为这件事愧疚了好几天，特意提前两周订了这家她种草很久的餐厅想补偿她。她今天下午还特意问你"今天不会又加班吧"，你当时很肯定地说"不会"。',
       atmosphere: '公司里只剩下你和几个同事，你拿着手机，心里很忐忑，不知道该怎么跟她说。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 女朋友（小雯）',
+        description: '恋爱一年多的情侣，感情基础不错，但近期你频繁加班导致她有情绪积压',
+        impact: '她是"回避型生气"性格，不会直接表达不满，而是用"没事"等反话和冷淡来回应。这已经是你连续两周爽约，她的情绪不是突然产生的，而是累积的结果。'
+      },
+      {
+        title: '小雯 vs 她的童年',
+        description: '她小时候父母经常吵架，导致她害怕冲突',
+        impact: '她之所以不说"我生气了"而是说"没事"，不是因为她大度，而是因为她潜意识里害怕直接表达不满会引发争吵，重蹈父母的覆辙。她选择用冷淡和疏离来保护自己。'
+      },
+      {
+        title: '你 vs 工作',
+        description: '你是程序员，项目上线期间加班频繁',
+        impact: '你对工作的投入客观上挤压了陪伴女朋友的时间，但你"直男思维"让你误以为她说"没事"就真的没事，没有及时感知到她的情绪变化，导致矛盾升级。'
+      }
+    ],
     characters: [
       {
         name: '女朋友（小雯）',
         role: '女朋友，26岁，设计师',
         relationshipWithYou: '恋爱一年多，感情一直不错，但最近因为你频繁加班，她有些情绪。',
+        relationshipLevel: 'lover',
+        relationshipTag: '女朋友',
         personality: '典型的"回避型"生气，不会直接说"我生气了"，而是用"没事""没关系"来表达不满。喜欢用"反话"，她越说没事，其实越有事。',
         background: '她小时候父母经常吵架，所以她特别害怕冲突，遇到不开心的事不会直接表达，而是压抑在心里，用冷淡的方式让对方"猜"。她之前有个前男友就是因为"永远猜不到她在想什么"分手的。'
       },
@@ -340,17 +444,19 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '男朋友，28岁，程序员',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'lover',
+        relationshipTag: '本人',
         personality: '典型的"直男思维"，女朋友说"没事"你就真的以为没事，经常因此踩雷。但你很爱她，不是故意忽略她的感受。',
         background: '你最近项目上线，确实很忙，经常加班。你也想多陪陪她，但有时候身不由己。'
       }
     ],
     dialog: [
-      { speaker: '你', role: '男朋友', text: '亲爱的，对不起……老板突然让我加班，今晚的约会可能要取消了。', tone: '愧疚，声音很小' },
-      { speaker: '女朋友', role: '女朋友', text: '哦。', tone: '语气很平淡，停顿了两秒，没有任何情绪起伏' },
-      { speaker: '你', role: '男朋友', text: '明天，明天我一定陪你去，好吗？', tone: '急切，想弥补' },
-      { speaker: '女朋友', role: '女朋友', text: '没事，你忙吧。工作重要。', tone: '声音很轻，没有情绪起伏，甚至连语调都没有变' },
-      { speaker: '你', role: '男朋友', text: '你……是不是生气了？', tone: '小心翼翼，你感觉有点不对，但又不确定' },
-      { speaker: '女朋友', role: '女朋友', text: '我生什么气啊，都说了没事。你专心加班吧，我挂了。', tone: '语速略快，说完就挂断了电话，没有给你说话的机会' }
+      { speaker: '你', role: '男朋友', relationshipLevel: 'lover', relationshipTag: '本人', text: '亲爱的，对不起……老板突然让我加班，今晚的约会可能要取消了。', tone: '愧疚，声音很小' },
+      { speaker: '女朋友', role: '女朋友', relationshipLevel: 'lover', relationshipTag: '女朋友', text: '哦。', tone: '语气很平淡，停顿了两秒，没有任何情绪起伏' },
+      { speaker: '你', role: '男朋友', relationshipLevel: 'lover', relationshipTag: '本人', text: '明天，明天我一定陪你去，好吗？', tone: '急切，想弥补' },
+      { speaker: '女朋友', role: '女朋友', relationshipLevel: 'lover', relationshipTag: '女朋友', text: '没事，你忙吧。工作重要。', tone: '声音很轻，没有情绪起伏，甚至连语调都没有变' },
+      { speaker: '你', role: '男朋友', relationshipLevel: 'lover', relationshipTag: '本人', text: '你……是不是生气了？', tone: '小心翼翼，你感觉有点不对，但又不确定' },
+      { speaker: '女朋友', role: '女朋友', relationshipLevel: 'lover', relationshipTag: '女朋友', text: '我生什么气啊，都说了没事。你专心加班吧，我挂了。', tone: '语速略快，说完就挂断了电话，没有给你说话的机会' }
     ],
     questions: [
       {
@@ -396,11 +502,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '你和小李是大学室友，住了4年，关系曾经很好。但毕业后你们联系越来越少，主要是因为发展差距越来越大——你一路顺风顺水，进了大公司，升职加薪也很快；而小李毕业后换了好几份工作，现在在一家小公司做普通职员，收入只有你的三分之一。去年同学聚会，你好心说"需要帮忙随时找我"，结果他后来跟别人说"他那是在我面前显摆"。你听了之后有些伤心，之后就很少主动联系他了。今天他刚进来的时候，你主动打招呼，他只是"嗯"了一声，表情不太自然。',
       atmosphere: '整体很热闹，大家都在叙旧，但你能感觉到小李一直在偷偷观察你，眼神有些复杂。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 小李',
+        description: '曾经的大学室友，四年同窗关系很好，但毕业后因为发展差距悬殊逐渐疏远，他对你心存嫉妒',
+        impact: '小李表面上跟你叙旧，实际上一直在找机会酸你。你的任何成功在他看来都是对他的刺激，所以他会用自贬和反讽的方式来拉平你们之间的差距。'
+      },
+      {
+        title: '小李 vs 他的自尊心',
+        description: '他自尊心极强但能力和家境都一般，无法接受自己不如别人的现实',
+        impact: '他的酸言酸语不是针对你个人，而是他内心失衡的投射。他需要通过贬低你的"好运"来维护自己脆弱的自尊，否则他会觉得自己的人生很失败。'
+      },
+      {
+        title: '你 vs 其他同学',
+        description: '多年未见的老同学，大家都在暗中比较各自的发展',
+        impact: '同学聚会本身就是一个"社交竞技场"，小李的话也是说给其他人听的——他想让在场的人觉得你"飘了""装了"，从而在社交层面上削弱你的优势。'
+      }
+    ],
     characters: [
       {
         name: '小李',
         role: '大学室友，现在是普通朋友',
         relationshipWithYou: '曾经是很好的朋友，但毕业后因为发展差距产生了隔阂。',
+        relationshipLevel: 'friend',
+        relationshipTag: '大学室友（渐疏远）',
         personality: '自尊心很强，比较敏感，容易觉得别人"看不起他"。能力一般，但又不太能接受自己不如别人的现实。',
         background: '他大学时就是那种"嘴上说着无所谓，其实心里很在意"的人。当年你拿奖学金，他嘴上说"厉害厉害"，但转头就跟别人说"不就是死读书嘛"。他家境一般，父母都是工人，所以他对"成功"的渴望比其他人更强烈，但又不愿意承认自己的不足。'
       },
@@ -408,6 +533,8 @@ export const socialScenarios: SocialScenario[] = [
         name: '你（老王）',
         role: '部门经理，28岁',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'friend',
+        relationshipTag: '本人',
         personality: '性格比较随和，不太喜欢张扬，但有时候会无意中"炫耀"而不自知。',
         background: '你家境还不错，父母都是老师，从小没缺过什么，所以对"物质差距"没那么敏感。你一直把小李当朋友，真心希望他也能过得好，但你也能感觉到他对你有些疏远。'
       },
@@ -415,16 +542,18 @@ export const socialScenarios: SocialScenario[] = [
         name: '同学A',
         role: '大学同学，和你关系一般',
         relationshipWithYou: '普通同学',
+        relationshipLevel: 'acquaintance',
+        relationshipTag: '普通同学',
         personality: '性格外向，喜欢热闹，说话不过脑子。',
         background: '他就是那种典型的"哪壶不开提哪壶"的人，不是故意的，但说话经常让别人尴尬。'
       }
     ],
     dialog: [
-      { speaker: '同学A', role: '老同学', text: '哎，你们知道吗？老王现在可厉害了，刚刚升了部门经理！', tone: '兴奋地说，声音很大，整个桌子的人都听见了' },
-      { speaker: '你', role: '老王', text: '哈哈运气好运气好。', tone: '谦虚地笑了笑，下意识地看了小李一眼' },
-      { speaker: '小李', role: '大学室友', text: '运气？别谦虚了。我真羡慕你啊，什么好事都让你赶上了。不像我，还是在那个破公司混日子，连个正经女朋友都没有。', tone: '举起酒杯，但嘴角没有笑意，说完仰头一口干了，酒洒出来一些都没在意' },
-      { speaker: '你', role: '老王', text: '你也挺好的啊，别这么说。', tone: '有些尴尬，不知道该怎么接话' },
-      { speaker: '小李', role: '大学室友', text: '好什么呀，人跟人不能比嘛。来，喝酒喝酒，别耽误人家"成功人士"聊天。', tone: '笑着说，但"成功人士"四个字咬字格外重，说完扫了一圈桌上的人，好像在寻求认同' }
+      { speaker: '同学A', role: '老同学', relationshipLevel: 'acquaintance', relationshipTag: '普通同学', text: '哎，你们知道吗？老王现在可厉害了，刚刚升了部门经理！', tone: '兴奋地说，声音很大，整个桌子的人都听见了' },
+      { speaker: '你', role: '老王', relationshipLevel: 'friend', relationshipTag: '本人', text: '哈哈运气好运气好。', tone: '谦虚地笑了笑，下意识地看了小李一眼' },
+      { speaker: '小李', role: '大学室友', relationshipLevel: 'friend', relationshipTag: '大学室友（渐疏远）', text: '运气？别谦虚了。我真羡慕你啊，什么好事都让你赶上了。不像我，还是在那个破公司混日子，连个正经女朋友都没有。', tone: '举起酒杯，但嘴角没有笑意，说完仰头一口干了，酒洒出来一些都没在意' },
+      { speaker: '你', role: '老王', relationshipLevel: 'friend', relationshipTag: '本人', text: '你也挺好的啊，别这么说。', tone: '有些尴尬，不知道该怎么接话' },
+      { speaker: '小李', role: '大学室友', relationshipLevel: 'friend', relationshipTag: '大学室友（渐疏远）', text: '好什么呀，人跟人不能比嘛。来，喝酒喝酒，别耽误人家"成功人士"聊天。', tone: '笑着说，但"成功人士"四个字咬字格外重，说完扫了一圈桌上的人，好像在寻求认同' }
     ],
     questions: [
       {
@@ -470,11 +599,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '这个"跨界联名"方案你想了很久，是你今年最重要的一个想法，你甚至已经私下找对方公司的朋友聊过，对方表示"有兴趣"。但你之前也听说，领导一直倾向于做"保守型"方案，也就是在去年的基础上优化升级，不要冒太大风险。上个月有个同事提出了一个比较激进的方案，领导当场就否决了，说"我们是大公司，稳一点好"。但领导同时也经常在会上说"大家要多创新，不要墨守成规"，你不确定他到底是怎么想的。',
       atmosphere: '前面几个同事的方案都比较常规，领导只是"嗯""好的"地应付。你是最后一个汇报的，你想给大家一个惊喜。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 领导（刘经理）',
+        description: '直属上下级关系，共事2年，领导是典型的"政治型"领导',
+        impact: '领导不会直接否定你的方案，因为他要维持"鼓励创新"的形象，也不想打击你的积极性。但他也不会支持有风险的方案，因为他明年要升总监，"不出错"才是他的核心诉求。'
+      },
+      {
+        title: '领导 vs 他的晋升目标',
+        description: '他明年有机会升总监，当前最重要的目标是平稳过渡',
+        impact: '他所有决策的出发点都是"不能出问题"。跨界联名方案涉及外部合作，不可控因素多，一旦出问题会直接影响他的晋升。所以他用"挺有意思的""再考虑可行性""先放一放"这套组合拳来委婉否决。'
+      },
+      {
+        title: '你 vs 你的职业诉求',
+        description: '你想通过创新方案证明自己有战略思维，不满足于只做执行',
+        impact: '你对方案投入了两周时间，寄予厚望，所以对领导的委婉信号不够敏感——你只听到了"挺有意思的"正面评价，却没听出"先放一放"的真实含义。'
+      }
+    ],
     characters: [
       {
         name: '领导（刘经理）',
         role: '部门经理，40岁',
         relationshipWithYou: '你的直属上级，共事2年',
+        relationshipLevel: 'colleague',
+        relationshipTag: '直属上级',
         personality: '典型的"政治型"领导，说话永远留有余地，不会把话说死。他的核心诉求是"不出错"——做好了是他领导有方，做错了是下属自己的问题。',
         background: '他明年有机会升总监，所以这一年他最大的目标是"平稳过渡"，不能出任何大的纰漏。他鼓励创新，但前提是"安全的创新"，也就是不会出大问题的那种创新。真正有风险的事情，他是绝对不会碰的。'
       },
@@ -482,17 +630,19 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '营销专员，入职2年',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'colleague',
+        relationshipTag: '本人',
         personality: '有想法，有冲劲，想做出点成绩证明自己。对职场政治不太敏感，有时候会把领导的"场面话"当真。',
         background: '你去年表现不错，但都是"执行层面"的成绩，你想通过这个方案证明自己有"战略思维"。'
       }
     ],
     dialog: [
-      { speaker: '你', role: '员工', text: '……所以我觉得，如果能和这个品牌跨界联名，应该能带来不错的话题度和转化效果。', tone: '自信满满地结束了汇报，期待着领导的表扬' },
-      { speaker: '领导', role: '部门经理', text: '嗯……', tone: '沉吟了几秒，手指敲了敲桌面，没有马上说话' },
-      { speaker: '你', role: '员工', text: '领导您觉得怎么样？', tone: '期待，身体微微前倾' },
-      { speaker: '领导', role: '部门经理', text: '这个想法挺有意思的，思路比较新颖。不过……我们是不是可以再考虑一下可行性？', tone: '语气平和，没有明显的情绪波动，甚至还微微笑了一下' },
-      { speaker: '你', role: '员工', text: '您是说哪方面的可行性？我可以补充说明。', tone: '准备继续解释，你觉得领导可能没听明白' },
-      { speaker: '领导', role: '部门经理', text: '不用急，先放一放，我们再看看其他方案，大家都可以多想一想。', tone: '摆摆手，开始让下一个人发言，明显不想继续讨论这个话题了' }
+      { speaker: '你', role: '员工', relationshipLevel: 'colleague', relationshipTag: '本人', text: '……所以我觉得，如果能和这个品牌跨界联名，应该能带来不错的话题度和转化效果。', tone: '自信满满地结束了汇报，期待着领导的表扬' },
+      { speaker: '领导', role: '部门经理', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '嗯……', tone: '沉吟了几秒，手指敲了敲桌面，没有马上说话' },
+      { speaker: '你', role: '员工', relationshipLevel: 'colleague', relationshipTag: '本人', text: '领导您觉得怎么样？', tone: '期待，身体微微前倾' },
+      { speaker: '领导', role: '部门经理', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '这个想法挺有意思的，思路比较新颖。不过……我们是不是可以再考虑一下可行性？', tone: '语气平和，没有明显的情绪波动，甚至还微微笑了一下' },
+      { speaker: '你', role: '员工', relationshipLevel: 'colleague', relationshipTag: '本人', text: '您是说哪方面的可行性？我可以补充说明。', tone: '准备继续解释，你觉得领导可能没听明白' },
+      { speaker: '领导', role: '部门经理', relationshipLevel: 'colleague', relationshipTag: '直属上级', text: '不用急，先放一放，我们再看看其他方案，大家都可以多想一想。', tone: '摆摆手，开始让下一个人发言，明显不想继续讨论这个话题了' }
     ],
     questions: [
       {
@@ -538,11 +688,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '小美（也就是对面走来的这个女生）是你女朋友的大学室友，但她们的关系一直有点"微妙"——大学时小美是系花，追她的人很多，而你女朋友当时比较普通，有点小自卑。毕业后小美嫁了个有钱人，经常在朋友圈晒奢侈品，你女朋友每次刷到都会沉默一会儿。你知道她们关系"表面很好，暗地里较劲"，所以你之前特意问过"小美长什么样啊"，你女朋友当时说"就那样吧，一般人"。还有，上周你在路上多看了一眼别的女生，你女朋友生了半天气，说"你是不是觉得别人比我好看"。',
       atmosphere: '你本来心情不错，但看到小美走过来，你下意识地紧张了——毕竟上周刚因为"看别的女生"翻过车。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 女朋友（琪琪）',
+        description: '恋爱半年的情侣，还在磨合期，她缺乏安全感，喜欢用测试来确认你的爱',
+        impact: '上周你刚因为"多看了别的女生一眼"惹她生气，她这次问"你觉得她好看吗"就是一次典型的安全感测试。她需要的不是客观评价，而是确认"在你眼里她才是最美的"。'
+      },
+      {
+        title: '女朋友（琪琪）vs 小美',
+        description: '大学室友，表面闺蜜，但暗地里一直在比较——比外貌、比老公、比男朋友',
+        impact: '小美是琪琪心中的"假想敌"，大学时小美是系花，琪琪一直有点自卑。现在小美嫁了有钱人，琪琪在她面前更没有安全感。琪琪下意识整理头发、观察你的反应，都是这种比较心态的体现。'
+      },
+      {
+        title: '小美 vs 你',
+        description: '第一次见面，她是你女朋友的大学室友',
+        impact: '小美"从头到脚"打量你、夸你帅时特意看你女朋友一眼、临走时回头看你——这些动作都说明她在故意"撩"你，也是在向琪琪示威："你男朋友我也能吸引到"。'
+      }
+    ],
     characters: [
       {
         name: '女朋友（琪琪）',
         role: '女朋友，25岁，策划',
         relationshipWithYou: '恋爱半年，还在磨合期',
+        relationshipLevel: 'lover',
+        relationshipTag: '女朋友',
         personality: '有点小自卑，缺乏安全感，喜欢用"测试"来确认你对她的爱。嘴巴上不说，但很在意你对她的看法，也很在意和别人的比较。',
         background: '她大学时比较普通，现在慢慢变好看了，但内心深处还是有点不自信，尤其是在小美这种"天生丽质"的朋友面前。'
       },
@@ -550,6 +719,8 @@ export const socialScenarios: SocialScenario[] = [
         name: '小美',
         role: '女朋友的大学室友/朋友',
         relationshipWithYou: '第一次见面，之前只是听说过',
+        relationshipLevel: 'acquaintance',
+        relationshipTag: '女朋友的室友（情敌般的存在）',
         personality: '性格外向，喜欢展示自己，有点"绿茶"倾向——说话总是"看似无心实则有意"。',
         background: '大学时就是系花，毕业后嫁了个有钱的老公，现在全职太太，每天就是逛街美容。她和琪琪（你女朋友）表面是闺蜜，但暗地里一直在比较——比身材、比穿着、比老公、比男朋友。今天她特意打扮得很时髦，也是因为知道会遇到琪琪。'
       },
@@ -557,17 +728,19 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '男朋友，27岁',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'lover',
+        relationshipTag: '本人',
         personality: '典型的"直男"，对女生的"小心思"不太敏感，经常踩雷。',
         background: '你很爱她，但确实不太会说话，经常因为"实话实说"让她不高兴。上周就是因为说了"那个女生腿挺长的"而生了半天气。'
       }
     ],
     dialog: [
-      { speaker: '女朋友', role: '女朋友', text: '咦？那不是小美吗？小美！', tone: '兴奋地挥手打招呼，但你注意到她下意识地整理了一下头发' },
-      { speaker: '小美', role: '女朋友的朋友', text: '哇，真的是你！好久不见！这位是……你男朋友？好帅啊！', tone: '热情地打量你，而且是"从头到脚"的那种打量，夸你时还特意看了你女朋友一眼' },
-      { speaker: '你', role: '男朋友', text: '你好你好，我是她男朋友。', tone: '礼貌微笑，不敢多看小美' },
-      { speaker: '小美', role: '女朋友的朋友', text: '哎呀，你真有福气，男朋友这么帅！你们聊，我还有事先走了，回头约啊！', tone: '笑着挥手离开，走的时候还回头看了你一眼' },
-      { speaker: '你', role: '男朋友', text: '嗯，你朋友挺热情的。', tone: '随口说，完全没意识到危险正在逼近' },
-      { speaker: '女朋友', role: '女朋友', text: '是啊……对了，你觉得她好看吗？', tone: '状似随意地问，但脚步放慢了，用余光瞟着你，观察你的每一个微表情' }
+      { speaker: '女朋友', role: '女朋友', relationshipLevel: 'lover', relationshipTag: '女朋友', text: '咦？那不是小美吗？小美！', tone: '兴奋地挥手打招呼，但你注意到她下意识地整理了一下头发' },
+      { speaker: '小美', role: '女朋友的朋友', relationshipLevel: 'acquaintance', relationshipTag: '女朋友的室友（情敌般的存在）', text: '哇，真的是你！好久不见！这位是……你男朋友？好帅啊！', tone: '热情地打量你，而且是"从头到脚"的那种打量，夸你时还特意看了你女朋友一眼' },
+      { speaker: '你', role: '男朋友', relationshipLevel: 'lover', relationshipTag: '本人', text: '你好你好，我是她男朋友。', tone: '礼貌微笑，不敢多看小美' },
+      { speaker: '小美', role: '女朋友的朋友', relationshipLevel: 'acquaintance', relationshipTag: '女朋友的室友（情敌般的存在）', text: '哎呀，你真有福气，男朋友这么帅！你们聊，我还有事先走了，回头约啊！', tone: '笑着挥手离开，走的时候还回头看了你一眼' },
+      { speaker: '你', role: '男朋友', relationshipLevel: 'lover', relationshipTag: '本人', text: '嗯，你朋友挺热情的。', tone: '随口说，完全没意识到危险正在逼近' },
+      { speaker: '女朋友', role: '女朋友', relationshipLevel: 'lover', relationshipTag: '女朋友', text: '是啊……对了，你觉得她好看吗？', tone: '状似随意地问，但脚步放慢了，用余光瞟着你，观察你的每一个微表情' }
     ],
     questions: [
       {
@@ -613,11 +786,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '你是做技术的，平时很少参加这种商务应酬，这次是领导让你来"多认识点人"。你不太喜欢加陌生人微信，你微信里只有100多个人，都是同事和朋友。你之前有过不好的经历：加了一个做销售的，之后对方天天给你发广告，烦不胜烦，最后只能拉黑。坐在你旁边的这个销售经理，从坐下开始就一直在给你倒酒、递烟、套近乎，问了你很多关于你们公司的问题，你都含糊过去了。你注意到他桌上放着一盒名片，刚才已经给桌上好几个人都发了。',
       atmosphere: '饭局气氛很热烈，大家都在互相敬酒、交换名片。你坐在角落，想低调一点，但旁边这个人一直围着你转。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 销售经理（老陈）',
+        description: '初次见面的陌生人，他是销售，你是技术工程师，他想通过你搭上你们公司的项目关系',
+        impact: '老陈的"自来熟"和热情都是销售的职业套路，他不是真的想和你交朋友，而是把你当成潜在的"资源"。他把手机直接递到你面前，就是用社交压力逼你就范。'
+      },
+      {
+        title: '老陈 vs 他的职业身份',
+        description: '十几年的老销售，人脉就是他的饭碗，口碑一般，认钱不认人',
+        impact: '他说"不强求"只是给自己台阶下，内心已经因为你"不给面子"而产生了负面印象。对他这种靠人脉吃饭的人来说，拒绝加联系方式等于否定了他的社交价值。'
+      },
+      {
+        title: '你 vs 商务社交场合',
+        description: '你是技术出身，不太擅长也不喜欢这种商务应酬',
+        impact: '你的内向性格和原则感让你在这种场合容易吃亏——你觉得"加不加微信是我的自由"，但在商务社交规则里，当面拒绝加联系方式是很不给面子的行为，可能会无端树敌。'
+      }
+    ],
     characters: [
       {
         name: '销售经理（老陈）',
         role: '某公司销售经理，大概40岁',
         relationshipWithYou: '第一次见面，陌生人',
+        relationshipLevel: 'stranger',
+        relationshipTag: '商务场合认识的销售',
         personality: '典型的"老销售"，自来熟，脸皮厚，擅长"见人说人话，见鬼说鬼话"。特别重视人脉，恨不得把所有人都变成他的"资源"。',
         background: '他在这个行业做了十几年，人脉很广，但口碑一般——很多人都说他"认钱不认人"，有用的时候跟你称兄道弟，没用的时候理都不理。他今天特意坐在你旁边，是因为听说你们公司最近有个大项目要招标，他想通过你搭上关系。'
       },
@@ -625,18 +817,20 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '技术工程师，28岁',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'stranger',
+        relationshipTag: '本人',
         personality: '偏内向，不太喜欢社交，有原则，不喜欢欠人情也不喜欢别人麻烦自己。',
         background: '你是做技术的，在公司不负责采购和招标，其实帮不上他什么忙。但他不知道，或者说他不在乎——对他来说，多一个联系方式总比少一个好，说不定哪天就用上了。'
       }
     ],
     dialog: [
-      { speaker: '销售经理', role: '同行', text: '兄弟，刚才听你讲你们公司那个项目，做得真漂亮！', tone: '热情地给你倒酒，身体往你这边凑了凑' },
-      { speaker: '你', role: '员工', text: '哪里哪里，大家一起做的。', tone: '客气回应，身体微微往后靠了靠' },
-      { speaker: '销售经理', role: '同行', text: '太谦虚了！我就喜欢和你们这种做事专业的人交朋友。来，我敬你一杯！以后咱们资源共享，互相帮助嘛！', tone: '一饮而尽，非常豪爽，喝完还把酒杯倒过来给你看' },
-      { speaker: '你', role: '员工', text: '好的好的，互相学习。', tone: '也喝了，但只喝了一小口' },
-      { speaker: '销售经理', role: '同行', text: '对了兄弟，留个联系方式吧？微信还是电话？', tone: '掏出手机，已经打开了添加好友界面，递到你面前，一副"你不会拒绝吧"的表情' },
-      { speaker: '你', role: '员工', text: '嗯……', tone: '有些犹豫，因为你不太喜欢加陌生人微信，不知道该怎么拒绝' },
-      { speaker: '销售经理', role: '同行', text: '哎呀，是不是不方便？没事没事，不强求不强求！', tone: '把手机收了回去，表情有些微妙的变化——笑容还在，但眼睛里的热情消失了一些' }
+      { speaker: '销售经理', role: '同行', relationshipLevel: 'stranger', relationshipTag: '商务场合认识的销售', text: '兄弟，刚才听你讲你们公司那个项目，做得真漂亮！', tone: '热情地给你倒酒，身体往你这边凑了凑' },
+      { speaker: '你', role: '员工', relationshipLevel: 'stranger', relationshipTag: '本人', text: '哪里哪里，大家一起做的。', tone: '客气回应，身体微微往后靠了靠' },
+      { speaker: '销售经理', role: '同行', relationshipLevel: 'stranger', relationshipTag: '商务场合认识的销售', text: '太谦虚了！我就喜欢和你们这种做事专业的人交朋友。来，我敬你一杯！以后咱们资源共享，互相帮助嘛！', tone: '一饮而尽，非常豪爽，喝完还把酒杯倒过来给你看' },
+      { speaker: '你', role: '员工', relationshipLevel: 'stranger', relationshipTag: '本人', text: '好的好的，互相学习。', tone: '也喝了，但只喝了一小口' },
+      { speaker: '销售经理', role: '同行', relationshipLevel: 'stranger', relationshipTag: '商务场合认识的销售', text: '对了兄弟，留个联系方式吧？微信还是电话？', tone: '掏出手机，已经打开了添加好友界面，递到你面前，一副"你不会拒绝吧"的表情' },
+      { speaker: '你', role: '员工', relationshipLevel: 'stranger', relationshipTag: '本人', text: '嗯……', tone: '有些犹豫，因为你不太喜欢加陌生人微信，不知道该怎么拒绝' },
+      { speaker: '销售经理', role: '同行', relationshipLevel: 'stranger', relationshipTag: '商务场合认识的销售', text: '哎呀，是不是不方便？没事没事，不强求不强求！', tone: '把手机收了回去，表情有些微妙的变化——笑容还在，但眼睛里的热情消失了一些' }
     ],
     questions: [
       {
@@ -682,11 +876,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '这个话题你们已经讨论过三次了，每次都是不欢而散。你拿到了创业公司的offer，薪资是现在的1.5倍，还有期权，你觉得这是个千载难逢的机会。但你爸坚持认为"国企稳定，创业公司说倒就倒"。你爷爷当年就是"下海"失败，家里穷了好多年，这件事一直是你爸的心理阴影。你爸这辈子最看重的就是"稳定"——他在同一家工厂干了30年，从工人做到车间主任，从来没跳过槽。上周你姑姑家的表哥创业失败，欠了一屁股债，你爸还跟你说"你看看，这就是瞎折腾的下场"。',
       atmosphere: '客厅里弥漫着紧张的气息，电视开着但没人看。你爸手里攥着遥控器，指节都发白了。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 父亲',
+        description: '亲生父子/女关系，父亲严厉但深爱你，你们因为职业选择产生了激烈冲突',
+        impact: '父亲的反对不是控制欲，而是源于他自身的痛苦经历——他亲眼见过你爷爷创业失败后全家的惨状。你说"我自己的事情我自己负责"这句话，对他来说等于"我不需要你了"，这比任何话都伤人。'
+      },
+      {
+        title: '父亲 vs 他的童年阴影',
+        description: '你爷爷当年下海失败，家里穷得交不起学费，他作为老大早早进厂打工养家',
+        impact: '父亲这辈子最深的恐惧就是"不稳定"，这不是保守，而是刻在骨子里的生存本能。他反对你去创业公司，本质上是不想让你重蹈他和你爷爷的覆辙，他怕你吃苦、怕你失败。'
+      },
+      {
+        title: '你 vs 你的人生追求',
+        description: '你不甘心在国企待一辈子，想趁年轻证明自己',
+        impact: '你对"一眼望到头"的生活的恐惧，和父亲对"不稳定"的恐惧一样强烈。你们都在用自己的人生经验判断对方的选择，但谁也无法真正说服谁——因为你们的恐惧来源完全不同。'
+      }
+    ],
     characters: [
       {
         name: '父亲',
         role: '父亲，58岁，退休工厂车间主任',
         relationshipWithYou: '你的亲生父亲，严厉但很爱你',
+        relationshipLevel: 'family',
+        relationshipTag: '亲生父亲',
         personality: '性格固执，观念传统，认定的事情很难改变。不擅长表达情感，关心你但说出来的话总是像在批评你。',
         background: '他这辈子吃过"不稳定"的苦——你爷爷下海失败，家里穷得连学费都交不起，他作为老大早早就进厂打工养家。所以他最大的心愿就是你能"安安稳稳过一辈子"，不要经历他吃过的苦。他不理解现在的互联网行业，在他看来"不是国企的工作都不算正经工作"。'
       },
@@ -694,18 +907,20 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '女儿/儿子，28岁',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'family',
+        relationshipTag: '本人',
         personality: '有闯劲，不甘心一辈子待在舒适区，想趁年轻拼一把。',
         background: '你在国企工作了5年，虽然稳定但一眼能看到退休的样子，你觉得再这样下去人生就废了。你很清楚父亲是为你好，但你也不想因为他的保守而放弃自己的梦想。'
       }
     ],
     dialog: [
-      { speaker: '你', role: '女儿/儿子', text: '爸，我想好了，我想去那家创业公司。', tone: '坚定，你不想再吵了，但态度很明确' },
-      { speaker: '父亲', role: '父亲', text: '我说了多少遍了，现在的工作这么稳定，多少人想进都进不去，你为什么非要折腾？', tone: '已经提高了音量，脸涨红了' },
-      { speaker: '你', role: '女儿/儿子', text: '爸，现在时代不一样了，稳定不代表好。我还年轻，想闯一闯。', tone: '试图说服，尽量让自己的语气平和' },
-      { speaker: '父亲', role: '父亲', text: '闯？闯失败了怎么办？你想过没有？', tone: '拍了一下桌子，茶杯都震了一下' },
-      { speaker: '你', role: '女儿/儿子', text: '爸，你能不能别老是打击我？我已经长大了，我自己的事情我自己负责。', tone: '也有些不耐烦了，声音也大了起来' },
-      { speaker: '父亲', role: '父亲', text: '……', tone: '沉默了几秒，深深地看了你一眼，眼神里有愤怒，但更多的是失望和无力' },
-      { speaker: '父亲', role: '父亲', text: '行，随便你吧。', tone: '声音很轻，甚至有些沙哑，说完就转身走进了自己房间，关上了门，关门的声音不大，但很沉' }
+      { speaker: '你', role: '女儿/儿子', relationshipLevel: 'family', relationshipTag: '本人', text: '爸，我想好了，我想去那家创业公司。', tone: '坚定，你不想再吵了，但态度很明确' },
+      { speaker: '父亲', role: '父亲', relationshipLevel: 'family', relationshipTag: '亲生父亲', text: '我说了多少遍了，现在的工作这么稳定，多少人想进都进不去，你为什么非要折腾？', tone: '已经提高了音量，脸涨红了' },
+      { speaker: '你', role: '女儿/儿子', relationshipLevel: 'family', relationshipTag: '本人', text: '爸，现在时代不一样了，稳定不代表好。我还年轻，想闯一闯。', tone: '试图说服，尽量让自己的语气平和' },
+      { speaker: '父亲', role: '父亲', relationshipLevel: 'family', relationshipTag: '亲生父亲', text: '闯？闯失败了怎么办？你想过没有？', tone: '拍了一下桌子，茶杯都震了一下' },
+      { speaker: '你', role: '女儿/儿子', relationshipLevel: 'family', relationshipTag: '本人', text: '爸，你能不能别老是打击我？我已经长大了，我自己的事情我自己负责。', tone: '也有些不耐烦了，声音也大了起来' },
+      { speaker: '父亲', role: '父亲', relationshipLevel: 'family', relationshipTag: '亲生父亲', text: '……', tone: '沉默了几秒，深深地看了你一眼，眼神里有愤怒，但更多的是失望和无力' },
+      { speaker: '父亲', role: '父亲', relationshipLevel: 'family', relationshipTag: '亲生父亲', text: '行，随便你吧。', tone: '声音很轻，甚至有些沙哑，说完就转身走进了自己房间，关上了门，关门的声音不大，但很沉' }
     ],
     questions: [
       {
@@ -751,11 +966,30 @@ export const socialScenarios: SocialScenario[] = [
       recentHistory: '你和这位朋友是发小，从小学就认识，关系非常铁。他家境不太好，父母都是农民工，所以他特别珍惜这次工作机会。之前他找了三个月工作都没着落，房租都快交不起了，你看着也着急。你动用了你在这家公司当HR的大学同学的关系，而且你还专门花了两个晚上帮他改简历、模拟面试。可以说，没有你的帮助，他很难拿到这个offer。你们平时经常一起吃饭，都是你请得多，他经济条件不好你也理解，从来没在意过。但是有一次你手头紧，跟他借2000块钱，他支支吾吾半天最后说"我也没钱"，其实你后来知道他当时刚发了工资。这件事让你心里有点不舒服，但也没说什么。',
       atmosphere: '他看起来很开心，一直说着感谢的话，但你心里隐隐有些异样的感觉——你帮了这么大的忙，他好像除了"谢谢"也没什么实际表示。'
     },
+    relationshipNotes: [
+      {
+        title: '你 vs 朋友（阿杰）',
+        description: '认识20年的发小，关系很铁，但经济条件差距较大，你帮他内推拿到了很好的offer',
+        impact: '你们之间的深厚情谊让你不好意思主动提"回报"，但他对钱的看重又让你心里有点不平衡。他说"改天请吃饭"时的感激是真的，但能不能落实是另一回事——因为"欠人情"对他来说是有压力的。'
+      },
+      {
+        title: '阿杰 vs 他的经济状况',
+        description: '他家境不好，从小节省，一块钱掰成两半花，之前你借钱他都支支吾吾',
+        impact: '他说"改天请吃饭"更多是一种情绪表达而非实际承诺——人均300的日料对他来说确实是一笔不小的开支。他不是不想感恩，而是"用花钱的方式感恩"会让他有很大的心理压力。'
+      },
+      {
+        title: '你 vs 你的期待',
+        description: '你重情义、对朋友大方，但内心深处也希望帮了大忙能得到认可和回报',
+        impact: '你嘴上说"不用不用"，心里其实在期待他坚持请客——这是人性的正常反应，不是功利，而是希望自己的付出被看见和重视。这种"口是心非"的社交默契，也是朋友相处中最微妙的地方。'
+      }
+    ],
     characters: [
       {
         name: '朋友（阿杰）',
         role: '发小、好朋友',
         relationshipWithYou: '认识20年的发小，关系很铁，但经济条件差距较大',
+        relationshipLevel: 'close_friend',
+        relationshipTag: '发小（20年交情）',
         personality: '性格比较内向，有些自卑，不太会表达感激。有时候会有点"小家子气"，对钱看得比较重，但人本质不坏。',
         background: '他家境确实不好，从小就很节省，一块钱恨不得掰成两半花。他不是不感恩，而是不知道该怎么表达，也确实没多少钱。他内心深处觉得"欠人情"是件很有压力的事，所以有时候会用"口头感谢"来逃避实际的回报。'
       },
@@ -763,16 +997,18 @@ export const socialScenarios: SocialScenario[] = [
         name: '你',
         role: '28岁，公司职员',
         relationshipWithYou: '本人视角',
+        relationshipLevel: 'close_friend',
+        relationshipTag: '本人',
         personality: '重情义，对朋友大方，但有时候也会心里不平衡——尤其是在帮了大忙之后。',
         background: '你家境比他好一些，工作也稳定，所以平时朋友之间你多花点钱也不在意。但这次你帮的忙确实很大，而且你还特意花了时间精力，你内心深处是希望他能有所表示的，哪怕只是请你吃顿饭。'
       }
     ],
     dialog: [
-      { speaker: '朋友', role: '好朋友', text: '兄弟，真的太感谢你了！这次要不是你帮忙，我根本进不了这家公司！', tone: '非常激动，用力拍了拍你的肩膀，眼眶都有点红了' },
-      { speaker: '你', role: '你', text: '嗨，小事儿，主要是你自己能力够，我只是搭个桥。', tone: '谦虚地笑了笑，说"小事儿"的时候自己都觉得有点虚伪' },
-      { speaker: '朋友', role: '好朋友', text: '那怎么能一样！你这忙帮得太大了！这样，改天我请你吃饭！就那家新开的日料店，你不是一直想去吗？', tone: '说得非常诚恳，甚至说了具体的餐厅名字' },
-      { speaker: '你', role: '你', text: '不用不用，咱们之间客气什么。', tone: '习惯性推辞，但心里其实挺想他请的——那家日料店人均300多，你一直舍不得去' },
-      { speaker: '朋友', role: '好朋友', text: '不行不行，必须得请！就这么定了，改天约！', tone: '态度很坚决，好像真的一定会请一样' }
+      { speaker: '朋友', role: '好朋友', relationshipLevel: 'close_friend', relationshipTag: '发小（20年交情）', text: '兄弟，真的太感谢你了！这次要不是你帮忙，我根本进不了这家公司！', tone: '非常激动，用力拍了拍你的肩膀，眼眶都有点红了' },
+      { speaker: '你', role: '你', relationshipLevel: 'close_friend', relationshipTag: '本人', text: '嗨，小事儿，主要是你自己能力够，我只是搭个桥。', tone: '谦虚地笑了笑，说"小事儿"的时候自己都觉得有点虚伪' },
+      { speaker: '朋友', role: '好朋友', relationshipLevel: 'close_friend', relationshipTag: '发小（20年交情）', text: '那怎么能一样！你这忙帮得太大了！这样，改天我请你吃饭！就那家新开的日料店，你不是一直想去吗？', tone: '说得非常诚恳，甚至说了具体的餐厅名字' },
+      { speaker: '你', role: '你', relationshipLevel: 'close_friend', relationshipTag: '本人', text: '不用不用，咱们之间客气什么。', tone: '习惯性推辞，但心里其实挺想他请的——那家日料店人均300多，你一直舍不得去' },
+      { speaker: '朋友', role: '好朋友', relationshipLevel: 'close_friend', relationshipTag: '发小（20年交情）', text: '不行不行，必须得请！就这么定了，改天约！', tone: '态度很坚决，好像真的一定会请一样' }
     ],
     questions: [
       {
