@@ -30,6 +30,7 @@ export interface ProgrammingAnswer {
   bestPractices: string[];
   relatedTopics: RelatedTopic[];
   references: string[];
+  capabilityNote?: string;
 }
 
 @Injectable()
@@ -60,7 +61,49 @@ export class ProgrammingQnaService {
     const language = dto.language || this.detectLanguage(question);
     const framework = dto.framework || this.detectFramework(question);
 
-    return this.generateAnswer(question, category, difficulty, language, framework, dto);
+    const answer = this.generateAnswer(question, category, difficulty, language, framework, dto);
+    answer.capabilityNote = this.buildCapabilityNote(question);
+    return answer;
+  }
+
+  private buildCapabilityNote(question: string): string | undefined {
+    const strongAreas: string[] = [];
+    const limitedAreas: string[] = [];
+
+    const embeddedKeywords = ['arduino', 'stm32', 'esp32', 'esp8266', '树莓派', 'raspberry',
+      '嵌入式', 'embedded', '单片机', 'mcu', 'gpio', 'i2c', 'spi', 'uart', 'pwm', 'adc',
+      '传感器', 'sensor', 'freertos', 'rtos', '寄存器', '中断', '驱动', 'driver', '物联网', 'iot'];
+    const hardwareKeywords = ['pcb', '电路板', '模拟电路', '数字电路', '运放', 'opamp',
+      '电源设计', '功耗', '信号完整性', 'si', '电磁兼容', 'emc', '焊接', '原理图', '芯片选型',
+      '芯片手册', 'datasheet', '晶体管', 'mos管', '电容', '电阻', 'verilog', 'vhdl', 'fpga'];
+    const weakAreas: { keywords: string[]; note: string }[] = [
+      { keywords: hardwareKeywords, note: '硬件电路设计（PCB、模拟电路、信号完整性等）——建议结合芯片手册和专业 EDA 工具验证' },
+      { keywords: ['verilog', 'vhdl', 'fpga'], note: 'FPGA/ASIC 数字逻辑设计（Verilog/VHDL）——建议配合仿真工具（ModelSim、Vivado）验证' },
+      { keywords: ['焊接', '维修', '拆焊'], note: '硬件维修、焊接等实操——请遵守安全规范，必要时寻求专业硬件工程师帮助' },
+    ];
+
+    for (const { keywords, note } of weakAreas) {
+      if (keywords.some((k) => question.includes(k))) {
+        limitedAreas.push(note);
+      }
+    }
+
+    if (embeddedKeywords.some((k) => question.includes(k))) {
+      strongAreas.push('嵌入式软件：Arduino/ESP32/STM32 固件开发、GPIO/UART/I2C/SPI 协议、传感器驱动、FreeRTOS 任务调度');
+    }
+
+    if (strongAreas.length === 0 && limitedAreas.length === 0) {
+      return undefined;
+    }
+
+    let note = '';
+    if (strongAreas.length) {
+      note += '✅ 在以下方面可以提供可靠帮助：' + strongAreas.join('；') + '。\n';
+    }
+    if (limitedAreas.length) {
+      note += '⚠️ 以下方向经验相对有限，建议结合专业工具/资料二次确认：' + limitedAreas.join('；') + '。';
+    }
+    return note.trim();
   }
 
   private detectCategory(
@@ -140,6 +183,16 @@ export class ProgrammingQnaService {
           'hook', '生命周期', 'lifecycle',
         ],
       },
+      {
+        category: ProgrammingCategory.GENERAL,
+        keywords: [
+          'arduino', 'stm32', 'esp32', 'esp8266', '树莓派', 'raspberry',
+          '嵌入式', 'embedded', '单片机', 'mcu', 'iot', '物联网', '硬件',
+          'hardware', 'gpio', 'i2c', 'spi', 'uart', '串口', 'pwm', 'adc',
+          'dac', '传感器', 'sensor', '驱动', 'driver', 'freertos', 'rtos',
+          '寄存器', 'register', '中断', 'interrupt', '时钟', 'clock',
+        ],
+      },
     ];
 
     for (const { category, keywords } of patterns) {
@@ -186,6 +239,7 @@ export class ProgrammingQnaService {
       { lang: 'C#', keywords: ['c#', 'csharp', '.net', 'asp.net'] },
       { lang: 'PHP', keywords: ['php', 'laravel', 'composer'] },
       { lang: 'SQL', keywords: ['sql', 'mysql', 'postgresql', 'select', 'from'] },
+      { lang: 'C/C++', keywords: ['arduino', 'stm32', 'esp32', 'esp8266', '单片机', 'embedded', '嵌入式', 'gpio', '寄存器'] },
     ];
 
     for (const { lang, keywords } of patterns) {
@@ -206,6 +260,10 @@ export class ProgrammingQnaService {
       { fw: 'Django', keywords: ['django'] },
       { fw: 'Flask', keywords: ['flask'] },
       { fw: 'Spring Boot', keywords: ['spring boot', 'springboot'] },
+      { fw: 'Arduino', keywords: ['arduino', 'uno', 'nano', 'mega'] },
+      { fw: 'FreeRTOS', keywords: ['freertos', 'rtos', '实时操作系统'] },
+      { fw: 'ESP-IDF', keywords: ['esp-idf', 'esp32', 'esp8266'] },
+      { fw: 'STM32 HAL', keywords: ['stm32', 'hal库', 'cubeide', 'cubemx'] },
     ];
 
     for (const { fw, keywords } of patterns) {
@@ -1894,6 +1952,406 @@ CMD ["nginx", "-g", "daemon off;"]`,
     difficulty: DifficultyLevel,
     language: string,
   ): ProgrammingAnswer {
+    const isEmbedded = /arduino|stm32|esp32|esp8266|树莓派|raspberry|嵌入式|embedded|单片机|mcu|gpio|i2c|spi|uart|串口|pwm|adc|dac|传感器|sensor|freertos|rtos|寄存器|中断|iot|物联网/.test(question);
+
+    if (isEmbedded) {
+      let summary = '嵌入式开发需要同时关注软件逻辑和硬件特性，资源受限环境下代码效率和稳定性是关键。';
+      let detailedExplanation = `
+嵌入式系统是"为特定应用设计的专用计算机系统"，核心特征是资源受限（RAM/Flash/CPU频率有限）、实时性要求高、与物理世界直接交互。
+开发流程通常是：理解硬件规格 → 配置时钟/外设 → 编写驱动/协议 → 应用逻辑 → 调试优化。
+常用通信协议：UART（串口）、I2C（两线，多从设备）、SPI（四线，高速）、1-Wire、CAN、ModBus。
+      `.trim();
+      let keyPoints: string[] = [
+        'GPIO 操作：配置输入/输出模式，上拉/下拉设置，注意电平兼容性（3.3V vs 5V）',
+        '通信协议：UART 异步串口、I2C 两线双向、SPI 四线高速，根据场景选型',
+        '中断 vs 轮询：高频事件用中断，低频率简单场景用轮询，注意中断处理函数要"短"',
+        '资源意识：单片机 RAM/Flash 有限，避免大数组、动态分配和递归调用',
+        '看门狗 WDT：防止程序跑飞卡死，定期喂狗保障系统可靠性',
+      ];
+      let codeExamples: CodeExample[] = [];
+      let commonPitfalls: string[] = [];
+      let bestPractices: string[] = [];
+
+      if (question.includes('gpio') || question.includes('点灯') || question.includes('led') || question.includes('blink')) {
+        summary = 'GPIO（通用输入输出）是嵌入式最基础的外设，用于读取按键、驱动LED、控制继电器等。';
+        detailedExplanation = `
+GPIO 操作三步走：1）开启外设时钟；2）配置引脚模式（输入/输出/复用/模拟）；3）读写数据寄存器。
+注意：STM32 等 ARM 芯片必须先开启对应 GPIO 端口时钟，否则配置不会生效。
+        `.trim();
+        codeExamples = [
+          {
+            title: 'Arduino LED 闪烁（Blink）',
+            language: 'cpp',
+            code: `// Arduino Uno - LED_BUILTIN 引脚 13
+void setup() {
+  pinMode(LED_BUILTIN, OUTPUT);  // 配置为输出模式
+}
+
+void loop() {
+  digitalWrite(LED_BUILTIN, HIGH);  // 点亮
+  delay(1000);                       // 延时 1 秒
+  digitalWrite(LED_BUILTIN, LOW);   // 熄灭
+  delay(1000);
+}`,
+            explanation: '最基础的 GPIO 输出示例，setup 执行一次，loop 循环执行。',
+          },
+          {
+            title: 'STM32 HAL 库 GPIO 输出',
+            language: 'c',
+            code: `/* STM32F103C8T6 - PC13 引脚控制板载 LED */
+#include "stm32f1xx_hal.h"
+
+GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+void GPIO_Init(void) {
+  __HAL_RCC_GPIOC_CLK_ENABLE();  // 必须先开启 GPIOC 时钟！
+
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, GPIO_PIN_SET);  // 初始熄灭（低电平点亮）
+
+  GPIO_InitStruct.Pin   = GPIO_PIN_13;
+  GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;         // 推挽输出
+  GPIO_InitStruct.Pull  = GPIO_NOPULL;                 // 无上拉下拉
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;         // 低速足够
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+}
+
+// 在 main 循环中调用
+HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);  // 翻转电平
+HAL_Delay(500);`,
+            explanation: 'HAL 库是 STM32 官方库，注意要点：1）先开时钟；2）推挽输出(Push-Pull) vs 开漏(Open-Drain)；3）LED 是高电平还是低电平点亮要看原理图。',
+          },
+          {
+            title: 'ESP32 GPIO 输入（按键检测 + 消抖）',
+            language: 'cpp',
+            code: `// ESP32 - 按键接 GPIO0，下拉输入
+#define BUTTON_PIN 0
+#define DEBOUNCE_MS 50
+
+unsigned long lastPressTime = 0;
+bool lastState = HIGH;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(BUTTON_PIN, INPUT_PULLUP);  // 内部上拉，按键按下接地
+}
+
+void loop() {
+  bool state = digitalRead(BUTTON_PIN);
+  unsigned long now = millis();
+
+  // 状态变化 + 消抖判断
+  if (state != lastState && (now - lastPressTime) > DEBOUNCE_MS) {
+    lastPressTime = now;
+    lastState = state;
+    if (state == LOW) {
+      Serial.println("按键按下！");
+    }
+  }
+}`,
+            explanation: '机械按键按下/释放时会有几十ms抖动，必须软件消抖，否则会误触发多次。',
+          },
+        ];
+        commonPitfalls = [
+          '忘记开启 GPIO 外设时钟（STM32 常见坑）',
+          '忽略电平兼容性：3.3V 芯片直连 5V 外设可能烧毁',
+          '按键未做消抖处理，触发多次',
+          '上拉/下拉模式配置错误，导致引脚电平不确定',
+        ];
+        bestPractices = [
+          '引脚配置集中在初始化函数，方便维护',
+          '按键输入都加上消抖（软件延时或硬件 RC 消抖）',
+          '不用的引脚建议配置为模拟输入，降低功耗',
+          '使用 HAL/官方库，不要直接操作寄存器（除非性能极致要求）',
+        ];
+      }
+      else if (question.includes('i2c') || question.includes('iic')) {
+        summary = 'I2C（Inter-Integrated Circuit）是两线制串行总线，常用于连接传感器、EEPROM、OLED 等低速外设。';
+        detailedExplanation = `
+I2C 只需两根线：SCL（时钟）和 SDA（数据），支持一主多从。
+每个从设备有唯一 7/10 位地址。通信由主设备发起 START 信号，发送 7 位地址 + R/W 位，从设备 ACK 应答后传输数据，STOP 结束。
+常用速率：标准模式 100kbps、快速模式 400kbps、高速模式 3.4Mbps。
+        `.trim();
+        codeExamples = [
+          {
+            title: 'Arduino I2C 读取 BH1750 光照传感器',
+            language: 'cpp',
+            code: `// Arduino + BH1750（地址 0x23）
+#include <Wire.h>
+
+#define BH1750_ADDR 0x23
+#define CONTINUOUS_H_RES 0x10  // 连续高分辨率模式
+
+void setup() {
+  Wire.begin();          // 初始化 I2C 主机
+  Serial.begin(115200);
+  Wire.beginTransmission(BH1750_ADDR);
+  Wire.write(CONTINUOUS_H_RES);  // 发送测量命令
+  Wire.endTransmission();
+  delay(180);
+}
+
+void loop() {
+  // 请求 2 字节数据
+  Wire.requestFrom(BH1750_ADDR, (uint8_t)2);
+  if (Wire.available() >= 2) {
+    uint16_t raw = (Wire.read() << 8) | Wire.read();
+    float lux = raw / 1.2;  // 转换为勒克斯
+    Serial.printf("光照: %.1f lux\\n", lux);
+  }
+  delay(1000);
+}`,
+            explanation: 'I2C 典型读取流程：发起请求 → 读取数据 → 转换物理量。注意：SDA/SCL 需要外接 4.7K 上拉电阻（大部分模块已自带）。',
+          },
+          {
+            title: 'STM32 HAL I2C 发送数据',
+            language: 'c',
+            code: `/* STM32 HAL 库 I2C 写寄存器（以 OLED SSD1306 为例） */
+#define OLED_ADDR 0x3C  // 7 位地址
+
+uint8_t cmd[2] = {0x00, 0xAE};  // 控制字节 + 关闭显示命令
+
+// 阻塞模式发送
+HAL_StatusTypeDef status = HAL_I2C_Master_Transmit(
+    &hi2c1,             // I2C 句柄
+    OLED_ADDR << 1,     // HAL 库需要 8 位地址（左移一位，最低位 R/W=0）
+    cmd,                // 数据缓冲区
+    sizeof(cmd),        // 数据长度
+    100                 // 超时 ms
+);
+
+if (status != HAL_OK) {
+  // 错误处理：NACK、总线仲裁失败等
+  Error_Handler();
+}`,
+            explanation: 'STM32 HAL I2C 注意：地址要左移一位；建议开启 I2C 中断或 DMA 模式避免阻塞主循环。',
+          },
+        ];
+        commonPitfalls = [
+          'SDA/SCL 缺少上拉电阻，导致信号异常或通信失败',
+          '地址位宽不匹配：7 位还是 8 位？HAL 库需手动左移',
+          'I2C 总线死锁：从设备拉低 SDA，主设备发 9 个时钟脉冲释放',
+          '速率过高导致长距离通信不稳定',
+        ];
+        bestPractices = [
+          'I2C 扫描程序先确认从设备地址是否正确',
+          '关键通信加超时和重试机制',
+          '多从设备时注意地址冲突，部分模块可用跳线切换地址',
+          '调试时用逻辑分析仪抓波形，比打印 Log 高效得多',
+        ];
+      }
+      else if (question.includes('uart') || question.includes('串口')) {
+        summary = 'UART（通用异步收发器）是最常用的串行通信协议，用于调试输出、GPS/WiFi/Bluetooth 模块通信等。';
+        detailedExplanation = `
+UART 是异步协议，无需时钟线，通过约定波特率（9600/115200/921600）同步。
+帧格式：起始位(1bit) + 数据位(5-8bit) + 校验位(可选) + 停止位(1/1.5/2bit)。
+常见问题：波特率不匹配、帧格式错误、电平不兼容（TTL vs RS232 vs RS485）。
+        `.trim();
+        codeExamples = [
+          {
+            title: 'STM32 HAL UART 中断接收 + 空闲中断',
+            language: 'c',
+            code: `/* STM32 HAL：使用空闲中断实现不定长数据接收 */
+#define RX_BUF_SIZE 128
+uint8_t rx_buf[RX_BUF_SIZE];
+volatile uint16_t rx_len = 0;
+volatile uint8_t rx_done = 0;
+
+// 初始化时开启接收中断和空闲中断
+void UART_Init_Ex(void) {
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_IDLE);   // 空闲中断
+  HAL_UART_Receive_IT(&huart1, rx_buf, RX_BUF_SIZE);
+}
+
+// USART1 全局中断服务函数
+void USART1_IRQHandler(void) {
+  HAL_UART_IRQHandler(&huart1);
+
+  if (__HAL_UART_GET_FLAG(&huart1, UART_FLAG_IDLE) != RESET) {
+    __HAL_UART_CLEAR_IDLEFLAG(&huart1);  // 必须软件清标志
+    HAL_UART_AbortReceive(&huart1);
+    rx_len = RX_BUF_SIZE - huart1.RxXferCount;
+    rx_done = 1;
+    HAL_UART_Receive_IT(&huart1, rx_buf, RX_BUF_SIZE);  // 重新开启
+  }
+}
+
+// main 循环中处理
+if (rx_done) {
+  HAL_UART_Transmit(&huart1, rx_buf, rx_len, 100);  // 回显
+  rx_done = 0;
+}`,
+            explanation: '空闲中断（IDLE）检测一帧数据结束，配合接收中断实现不定长数据接收，比固定长度接收更灵活。',
+          },
+        ];
+        commonPitfalls = [
+          '波特率不匹配：双方必须严格一致（115200 最常用）',
+          'TX/RX 接反：A 的 TX 接 B 的 RX，交叉连接',
+          '电平不兼容：TTL(3.3V/5V) 和 RS232(-12V~+12V) 需要 MAX232 转换',
+          '数据丢失：处理不及时导致接收缓冲区溢出',
+        ];
+        bestPractices = [
+          '打印调试信息时加时间戳和模块前缀',
+          '大数据量使用 DMA + 空闲中断，降低 CPU 占用',
+          '关键通信协议加入 CRC 校验，发现错误数据',
+          '串口线尽量短、远离干扰源（电机、电源）',
+        ];
+      }
+      else if (question.includes('freertos') || question.includes('rtos') || question.includes('任务')) {
+        summary = 'FreeRTOS 是最流行的开源实时操作系统内核，提供任务调度、信号量、队列、软件定时器等功能。';
+        detailedExplanation = `
+RTOS 核心概念：任务（Task）是独立执行单元，每个任务有自己的栈；调度器基于优先级抢占式调度；
+同步通信原语：队列(Queue)、信号量(Semaphore)、互斥锁(Mutex)、事件组(Event Group)、任务通知(Task Notification)。
+中断优先级必须高于系统调用优先级，且中断中只能使用 FromISR 后缀的 API。
+        `.trim();
+        codeExamples = [
+          {
+            title: 'FreeRTOS 创建任务 + 队列通信',
+            language: 'c',
+            code: `/* FreeRTOS：两个任务通过队列传递数据 */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
+QueueHandle_t xQueue;
+
+// 生产者任务：每 500ms 发送一个递增数字
+void vProducerTask(void *pvParam) {
+  uint32_t counter = 0;
+  for (;;) {
+    xQueueSend(xQueue, &counter, portMAX_DELAY);
+    counter++;
+    vTaskDelay(pdMS_TO_TICKS(500));
+  }
+}
+
+// 消费者任务：从队列接收并打印
+void vConsumerTask(void *pvParam) {
+  uint32_t value;
+  for (;;) {
+    if (xQueueReceive(xQueue, &value, pdMS_TO_TICKS(1000)) == pdPASS) {
+      printf("收到: %lu\\n", value);
+    } else {
+      printf("超时，无数据\\n");
+    }
+  }
+}
+
+// main 中初始化并启动调度器
+int main(void) {
+  xQueue = xQueueCreate(10, sizeof(uint32_t));  // 10 个元素的队列
+
+  xTaskCreate(vProducerTask, "Producer", 512, NULL, 2, NULL);
+  xTaskCreate(vConsumerTask, "Consumer", 512, NULL, 1, NULL);
+
+  vTaskStartScheduler();  // 启动调度器，不会返回
+  for (;;);
+}`,
+            explanation: '队列是 FreeRTOS 最常用的任务间通信方式，线程安全、支持多写多读。注意栈大小要足够，避免栈溢出。',
+          },
+        ];
+        commonPitfalls = [
+          '任务栈溢出：任务栈分配过小，导致内存踩踏和莫名崩溃',
+          '在中断中调用非 FromISR 版本的 API，系统直接崩溃',
+          '高优先级任务死循环，低优先级任务永远得不到执行（饥饿）',
+          '使用 Mutex 但不释放，造成死锁',
+          'vTaskDelay 误用为精确延时（实际是至少延时）',
+        ];
+        bestPractices = [
+          '合理分配任务优先级：紧急任务优先级高，常规任务低',
+          '队列/信号量在初始化时一次性创建，运行时不要动态创建删除',
+          '开启 FreeRTOS 栈溢出检测（configCHECK_FOR_STACK_OVERFLOW）',
+          '中断处理函数尽量短，只负责唤醒任务，实际逻辑在任务中做',
+          '使用软件定时器处理周期性事件，避免创建大量专用任务',
+        ];
+      }
+      else {
+        // 通用嵌入式解答
+        codeExamples = [
+          {
+            title: 'Arduino 多传感器综合示例（DHT11温湿度 + OLED显示）',
+            language: 'cpp',
+            code: `// Arduino Uno + DHT11 温湿度 + SSD1306 0.96" OLED
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <DHT.h>
+
+#define DHT_PIN 2
+#define DHT_TYPE DHT11
+DHT dht(DHT_PIN, DHT_TYPE);
+
+#define SCREEN_W 128
+#define SCREEN_H 64
+Adafruit_SSD1306 display(SCREEN_W, SCREEN_H, &Wire, -1);
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+}
+
+void loop() {
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.printf("Temp: %.1f C", t);
+  display.setCursor(0, 20);
+  display.printf("Humi: %.1f %%", h);
+  display.setCursor(0, 40);
+  display.println("ESP32 Ready!");
+  display.display();
+  delay(2000);
+}`,
+            explanation: '典型 Arduino 项目结构：库头文件 → 引脚/对象定义 → setup 初始化 → loop 业务循环。每个外设一个库，降低开发难度。',
+          },
+        ];
+        commonPitfalls = [
+          '混淆不同硬件的引脚定义，直接复制代码不看原理图',
+          '忽略电流和功耗：单片机 IO 驱动能力有限（一般 <20mA）',
+          '外设电源不稳：传感器/模块需要独立供电或增加滤波电容',
+          '看门狗未喂狗或喂狗时机不对，导致系统反复重启',
+          '调试只靠串口打印：逻辑分析仪和示波器才是硬件调试利器',
+        ];
+        bestPractices = [
+          '阅读芯片数据手册(Datasheet)，理解寄存器和电气特性',
+          '硬件外设先跑官方 Demo，确认硬件没问题再集成',
+          '模块化分层：硬件抽象层(HAL) → 驱动层 → 应用层',
+          '使用示波器/逻辑分析仪看波形，比串口打印高效 10 倍',
+          '做好版本管理：硬件版本和固件版本对应，避免混乱',
+        ];
+      }
+
+      return {
+        category: ProgrammingCategory.GENERAL,
+        categoryLabel: this.categoryLabels[ProgrammingCategory.GENERAL] + ' / 嵌入式与物联网',
+        difficulty,
+        difficultyLabel: this.difficultyLabels[difficulty],
+        summary,
+        detailedExplanation,
+        keyPoints,
+        codeExamples,
+        commonPitfalls,
+        bestPractices,
+        relatedTopics: [
+          { topic: '通信协议', description: 'UART / I2C / SPI / CAN / ModBus 选型与对比' },
+          { topic: '实时操作系统', description: 'FreeRTOS / RT-Thread / Zephyr 任务调度与同步' },
+          { topic: '低功耗设计', description: '休眠模式、时钟门控、外设按需开启' },
+        ],
+        references: [
+          'Arduino 官方文档（https://docs.arduino.cc）',
+          'STM32 HAL 库用户手册（ST 官网 UM1725）',
+          'FreeRTOS 官方文档（https://www.freertos.org/Documentation）',
+          'ESP-IDF 编程指南（https://docs.espressif.com）',
+          '相关芯片数据手册(Datasheet)与参考手册(Reference Manual)',
+        ],
+      };
+    }
+
     return {
       category: ProgrammingCategory.GENERAL,
       categoryLabel: this.categoryLabels[ProgrammingCategory.GENERAL],
@@ -1901,7 +2359,7 @@ CMD ["nginx", "-g", "daemon off;"]`,
       difficultyLabel: this.difficultyLabels[difficulty],
       summary: '编程是一门实践学科，建议从基础知识开始，配合大量练习和项目实战。',
       detailedExplanation:
-        '学习编程的建议路径：1）掌握一门语言的基础语法；2）学习数据结构与算法；3）选择一个方向（前端/后端/全栈/移动端）深入学习；4）参与开源项目或做实战项目积累经验。持续学习是程序员的终身必修课。',
+        '学习编程的建议路径：1）掌握一门语言的基础语法；2）学习数据结构与算法；3）选择一个方向（前端/后端/全栈/移动端/嵌入式）深入学习；4）参与开源项目或做实战项目积累经验。持续学习是程序员的终身必修课。',
       keyPoints: [
         '打好基础：语言基础、数据结构、算法、计算机网络、操作系统',
         '多写代码，阅读优秀源码，参与开源项目',

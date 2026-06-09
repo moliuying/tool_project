@@ -114,7 +114,7 @@
             <el-tag size="small" type="info" effect="plain" class="section-hint">按类别分组</el-tag>
           </h4>
           <div class="framework-groups">
-            <div v-for="group in ['前端', '后端', '移动端', '数据库', '运维']" :key="group" class="framework-group">
+            <div v-for="group in ['前端', '后端', '嵌入式', '移动端', '数据库', '运维']" :key="group" class="framework-group">
               <div class="fg-title">
                 <el-icon><Collection /></el-icon>
                 {{ group }}
@@ -131,6 +131,30 @@
                   <span class="fw-name">{{ fw.name }}</span>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="intro-section full-width">
+          <h4 class="section-label">
+            <el-icon color="#722ed1"><Promotion /></el-icon>
+            能力边界说明
+            <el-tag size="small" type="info" effect="plain" class="section-hint">透明告知，避免误导</el-tag>
+          </h4>
+          <div class="boundary-groups">
+            <div
+              v-for="boundary in capabilityBoundaries"
+              :key="boundary.type"
+              class="boundary-card"
+              :style="{ '--boundary-color': boundary.color }"
+            >
+              <div class="bc-header">
+                <span class="bc-icon">{{ boundary.icon }}</span>
+                <span class="bc-title">{{ boundary.title }}</span>
+              </div>
+              <ul class="bc-list">
+                <li v-for="(item, i) in boundary.items" :key="i">{{ item }}</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -364,6 +388,20 @@
         <el-alert :title="answer.summary" type="success" :closable="false" show-icon />
       </div>
 
+      <div v-if="answer.capabilityNote" class="capability-note">
+        <el-alert type="warning" :closable="false" show-icon>
+          <template #title>
+            <div class="capability-note-title">
+              <el-icon><Promotion /></el-icon>
+              <span>能力边界提示</span>
+            </div>
+          </template>
+          <div class="capability-note-content">
+            <p v-for="(line, idx) in answer.capabilityNote.split('\\n')" :key="idx">{{ line }}</p>
+          </div>
+        </el-alert>
+      </div>
+
       <el-tabs v-model="activeTab" class="answer-tabs">
         <el-tab-pane label="📖 详细解答" name="detail">
           <div class="detail-section">
@@ -553,6 +591,7 @@ import {
   Link,
   Guide,
   Collection,
+  Promotion,
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import {
@@ -564,6 +603,7 @@ import {
   supportedLanguages,
   supportedFrameworks,
   expertiseAreas,
+  capabilityBoundaries,
   type ProgrammingAnswer,
   type ProgrammingCategory,
   type DifficultyLevel,
@@ -694,6 +734,9 @@ const copyAnswer = () => {
   }
   if (a.references.length) {
     text += `【参考资料】\n${a.references.map((r) => `📖 ${r}`).join('\n')}\n`
+  }
+  if (a.capabilityNote) {
+    text += `\n【能力边界提示】\n${a.capabilityNote}\n`
   }
 
   navigator.clipboard.writeText(text)
@@ -1030,6 +1073,79 @@ onMounted(() => {
 
 .fw-name {
   white-space: nowrap;
+}
+
+.boundary-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 14px;
+}
+
+.boundary-card {
+  padding: 16px 18px;
+  background: #f7f8fa;
+  border-radius: 10px;
+  border-left: 4px solid var(--boundary-color, #165DFF);
+  transition: all 0.25s;
+}
+
+.boundary-card:hover {
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.bc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bc-icon {
+  font-size: 22px;
+}
+
+.bc-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--boundary-color, #1d2129);
+}
+
+.bc-list {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.9;
+  font-size: 13px;
+  color: #4e5969;
+}
+
+.bc-list li::marker {
+  color: var(--boundary-color, #86909c);
+}
+
+.capability-note {
+  margin-bottom: 16px;
+}
+
+.capability-note-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #b88230;
+}
+
+.capability-note-content {
+  margin-top: 8px;
+  line-height: 1.8;
+}
+
+.capability-note-content p {
+  margin: 4px 0;
+  color: #865825;
+  font-size: 13px;
 }
 
 .card-header {
