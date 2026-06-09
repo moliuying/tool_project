@@ -998,7 +998,101 @@ export class FoodRecognitionService {
         '煮好立刻冰水浸泡皮更爽脆',
         '姜葱酱要现做更香'
       ],
-      dietaryTags: ['清淡', '粤菜经典', '原汁原味']
+      dietaryTags: ['清淡', '粤菜经典', '原汁原味'],
+      regionalVersions: [
+        {
+          region: '粤式正宗版',
+          regionIcon: '🥢',
+          cuisine: '粤菜',
+          mainIngredients: [
+            { name: '清远走地鸡', probability: 0.98 },
+            { name: '生姜', probability: 0.95 },
+            { name: '广东红葱头', probability: 0.95 },
+            { name: '花生油', probability: 0.9 },
+            { name: '盐', probability: 0.85 },
+            { name: '糖', probability: 0.65 },
+            { name: '米酒', probability: 0.75 }
+          ],
+          cookingMethods: [
+            { name: '三浸三提浸煮法', description: '正宗粤式白切鸡核心技法：水沸后将鸡放入浸5分钟提起沥干，重复3次，最后微沸浸15-20分钟，全程保持水微沸不翻滚' }
+          ],
+          flavor: '皮爽肉滑骨带血，原汁原味鲜到极致',
+          description: '正宗粤式白切鸡是粤菜精髓，讲究"皮爽、肉滑、骨带血"。必须选用120-150天的清远走地鸡，采用"三浸三提"古法浸煮，鸡骨微带血丝才是最佳状态，蘸上姜葱酱，鲜到极致。',
+          difficulty: '较难',
+          cookingTime: '50-60分钟',
+          calories: '约260千卡/份',
+          nutritionalInfo: '高蛋白、低脂肪、原汁原味保留营养',
+          cookingTips: [
+            '【鸡种选择】必须用清远走地鸡、湛江鸡或文昌鸡，120-150天最佳，冰冻鸡口感天差地别',
+            '【火候控制】水保持微沸状态，绝对不能大开翻滚，否则鸡肉会柴',
+            '【三浸三提】水沸后放入鸡浸5分钟，提起沥干水分30秒，重复3次，让鸡皮脆肉嫩',
+            '【浸泡时间】最后一次放入后关小火浸15-20分钟，用筷子插入鸡腿无血水流出即可',
+            '【冰水冷却】煮好立刻放入冰水中浸泡10-15分钟，鸡皮瞬间收缩爽脆',
+            '【斩鸡技巧】鸡完全冷却后再斩件，鸡皮才不会碎',
+            '【姜葱酱灵魂】姜蓉+红葱头+盐+糖，淋上滚烫的花生油，这是白切鸡的灵魂'
+          ],
+          isDefault: true
+        },
+        {
+          region: '家常简化版',
+          regionIcon: '🏠',
+          cuisine: '家常粤菜',
+          mainIngredients: [
+            { name: '三黄鸡', probability: 0.9 },
+            { name: '生姜', probability: 0.9 },
+            { name: '小葱', probability: 0.9 },
+            { name: '料酒', probability: 0.8 },
+            { name: '盐', probability: 0.85 },
+            { name: '生抽', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '普通浸煮', description: '家常做法：整鸡放入加了姜葱料酒的水中煮熟即可，适合新手' }
+          ],
+          flavor: '皮滑肉嫩，清淡鲜香',
+          description: '家常版白切鸡简化了"三浸三提"的复杂步骤，直接煮熟即可，口感虽然稍逊但已经很美味，适合家庭日常制作。',
+          difficulty: '简单',
+          cookingTime: '35-45分钟',
+          calories: '约270千卡/份',
+          nutritionalInfo: '高蛋白、低脂肪',
+          cookingTips: [
+            '新手建议用三黄鸡或文昌鸡，不要用太老的鸡',
+            '水中加姜葱和料酒去腥',
+            '煮15-20分钟后关火焖10分钟，更嫩滑',
+            '有条件还是用冰水浸泡，鸡皮更脆',
+            '蘸料可以用姜葱酱或简单的生抽+香油'
+          ]
+        },
+        {
+          region: '广西白切鸡版',
+          regionIcon: '🌴',
+          cuisine: '广西菜',
+          mainIngredients: [
+            { name: '广西土鸡', probability: 0.95 },
+            { name: '沙姜', probability: 0.95 },
+            { name: '香菜', probability: 0.85 },
+            { name: '小米辣', probability: 0.75 },
+            { name: '柠檬', probability: 0.7 },
+            { name: '生抽', probability: 0.85 },
+            { name: '花生油', probability: 0.8 }
+          ],
+          cookingMethods: [
+            { name: '白切+柠檬蘸料', description: '广西版白切鸡注重蘸料创新，沙姜+柠檬+小米辣是特色' }
+          ],
+          flavor: '皮爽肉嫩，酸辣开胃',
+          description: '广西白切鸡的特色在于沙姜蘸料和柠檬的运用，酸辣开胃，夏天吃特别清爽，是两广地区的夏日美食。',
+          difficulty: '中等',
+          cookingTime: '40-50分钟',
+          calories: '约250千卡/份',
+          nutritionalInfo: '高蛋白、低脂肪、开胃解腻',
+          cookingTips: [
+            '鸡的做法和粤式类似，但蘸料是灵魂',
+            '沙姜（山奈）是广西蘸料的必备，味道独特',
+            '加少许柠檬汁和小米辣，酸辣开胃',
+            '广西人喜欢斩件后淋上蘸料，而不是蘸着吃',
+            '夏天吃特别清爽，配白粥最佳'
+          ]
+        }
+      ]
     },
     {
       dishName: '扬州炒饭',
