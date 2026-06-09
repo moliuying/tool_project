@@ -373,16 +373,18 @@ export class FitnessService {
 
     if (conditions.includes(HealthCondition.PREGNANCY)) {
       warnings.push({
-        condition: '孕期',
+        condition: '孕期运动安全指引（已自动调整为孕期专属方案）',
         severity: 'high',
-        warning: '孕期运动涉及胎儿安全，必须谨慎对待，个体差异极大',
+        warning: '孕期运动涉及胎儿安全，个体差异极大。本方案为通用参考，开始前务必获得产科医生许可，运动中随时以身体感受为准，如有不适立即停止。',
         suggestions: [
-          '‼️ 本计划不适用于孕期，孕期运动请务必在产科医生和专业产前教练指导下进行',
-          '禁止仰卧位运动（孕中晚期）、跳跃、冲击性、平衡风险高的运动',
-          '孕早期（前 3 个月）以休息和轻度活动为主，避免剧烈运动',
-          '推荐运动：孕妇瑜伽、散步、游泳（孕中期）、固定自行车',
-          '运动时避免憋气、避免腹部受压、避免过热环境',
-          '如出现阴道出血、腹痛、头晕、气短异常等情况立即停止并就医',
+          '【孕早期（1-12周）】以休息为主，仅推荐10-15分钟慢走+呼吸练习，避免劳累，避免高温环境，此阶段胎儿不稳定',
+          '【孕中期（13-27周）】相对安全的运动窗口，可进行20-30分钟低强度运动，每周3次以内，注意补充水分和能量',
+          '【孕晚期（28周以后）】运动时间缩短至15-20分钟，以散步、盆底肌练习、拉伸为主，避免仰卧位，避免平衡挑战',
+          '✅ 推荐运动：慢走、孕妇瑜伽、游泳（水温适宜）、固定自行车、凯格尔运动、骨盆倾斜、桥式（靠墙）、轻柔拉伸',
+          '❌ 绝对禁忌：仰卧位（孕中晚期）、跳跃、冲击性动作、腹部受压、憋气发力（Valsalva动作）、球类对抗、滑雪/骑马/潜水、高温瑜伽、平躺超过5分钟',
+          '⚠️ 监测指标：运动中心率不超过（220-年龄）× 70%，始终能正常说话（说话测试），体温不超过38℃',
+          '🚨 出现以下情况立即停止并就医：阴道出血/流液、规律宫缩、腹痛、头晕胸痛、严重气短、头痛视物模糊、胎动异常减少',
+          '每次运动前补充水分和少量碳水，穿宽松衣物和合脚的鞋，避免空腹或餐后立即运动，运动后缓慢降温',
         ],
       });
     }
@@ -492,7 +494,9 @@ export class FitnessService {
     const restDays: string[] = [];
 
     let effectiveDays = dto.availableDaysPerWeek;
-    if (this.hasHighRiskCondition(healthConditions) || healthConditions.includes(HealthCondition.POSTPARTUM)) {
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      effectiveDays = Math.min(effectiveDays, 2);
+    } else if (this.hasHighRiskCondition(healthConditions) || healthConditions.includes(HealthCondition.POSTPARTUM)) {
       effectiveDays = Math.min(effectiveDays, 3);
     }
 
@@ -531,20 +535,30 @@ export class FitnessService {
       warmUp = '10-15 分钟缓慢热身：慢走 + 关节活动，让心率平稳上升';
       coolDown = '10-15 分钟逐渐放松：慢走 + 深呼吸，让心率平稳下降，不要突然停止';
     }
-
-    if (perSession < 30) {
-      warmUp = '3-5 分钟简单热身：关节环绕、原地踏步';
-      coolDown = '3-5 分钟简单拉伸';
-    } else if (perSession > 90 && !this.hasHighRiskCondition(healthConditions)) {
-      warmUp = '10-15 分钟充分热身：慢跑/跳绳 + 动态拉伸 + 激活训练';
-      coolDown = '10-15 分钟系统放松：静态拉伸 + 泡沫轴 + 冥想';
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      warmUp = '5-8 分钟孕期专属热身：原地慢走摆臂 → 手腕脚踝关节环绕 → 肩部画圈 → 骨盆轻柔晃动（手扶稳固支撑），全程呼吸平稳，不做任何跳跃或快速动作';
+      coolDown = '8-10 分钟孕期放松：逐渐减速慢走 → 端坐或侧卧腹式深呼吸 → 小腿和肩部轻柔静态拉伸（每个动作15-20秒，不过度伸展）→ 左侧卧休息2-3分钟，避免突然站起防止体位性低血压';
     }
 
+    if (!healthConditions.includes(HealthCondition.PREGNANCY)) {
+      if (perSession < 30) {
+        warmUp = '3-5 分钟简单热身：关节环绕、原地踏步';
+        coolDown = '3-5 分钟简单拉伸';
+      } else if (perSession > 90 && !this.hasHighRiskCondition(healthConditions)) {
+        warmUp = '10-15 分钟充分热身：慢跑/跳绳 + 动态拉伸 + 激活训练';
+        coolDown = '10-15 分钟系统放松：静态拉伸 + 泡沫轴 + 冥想';
+      }
+    }
+
+    let sessionDuration = perSession;
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      sessionDuration = Math.min(perSession, 30);
+    }
     const estimatedDuration = Math.min(
-      perSession,
-      (perSession >= 60 ? 10 : 5) +
+      sessionDuration,
+      (sessionDuration >= 60 ? 10 : 5) +
         exercises.reduce((acc, ex) => acc + (this.estimateExerciseTime(ex)), 0) +
-        (perSession >= 60 ? 10 : 5)
+        (sessionDuration >= 60 ? 10 : 5)
     );
 
     return {
@@ -576,8 +590,14 @@ export class FitnessService {
   }
 
   private getDayFocus(index: number, totalDays: number, goal: FitnessGoal, healthConditions: HealthCondition[]): string {
-    if (healthConditions.includes(HealthCondition.HEART_DISEASE) ||
-        healthConditions.includes(HealthCondition.PREGNANCY)) {
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      const pregnancyFocuses = [
+        '孕期专属 · 慢走 + 呼吸 + 凯格尔',
+        '孕期专属 · 骨盆稳定 + 拉伸放松',
+      ];
+      return pregnancyFocuses[index % pregnancyFocuses.length];
+    }
+    if (healthConditions.includes(HealthCondition.HEART_DISEASE)) {
       return '轻度活动 · 以散步和呼吸为主';
     }
     if (healthConditions.includes(HealthCondition.HYPERTENSION) ||
@@ -619,13 +639,16 @@ export class FitnessService {
 
     let exercises: Exercise[] = [];
 
-    if (healthConditions.includes(HealthCondition.HEART_DISEASE) ||
-        healthConditions.includes(HealthCondition.PREGNANCY)) {
+    if (healthConditions.includes(HealthCondition.HEART_DISEASE)) {
       exercises = [
         { name: '慢走', duration: '20 分钟', description: '以能正常说话的速度匀速慢走，如感到不适立即停止', targetMuscle: '全身、心肺' },
         { name: '腹式呼吸', duration: '5 分钟', description: '仰卧或端坐，深呼吸，吸气鼓腹，呼气收腹', targetMuscle: '核心、呼吸肌' },
       ];
       return exercises;
+    }
+
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      return this.getPregnancyExercises();
     }
 
     if (focus.includes('轻度活动') || focus.includes('低冲击')) {
@@ -928,9 +951,110 @@ export class FitnessService {
     return result;
   }
 
+  private getPregnancyExercises(): Exercise[] {
+    return [
+      {
+        name: '户外慢走',
+        duration: '15-20 分钟',
+        description: '以能正常说话的速度匀速行走，穿合脚的运动鞋，选择平坦安全的路线，避免高温和寒冷天气',
+        targetMuscle: '全身、心肺'
+      },
+      {
+        name: '凯格尔运动（盆底肌训练）',
+        sets: 3,
+        reps: '每轮 10-15 次 × 保持 5 秒',
+        description: '收缩盆底肌肉（如同憋尿），保持 5 秒后放松 10 秒，站姿或坐姿均可，有助于预防孕期尿失禁和加速产后恢复',
+        targetMuscle: '盆底肌'
+      },
+      {
+        name: '骨盆倾斜运动',
+        sets: 3,
+        reps: '10-12 次',
+        description: '双手膝四点跪姿（猫式准备），吸气时塌腰抬头，呼气时拱背收腹（类似猫牛式），动作缓慢轻柔，锻炼核心稳定缓解腰酸',
+        targetMuscle: '核心、下背、盆底'
+      },
+      {
+        name: '腹式呼吸练习',
+        duration: '5 分钟',
+        description: '端坐或侧卧，一手放胸前一手放腹部，吸气时腹部隆起（3秒），呼气时腹部收缩（5秒），全程胸部不动，有助于血氧交换和放松',
+        targetMuscle: '呼吸肌、核心'
+      },
+      {
+        name: '坐姿举臂拉伸',
+        sets: 3,
+        reps: '每侧 8-10 次',
+        description: '端坐稳固椅子上，双手合十上举过头顶，然后身体缓慢向左右侧弯曲各 5 秒，轻柔拉伸肋间肌和腰侧，缓解孕期腰背紧张',
+        targetMuscle: '肩背、腰侧'
+      },
+      {
+        name: '坐姿踝泵练习',
+        sets: 4,
+        reps: '每侧 15 次',
+        description: '端坐椅子上，双腿伸直抬起与地面平行（或放矮凳上），脚踝用力向回勾再向前踩，促进下肢血液循环，预防孕期水肿和静脉血栓',
+        targetMuscle: '小腿、踝关节'
+      },
+      {
+        name: '靠墙桥式（臀部抬起）',
+        sets: 3,
+        reps: '8-10 次',
+        description: '上背部和头部靠墙，双脚踩地屈膝与肩同宽，吸气时臀部缓慢抬起至身体呈一条斜线（不做完全桥式），呼气回落，增强臀肌和下背，注意不要憋气',
+        targetMuscle: '臀大肌、下背'
+      },
+      {
+        name: '盘腿坐姿拉伸',
+        duration: '3-5 分钟',
+        description: '端坐垫上，双脚掌相对（蝴蝶式），双手轻按膝盖向下施压（不用强求贴地），保持呼吸平稳，有助于打开骨盆，为分娩做准备',
+        targetMuscle: '髋内收肌、骨盆底'
+      },
+    ];
+  }
+
   private generateCyclePlan(goal: FitnessGoal, age: number, healthConditions: HealthCondition[]): { phases: CyclePhase[]; totalDuration: string } {
     const hasCondition = healthConditions.length > 0;
     const phases: CyclePhase[] = [];
+
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      phases.push({
+        name: '孕早期（1-12周）· 静养与适应',
+        duration: '12 周',
+        description: '此阶段胎儿不稳定，以休息和极轻度活动为主，避免劳累和风险',
+        focus: '呼吸练习、盆底肌激活、日常慢走（如身体允许）',
+        intensity: '极低强度，以无不适为原则，有孕吐或不适时完全休息',
+        tips: [
+          '每日仅 10-15 分钟慢走或呼吸练习，避免任何劳累',
+          '避免高温、避免长时间站立、避免提重物',
+          '坚持补充叶酸，注意饮食清淡少量多餐',
+          '有腹痛、阴道出血等异常情况立即停止活动并就医',
+        ],
+      });
+      phases.push({
+        name: '孕中期（13-27周）· 黄金运动窗口',
+        duration: '15 周',
+        description: '此阶段相对稳定，是孕期最适合规律运动的时期，有助于控制体重和改善血液循环',
+        focus: '规律慢走、凯格尔运动、孕妇瑜伽、骨盆稳定练习',
+        intensity: '低强度，能正常说话的程度，每次 20-30 分钟，每周 2-3 次',
+        tips: [
+          '运动前后补充水分和少量碳水，避免空腹',
+          '避免仰卧位超过 5 分钟，避免憋气发力',
+          '穿着孕妇专用运动内衣和有支撑的运动鞋',
+          '每周体重增长约 0.3-0.5kg，关注体重变化',
+        ],
+      });
+      phases.push({
+        name: '孕晚期（28周以后）· 分娩准备',
+        duration: '约 12 周（至分娩）',
+        description: '此阶段身体负担大，缩短运动时间，重点在呼吸技巧、盆底肌和骨盆准备，为分娩做准备',
+        focus: '短时间慢走、拉玛泽呼吸法、凯格尔运动、轻柔骨盆拉伸',
+        intensity: '极低强度，每次 15-20 分钟，随时可停止，避免平衡挑战',
+        tips: [
+          '学习拉玛泽呼吸法，为分娩镇痛做准备',
+          '避免平躺、避免久站、避免腹部受压',
+          '关注胎动和宫缩，如有规律宫缩、破水等情况立即就医',
+          '饮食控制精制糖和盐分，预防水肿和妊娠糖尿病',
+        ],
+      });
+      return { phases, totalDuration: '全程约 40 周，配合孕期进程动态调整，遵医嘱为第一原则' };
+    }
 
     if (age > 50) {
       phases.push({
@@ -1068,7 +1192,13 @@ export class FitnessService {
       advice.push('增加钾摄入（香蕉、土豆、菠菜等），限制饮酒和咖啡因');
     }
     if (healthConditions.includes(HealthCondition.PREGNANCY)) {
-      advice.push('⚠️ 孕期营养请严格遵照产科医生和营养师指导，保证叶酸、铁、钙等关键营养素摄入');
+      advice.push('⚠️【孕期专属营养】请严格遵照产科医生和营养师指导，以下为通用建议，个体情况需遵医嘱');
+      advice.push('【孕早期（1-12周）】每日补充叶酸400-800μg预防神经管畸形，饮食清淡易消化，少量多餐缓解孕吐，保证碳水摄入避免酮症');
+      advice.push('【孕中期（13-27周）】每日增加约300大卡热量，蛋白质增加15g（约等于1个鸡蛋+1杯牛奶+50g瘦肉），注意补铁预防贫血');
+      advice.push('【孕晚期（28周以后）】每日增加约450大卡热量，蛋白质增加30g，钙摄入需达1000mg/天（牛奶500ml+豆制品+深绿色蔬菜），控制精制糖和盐分避免水肿');
+      advice.push('关键营养素：叶酸、铁（红肉/动物血/肝脏，搭配维C促进吸收）、钙、DHA（深海鱼每周2-3次或补充剂）、碘、维生素D');
+      advice.push('饮食禁忌：禁止饮酒和含酒精饮品、避免生食（生鱼片/半熟蛋/未杀菌奶制品）、避免高汞鱼类（鲨鱼/旗鱼/金枪鱼）、减少咖啡因（每日<200mg，约1杯美式）、避免未清洗的蔬果');
+      advice.push('体重增长参考：孕前BMI正常（18.5-24.9）总增重11.5-16kg，孕中晚期每周约0.4kg；超重/肥胖需适当控制，具体遵医嘱');
     }
     if (healthConditions.includes(HealthCondition.OSTEOPOROSIS)) {
       advice.push('⚠️ 骨质疏松注意补充钙（每日 1000-1200mg）和维生素 D，多吃奶制品、豆制品、深绿色蔬菜');
@@ -1167,7 +1297,17 @@ export class FitnessService {
       tips.push('肥胖人群建议先咨询医生或专业健身教练，制定安全的运动方案');
     }
 
-    tips.push('保证每周至少 1-2 天的完全休息日，让身体充分恢复');
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      tips.unshift('🚨【孕期安全第一】运动前必须获得产科医生书面许可，有前置胎盘、先兆流产、妊娠高血压等并发症者禁止运动');
+      tips.push('孕期避免仰卧位超过5分钟（孕中晚期），避免憋气发力、避免腹部受压、避免体温过高（<38℃）');
+      tips.push('每次运动前先喝200ml水，运动中每15分钟补充水分，避免在高温高湿环境和正午时段运动');
+      tips.push('建议在家人或专业人员陪同下运动，随身携带手机和糖块，选择地面平坦安全的场所');
+      tips.push('孕晚期建议以左侧卧位休息为主，避免长时间站立，运动后监测胎动是否正常');
+      tips.push('体重每周称重1次（晨起空腹），体重异常快速增加或减少需及时就医');
+    } else {
+      tips.push('保证每周至少 1-2 天的完全休息日，让身体充分恢复');
+    }
+
     tips.push('运动时穿着合适的运动鞋和运动服，提供足够的支撑和保护');
 
     return tips;

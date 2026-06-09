@@ -220,8 +220,10 @@
               :value="opt.value"
               :border="true"
               :size="'default'"
+              :class="{ 'pregnancy-checkbox': opt.value === HealthCondition.PREGNANCY }"
             >
-              {{ opt.label }}
+              <span v-if="opt.value === HealthCondition.PREGNANCY" style="font-weight: 700">🤰 {{ opt.label }}</span>
+              <span v-else>{{ opt.label }}</span>
               <el-tag
                 v-if="opt.risk === 'high'"
                 size="small"
@@ -238,6 +240,25 @@
               >需注意</el-tag>
             </el-checkbox>
           </el-checkbox-group>
+
+          <el-alert
+            v-if="isPregnancySelected"
+            type="error"
+            :closable="false"
+            show-icon
+            class="pregnancy-warning"
+          >
+            <template #title>
+              <strong>🤰 孕期运动安全提示</strong>
+            </template>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px; line-height: 1.8">
+              <li>孕期运动前<strong>必须获得产科医生书面许可</strong>，前置胎盘、先兆流产、妊娠高血压等并发症者<strong>禁止运动</strong></li>
+              <li>本工具将自动为你生成孕期专属安全方案（慢走、凯格尔、呼吸练习等），但仅供参考</li>
+              <li>禁止仰卧位（孕中晚期）、跳跃、冲击性动作、憋气发力、高温环境运动</li>
+              <li>如出现阴道出血、规律宫缩、腹痛、头晕等情况，<strong>立即停止并就医</strong></li>
+            </ul>
+          </el-alert>
+
           <div class="form-hint">
             <el-icon :size="14" color="#e6a23c"><WarningFilled /></el-icon>
             如有特殊健康状况，系统会自动调整训练强度和动作，并生成专项警示建议。高风险状况（高血压、心脏病、孕期、糖尿病）建议先咨询医生。
@@ -670,7 +691,7 @@ import {
   CircleCloseFilled,
   Select
 } from '@element-plus/icons-vue'
-import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import {
   fitnessApi,
   FitnessGoal,
@@ -764,6 +785,10 @@ const durationMarks = {
   180: '3小时'
 }
 
+const isPregnancySelected = computed(() =>
+  formData.healthConditions?.includes(HealthCondition.PREGNANCY)
+)
+
 const currentStep = computed(() => {
   if (fitnessPlan.value && !isGenerating.value) return 3
   if (isGenerating.value) return 3
@@ -816,6 +841,38 @@ const generatePlan = async () => {
   } catch (e) {
     ElMessage.warning('请完整填写所有必填项')
     return
+  }
+
+  if (isPregnancySelected.value) {
+    try {
+      await ElMessageBox.confirm(
+        `
+          <div style="font-size: 14px; line-height: 1.8;">
+            <p style="margin: 0 0 10px 0; color: #f56c6c; font-weight: bold;">🤰 孕期运动安全确认</p>
+            <p style="margin: 0 0 8px 0;">您已选择"孕期"，请确认以下事项：</p>
+            <ul style="margin: 0; padding-left: 20px; color: #606266;">
+              <li>我已获得<strong>产科医生的书面许可</strong>可以进行运动</li>
+              <li>我没有前置胎盘、先兆流产、妊娠高血压等运动禁忌症</li>
+              <li>我理解本方案仅供参考，运动中如有不适立即停止并就医</li>
+              <li>我将避免仰卧位、跳跃、憋气、腹部受压等高风险动作</li>
+            </ul>
+          </div>
+        `,
+        '孕期安全确认',
+        {
+          confirmButtonText: '我已确认，生成孕期安全方案',
+          cancelButtonText: '取消',
+          type: 'warning',
+          dangerouslyUseHTMLString: true,
+          confirmButtonClass: 'el-button--danger',
+          closeOnClickModal: false,
+          closeOnPressEscape: false,
+        }
+      )
+    } catch {
+      ElMessage.info('已取消生成')
+      return
+    }
   }
 
   isGenerating.value = true
@@ -965,6 +1022,31 @@ const hasHighRiskMessage = (data: FitnessPlanType) => {
   align-items: flex-start;
   gap: 4px;
   line-height: 1.6;
+}
+
+.pregnancy-warning {
+  margin: 12px 0 4px 0;
+  border: 2px solid #f56c6c;
+  background: linear-gradient(135deg, #fef0f0 0%, #fff 100%);
+}
+
+.pregnancy-warning :deep(.el-alert__title) {
+  font-size: 15px !important;
+  color: #f56c6c !important;
+}
+
+.pregnancy-checkbox :deep(.el-checkbox__inner) {
+  border-color: #f56c6c !important;
+}
+
+.pregnancy-checkbox :deep(.el-checkbox__input.is-checked .el-checkbox__inner) {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+}
+
+.pregnancy-checkbox :deep(.el-checkbox__label) {
+  color: #f56c6c !important;
+  font-weight: 600;
 }
 
 .form-actions {
