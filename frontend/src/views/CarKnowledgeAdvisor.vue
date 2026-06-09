@@ -368,16 +368,62 @@
           <el-icon><EditPen /></el-icon>
           <span>描述你的问题</span>
           <span class="required-tag">*</span>
+          <el-tag size="small" :type="questionDescriptionQuality >= 3 ? 'success' : 'warning'" class="hint-tag">
+            描述完整度 {{ questionDescriptionQuality }}/5 - {{ questionQualityTip }}
+          </el-tag>
         </div>
+
+        <el-alert
+          v-if="currentCategoryHint"
+          type="info"
+          :closable="false"
+          show-icon
+          class="question-hint-alert"
+        >
+          <template #title>
+            <span>📝 描述「{{ getCategoryLabel(selectedCategory) }}」类问题建议包含以下信息</span>
+          </template>
+          <template #default>
+            <div class="qh-points">
+              <span
+                v-for="(point, idx) in currentCategoryHint"
+                :key="idx"
+                class="qh-point"
+                @click="insertHintText(point)"
+              >
+                + {{ point }}
+              </span>
+            </div>
+            <div class="qh-tip" v-if="selectedCategory === 'maintenance' || selectedCategory === 'safety' || selectedCategory === 'chassis'">
+              💡 点击上方要点可快速插入到问题描述中
+            </div>
+          </template>
+        </el-alert>
+
+        <div class="symptom-quick-tags" v-if="symptomQuickTags.length > 0">
+          <span class="sqt-label">🔧 快速选择症状（故障类）：</span>
+          <el-tag
+            v-for="(tag, i) in symptomQuickTags"
+            :key="i"
+            class="sqt-tag"
+            effect="plain"
+            size="small"
+            @click="appendSymptomTag(tag)"
+          >
+            {{ tag }}
+          </el-tag>
+        </div>
+
         <el-input
           v-model="questionDescription"
           type="textarea"
-          :rows="6"
-          placeholder="请详细描述你的汽车相关问题，包括：&#10;例如：「2023款丰田凯美瑞2.5L混动版，高速行驶时发动机介入瞬间有明显顿挫感，请问这正常吗？THS混动系统的工作原理是什么？」&#10;例如：「想买一台20万左右的家用SUV，关注油耗和安全性，纠结比亚迪宋PLUS DM-i和本田CR-V混动，能从技术角度分析一下各自的优缺点吗？」&#10;例如：「涡轮增压发动机在市区行驶是不是比较费油？保养费用是不是比自然吸气贵很多？」"
-          maxlength="1000"
+          :rows="7"
+          placeholder="请详细描述你的问题，越具体越容易获得精准解答。建议包含：&#10;✅ 故障类：异响/抖动/报警等症状 + 发生场景（冷车/热车/低速/高速/转弯/刹车）+ 出现频率 + 持续时间&#10;✅ 购车类：预算 + 用车场景 + 关注优先级（油耗/空间/动力/安全/可靠性）&#10;✅ 技术类：具体想了解的技术点 + 应用场景&#10;&#10;好例子：「2020款大众迈腾330TSI，行驶6.5万公里，最近冷车启动后刹车时有刺耳的尖叫声，热车后消失，轻踩刹车时明显，重踩反而没有。请问这是什么原因？需要立即维修吗？」&#10;坏例子：「刹车有异响」（信息太少，无法给出准确判断）"
+          maxlength="1500"
           show-word-limit
           :disabled="isGenerating"
           resize="vertical"
+          ref="questionInputRef"
         />
         <div class="quick-samples">
           <span class="sample-label">💡 快速体验：</span>
@@ -510,6 +556,49 @@
           <h3 class="result-section-title">{{ generatedResult.brandTechInsights.title }}</h3>
           <div class="brand-tech-content">
             <div class="bt-text">{{ generatedResult.brandTechInsights.content }}</div>
+          </div>
+        </div>
+
+        <div v-if="generatedResult.clarityFollowUp" class="result-section followup-section">
+          <div class="section-icon">💬</div>
+          <h3 class="result-section-title">{{ generatedResult.clarityFollowUp.title }}</h3>
+          <div class="followup-content">
+            <div class="fu-missing">
+              <div class="fu-label">📋 需要你补充的信息：</div>
+              <div class="fu-tags">
+                <el-tag
+                  v-for="(item, i) in generatedResult.clarityFollowUp.missingInfo"
+                  :key="i"
+                  type="warning"
+                  effect="dark"
+                  size="small"
+                  class="fu-tag"
+                >
+                  {{ item }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="fu-suggestions">
+              <div class="fu-label">💡 补充建议：</div>
+              <ul>
+                <li v-for="(s, i) in generatedResult.clarityFollowUp.suggestions" :key="i">{{ s }}</li>
+              </ul>
+            </div>
+            <div class="fu-sample">
+              <div class="fu-label">📝 {{ generatedResult.clarityFollowUp.isFault ? '故障描述参考示例' : '购车咨询参考示例' }}（可直接参考修改）：</div>
+              <div class="sample-box">
+                <div class="sample-text">{{ generatedResult.clarityFollowUp.sampleQuestion }}</div>
+                <el-button
+                  size="small"
+                  type="primary"
+                  :icon="DocumentCopy"
+                  @click="copyFollowUpSample"
+                  class="copy-sample-btn"
+                >
+                  复制示例
+                </el-button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -737,6 +826,13 @@ interface AnswerResult {
   suggestions: string[]
   warnings?: string[]
   maintenanceTips?: string[]
+  clarityFollowUp?: {
+    title: string
+    missingInfo: string[]
+    suggestions: string[]
+    sampleQuestion: string
+    isFault: boolean
+  }
 }
 
 interface HistoryItem {
@@ -980,6 +1076,20 @@ const quickSamples: QuickSample[] = [
     description: '看车的时候经常看到前悬挂是麦弗逊式独立悬挂，高配上是双叉臂或者多连杆。请问麦弗逊、双叉臂、多连杆这些悬挂类型在结构和实际驾驶感受上有什么区别？真的越复杂越好吗？',
     expert: 'chassis',
     vehicle: { brand: '宝马', model: '3系', year: 2023, displacement: '325Li' }
+  },
+  {
+    label: '刹车异响怎么办',
+    category: 'maintenance',
+    description: '2020款大众迈腾330TSI，行驶6.5万公里。最近冷车启动后刹车时有刺耳的尖叫声，热车后消失；轻踩刹车时明显，重踩反而没有；倒车时也经常响。刹车片上个月刚换的，修车师傅说还很厚。请问这是什么原因？需要立即维修吗？',
+    expert: 'maintenance',
+    vehicle: { brand: '大众', model: '迈腾', year: 2020, displacement: '330TSI', transmission: 'DCT', mileage: '6.5万' }
+  },
+  {
+    label: '变速箱顿挫正常吗',
+    category: 'transmission',
+    description: '2022款本田雅阁1.5T豪华版，CVT变速箱，行驶2.8万公里。最近发现低速（20-40km/h）跟车时有轻微顿挫，就像被轻轻拽了一下，尤其是收油再给油的时候比较明显。冷车时更明显，热车后好一些。这是CVT变速箱的通病吗？需要去检查吗？',
+    expert: 'powertrain',
+    vehicle: { brand: '本田', model: '雅阁', year: 2022, displacement: '1.5T', transmission: 'CVT', mileage: '2.8万' }
   }
 ]
 
@@ -1651,6 +1761,222 @@ const isGenerating = ref(false)
 const generatedResult = ref<AnswerResult | null>(null)
 const history = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
+const questionInputRef = ref<any>(null)
+
+const categoryHintBank: Record<string, string[]> = {
+  maintenance: [
+    '异响/故障/报警的具体症状（如：刺耳尖叫/沉闷摩擦声/金属撞击声）',
+    '发生场景（冷车/热车/低速/高速/转弯/刹车/倒车/起步）',
+    '出现频率和持续时间（一直有/偶尔/冷车才有/热车消失）',
+    '近期是否做过保养、更换过零件（如刹车片/机油/轮胎）',
+    '车辆里程、已使用年限'
+  ],
+  safety: [
+    '具体关注的安全配置或安全问题',
+    '涉及事故或碰撞的详细描述（车速/碰撞位置/人员情况）',
+    '是否有故障灯亮起（ABS/ESP/安全气囊等）',
+    '日常用车场景（城市通勤/高速多/山路多/家庭用车）'
+  ],
+  chassis: [
+    '具体症状描述（异响/抖动/跑偏/侧倾大/滤震差）',
+    '发生场景（过减速带/过坑/高速/转弯/烂路）',
+    '轮胎型号、里程、是否更换过',
+    '是否做过四轮定位、动平衡',
+    '近期是否有过托底、碰撞'
+  ],
+  transmission: [
+    '具体症状（顿挫/打滑/异响/升档慢/降档积极/闯动）',
+    '发生场景（冷车/热车/低速跟车/急加速/爬坡）',
+    '变速箱类型（如已知）、里程',
+    '变速箱油是否更换过、何时更换的',
+    '是否有故障灯亮起'
+  ],
+  engine: [
+    '具体症状（异响/抖动/动力下降/油耗升高/报警灯/冒烟）',
+    '发生场景（冷车启动/怠速/加速/高速巡航/熄火时）',
+    '机油标号、上次更换时间、目前里程',
+    '近期是否加过不同加油站的油',
+    '是否有故障码、故障灯亮起'
+  ],
+  nev: [
+    '具体问题（续航衰减/充电慢/动力异常/电池告警/异响）',
+    '电池类型（磷酸铁锂/三元锂）、里程、已使用年限',
+    '充电习惯（快充多/慢充多/是否经常用到低电量）',
+    '续航是市区还是高速、气温条件（冬季/夏季）',
+    '是否有故障码、OTA升级后是否出现问题'
+  ],
+  purchase: [
+    '购车预算范围（裸车/落地）',
+    '主要用车场景（城市通勤/高速多/家庭用车/商务）',
+    '关注优先级（油耗/空间/动力/安全/可靠性/品牌/保值率）',
+    '是否有特定意向车型、纠结的对比车型',
+    '能源类型偏好（燃油/混动/纯电/无偏好）'
+  ],
+  industry: [
+    '具体想了解的技术趋势或行业问题',
+    '关注的品牌、技术路线',
+    '用于学习研究/购车参考/行业了解'
+  ]
+}
+
+const currentCategoryHint = computed(() => categoryHintBank[selectedCategory.value] || null)
+
+const symptomTagBank: Record<string, string[]> = {
+  maintenance: [
+    '冷车异响', '热车异响', '刺耳尖叫声', '沉闷摩擦声', '金属撞击声',
+    '轻踩明显', '重踩消失', '倒车异响', '方向盘抖动', '故障灯亮'
+  ],
+  safety: ['ABS灯亮', 'ESP介入频繁', '气囊告警', '刹车距离变长', '车身不稳'],
+  chassis: ['过烂路异响', '过减速带异响', '高速抖动', '方向盘跑偏', '侧倾大'],
+  transmission: ['低速顿挫', '升档慢', '降档顿挫', '变速箱异响', '打滑感'],
+  engine: ['怠速抖动', '加速无力', '油耗升高', '机油告警', '发动机异响'],
+  nev: ['续航衰减', '充电慢', '电池告警', '动力下降', '冬季续航打折']
+}
+
+const symptomQuickTags = computed(() => {
+  const tags = symptomTagBank[selectedCategory.value]
+  if (!tags) return []
+  const q = questionDescription.value
+  return tags.filter(t => !q.includes(t))
+})
+
+const questionDescriptionQuality = computed(() => {
+  const q = questionDescription.value.trim()
+  if (!q) return 0
+  let score = 0
+  if (q.length >= 50) score++
+  if (q.length >= 100) score++
+  const hasVehicle = hasVehicleInfo.value
+  if (hasVehicle && vehicleInfoCompleteness.value >= 3) score++
+  if (/(冷车|热车|低速|高速|转弯|刹车|倒车|起步|怠速|加速)/.test(q)) score++
+  if (/(异响|抖动|顿挫|报警|灯亮|打滑|动力|油耗|续航)/.test(q)) score++
+  return Math.min(score, 5)
+})
+
+const questionQualityTip = computed(() => {
+  const s = questionDescriptionQuality.value
+  if (s === 0) return '请开始描述问题'
+  if (s <= 1) return '信息较少，建议补充症状和场景'
+  if (s <= 2) return '描述一般，建议增加发生场景'
+  if (s <= 3) return '描述较好，补充车辆信息后更佳'
+  if (s <= 4) return '描述完整，解答将较精准'
+  return '描述非常详细，解答将非常精准'
+})
+
+const insertHintText = (text: string) => {
+  if (!questionInputRef.value) return
+  const input = questionInputRef.value?.textareaRef || questionInputRef.value
+  const start = questionDescription.value.length
+  const prefix = questionDescription.value ? (questionDescription.value.endsWith('。') || questionDescription.value.endsWith('；') ? '' : '；') : ''
+  questionDescription.value = questionDescription.value + prefix + text + '：'
+  setTimeout(() => {
+    if (input?.focus) input.focus()
+  }, 50)
+}
+
+const appendSymptomTag = (tag: string) => {
+  const prefix = questionDescription.value ? (questionDescription.value.endsWith('，') || questionDescription.value.endsWith('。') || questionDescription.value.endsWith('；') ? '' : '，') : ''
+  questionDescription.value = questionDescription.value + prefix + tag
+}
+
+interface ClarityCheckResult {
+  isClear: boolean
+  missingInfo: string[]
+  suggestions: string[]
+}
+
+const checkQuestionClarity = (): ClarityCheckResult => {
+  const q = questionDescription.value.trim()
+  const missingInfo: string[] = []
+  const suggestions: string[] = []
+  let isClear = true
+
+  const isFaultQuestion = /(异响|故障|抖动|顿挫|报警|灯亮|打滑|漏油|漏水|过热|异味|冒烟)/.test(q)
+  const isPurchaseQuestion = /(买|选|对比|推荐|纠结|预算|哪款|怎么样|值不值)/.test(q)
+  const isBrakeFault = /(刹车|制动|手刹|脚刹)/.test(q)
+  const isTransmissionFault = /(变速箱|波箱|换挡|档位|顿挫)/.test(q)
+  const isEngineFault = /(发动机|引擎|缸|积碳|机油|怠速|加速无力)/.test(q)
+  const isSafetyRelated = isBrakeFault || /(转向|方向|跑偏)/.test(q)
+
+  if (!hasVehicleInfo.value || vehicleInfoCompleteness.value < 3) {
+    missingInfo.push('车辆信息（品牌/车型/年款）')
+    suggestions.push('补充车辆品牌、具体车型和年款，同款车不同年代款技术差异很大')
+    if (isFaultQuestion) isClear = false
+  }
+
+  if (isFaultQuestion) {
+    if (q.length < 50) {
+      isClear = false
+      missingInfo.push('故障症状的详细描述')
+    }
+
+    if (isBrakeFault) {
+      if (!/(刺耳|尖叫|尖锐|唧唧|吱|沉闷|咯噔|咚咚|金属|摩擦)/.test(q)) {
+        isClear = false
+        missingInfo.push('异响具体特征')
+        suggestions.push('描述刹车异响的声音类型：是刺耳尖叫声？沉闷摩擦声？还是金属撞击声？不同声音对应不同故障原因')
+      }
+      if (!/(轻踩|重踩|踩死|点刹|急刹|连续|倒车|驻车|停车瞬间)/.test(q)) {
+        isClear = false
+        missingInfo.push('踩刹车力度和时机')
+        suggestions.push('说明异响出现在轻踩刹车、重踩刹车、倒车刹车还是停车瞬间？不同时机原因完全不同')
+      }
+      if (!/(前刹|后刹|前轮|后轮|左边|右边|单侧|两侧)/.test(q)) {
+        missingInfo.push('异响位置')
+        suggestions.push('如果能分辨，说明异响来自前轮还是后轮？左侧还是右侧？有助于缩小排查范围')
+      }
+      if (!/(新换|刚换|换过|更换|原厂|品牌)/.test(q) && !vehicleInfo.value.mileage) {
+        suggestions.push('告知刹车片/盘是否更换过、车辆行驶里程，磨损是刹车异响的最常见原因')
+      }
+    } else if (isTransmissionFault) {
+      if (!/(低速|高速|升档|降档|换挡|收油|给油|爬坡|超车)/.test(q)) {
+        isClear = false
+        missingInfo.push('发生的具体工况')
+        suggestions.push('说明是低速跟车顿挫？升档/降档时顿挫？收油/给油时？爬坡时？不同工况对应不同原因')
+      }
+    } else if (isEngineFault) {
+      if (!/(冷车|热车|怠速|加速|匀速|收油|熄火|启动)/.test(q)) {
+        isClear = false
+        missingInfo.push('发动机工作状态')
+        suggestions.push('说明是冷车启动时？怠速时？加速时？还是匀速巡航时？发动机不同工况故障原因完全不同')
+      }
+    } else {
+      if (!/(冷车|热车|低速|高速|转弯|刹车|倒车|起步|怠速|加速|减速|满载|空载)/.test(q)) {
+        missingInfo.push('故障发生场景')
+        suggestions.push('描述症状出现在什么工况下（冷车/热车？低速/高速？刹车/转弯/倒车？）')
+      }
+    }
+
+    if (!/(一直|经常|偶尔|有时|冷车才有|热车消失|越来越严重|突然出现|慢慢出现)/.test(q)) {
+      missingInfo.push('故障出现频率和趋势')
+      suggestions.push('说明症状是一直有、偶尔出现、冷车才有热车消失？是突然出现的还是越来越严重？')
+    }
+
+    if (isSafetyRelated) {
+      isClear = false
+      if (!missingInfo.includes('安全提示')) {
+        suggestions.unshift('⚠️ 刹车/转向系统直接关系行车安全，如症状明显请立即前往正规维修厂检修，切勿仅凭网络建议判断')
+      }
+    }
+  }
+
+  if (isPurchaseQuestion) {
+    if (!/(万|预算|价格|价位)/.test(q)) {
+      missingInfo.push('购车预算')
+      suggestions.push('告知你的预算范围（裸车/落地），推荐才会更精准')
+    }
+    if (!/(家用|通勤|高速|长途|商务|家庭|代步|越野)/.test(q)) {
+      missingInfo.push('主要用车场景')
+      suggestions.push('说明主要用车场景（城市通勤/高速多/家庭几人使用？），不同场景选车标准不同')
+    }
+    if (!/(油耗|空间|动力|安全|可靠|保养|品牌|保值|配置)/.test(q)) {
+      missingInfo.push('关注优先级')
+      suggestions.push('说明你最看重什么（油耗/空间/动力/安全/可靠性/品牌），好帮你权衡取舍')
+    }
+  }
+
+  return { isClear, missingInfo, suggestions }
+}
 
 const currentStep = computed(() => {
   if (generatedResult.value && !isGenerating.value) return 3
@@ -1727,6 +2053,8 @@ const generateAnswer = () => {
     return
   }
 
+  const clarity = checkQuestionClarity()
+
   isGenerating.value = true
   generatedResult.value = null
 
@@ -1740,6 +2068,76 @@ const generateAnswer = () => {
 
     const vInfo = buildVehicleInfoWithSummary()
     const vehicleContext = buildVehicleContextText(vInfo)
+
+    const q = questionDescription.value.trim()
+    const isFaultQuestion = /(异响|故障|抖动|顿挫|报警|灯亮|打滑|漏油|漏水|过热|异味|冒烟)/.test(q)
+    const isPurchaseQuestion = /(买|选|对比|推荐|纠结|预算|哪款|怎么样|值不值)/.test(q)
+
+    if (!clarity.isClear && (isFaultQuestion || isPurchaseQuestion)) {
+      let sampleQuestion = ''
+      let followUpTitle = ''
+
+      if (isFaultQuestion) {
+        followUpTitle = '🔍 故障描述信息不足，请补充以下信息后我才能给出准确判断'
+        const vBrand = vehicleInfo.value.brand || '大众'
+        const vModel = vehicleInfo.value.model || '迈腾'
+        const vYear = vehicleInfo.value.year || 2020
+        const vMileage = vehicleInfo.value.mileage || '5万'
+        if (/刹车/.test(q)) {
+          sampleQuestion = `好例子：「${vYear}款${vBrand}${vModel}，行驶${vMileage}公里，最近冷车启动后刹车时有刺耳的尖叫声，热车后消失；轻踩刹车时明显，重踩反而没有；倒车时也经常响。刹车片上个月刚换的。请问这是什么原因？」`
+        } else if (/变速箱|波箱/.test(q)) {
+          sampleQuestion = `好例子：「${vYear}款${vBrand}${vModel}，${vMileage}公里，CVT变速箱。最近低速20-40km/h跟车时有轻微顿挫，收油再给油时明显，冷车更严重。请问这正常吗？需要检查吗？」`
+        } else if (/发动机/.test(q)) {
+          sampleQuestion = `好例子：「${vYear}款${vBrand}${vModel}，${vMileage}公里。最近冷车启动怠速抖动明显，热车后好转；加速时感觉动力不如以前，油耗也升高了1个多油。机油是5000公里前刚换的。请问可能是什么问题？」`
+        } else {
+          sampleQuestion = `好例子：「${vYear}款${vBrand}${vModel}，行驶${vMileage}公里。最近【描述具体症状】，在【冷车/热车/低速/高速/刹车/转弯】时出现，【一直有/偶尔出现/越来越严重】。请问这是什么原因？」`
+        }
+      } else {
+        followUpTitle = '🔍 购车咨询信息不足，请补充以下信息以便给出精准推荐'
+        sampleQuestion = `好例子：「预算15-20万落地，主要城市通勤偶尔高速，家里3口人，最看重油耗和安全性，纠结丰田凯美瑞和本田雅阁。请问哪个更适合？」`
+      }
+
+      const followUpResult: AnswerResult = {
+        category,
+        expert,
+        vehicleInfo: vInfo,
+        answer: `我注意到你描述的信息还不够详细，汽车故障诊断和购车推荐非常依赖具体信息。为了给你准确、可落地的建议，而不是泛泛而谈的通用内容，请补充以下信息：\n\n${clarity.suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n💡 你可以直接参考下面的好例子进行补充，也可以修改上面的问题描述后重新生成。`,
+        principle: {
+          title: '为什么需要这些信息？',
+          detail: `汽车是高度复杂的机械系统，同一品牌的不同年款、不同配置，技术方案可能完全不同。\n\n例如：\n• 2019款大众迈腾用DQ380变速箱，2023款已升级为DQ381，故障模式完全不同\n• 同一款车的CVT和AT变速箱，异响原因和解决方案天差地别\n• 刹车片异响在3万公里和10万公里的车上，可能的原因完全相反\n• 同样是15万预算，城市通勤和高速为主的选车标准截然不同\n\n提供的信息越具体，我的分析就越精准，才能真正帮你解决实际问题。`
+        },
+        suggestions: [
+          '补充车辆品牌、具体车型和年款（最关键）',
+          '详细描述故障症状或具体需求（50字以上）',
+          '说明发生场景和频率（冷车/热车/低速/高速？偶尔/一直？）',
+          '告知近期是否做过保养、更换过相关零件'
+        ],
+        clarityFollowUp: {
+          title: followUpTitle,
+          missingInfo: clarity.missingInfo,
+          suggestions: clarity.suggestions,
+          sampleQuestion,
+          isFault: isFaultQuestion
+        }
+      }
+
+      generatedResult.value = followUpResult
+
+      const historyItem: HistoryItem = {
+        category,
+        expert,
+        vehicleInfo: vInfo,
+        description: questionDescription.value,
+        result: followUpResult,
+        time: new Date().toISOString()
+      }
+      history.value.push(historyItem)
+      saveHistory()
+
+      isGenerating.value = false
+      ElMessage.warning('信息不够详细，已为你生成补充建议')
+      return
+    }
 
     let result: AnswerResult
 
@@ -1995,6 +2393,16 @@ const copyResult = () => {
   navigator.clipboard.writeText(text).then(() => {
     ElMessage.success('已复制全部内容')
   })
+}
+
+const copyFollowUpSample = () => {
+  if (!generatedResult.value?.clarityFollowUp?.sampleQuestion) return
+  const sampleText = generatedResult.value.clarityFollowUp.sampleQuestion.replace(/^好例子：「|」$/g, '')
+  questionDescription.value = sampleText
+  ElMessage.success('已载入示例，请修改为你的实际情况后重新生成')
+  setTimeout(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, 200)
 }
 
 const clearHistory = () => {
@@ -2581,6 +2989,121 @@ onMounted(() => {
 
 .vehicle-form {
   margin-top: 8px;
+}
+
+.followup-section {
+  background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
+  padding: 20px;
+  border-radius: 12px;
+  border-left: 4px solid #fa8c16;
+  margin-bottom: 20px;
+}
+
+.followup-content {
+  margin-top: 12px;
+}
+
+.fu-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.fu-missing {
+  margin-bottom: 16px;
+}
+
+.fu-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fu-tag {
+  cursor: default;
+}
+
+.fu-suggestions {
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #ffe58f;
+}
+
+.fu-suggestions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.fu-suggestions li {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #606266;
+}
+
+.fu-sample {
+  padding: 12px 16px;
+  background: #f6ffed;
+  border-radius: 8px;
+  border: 1px solid #b7eb8f;
+}
+
+.sample-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.sample-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #529b2e;
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 6px;
+  white-space: pre-wrap;
+}
+
+.copy-sample-btn {
+  flex-shrink: 0;
+}
+
+.quick-fill-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: #e6f7ff;
+  border-radius: 8px;
+  border: 1px solid #91d5ff;
+}
+
+.qf-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1890ff;
+  margin-bottom: 8px;
+}
+
+.qf-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.qf-tag {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qf-tag:hover {
+  background: #1890ff;
+  color: #fff;
+  border-color: #1890ff;
+  transform: translateY(-1px);
 }
 
 .input-section {
