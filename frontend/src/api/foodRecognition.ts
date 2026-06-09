@@ -15,6 +15,22 @@ export interface CookingMethod {
   description: string
 }
 
+export interface RegionalVersion {
+  region: string
+  regionIcon: string
+  cuisine: string
+  mainIngredients: Ingredient[]
+  cookingMethods: CookingMethod[]
+  flavor: string
+  description: string
+  difficulty: string
+  cookingTime: string
+  calories: string
+  nutritionalInfo: string
+  cookingTips: string[]
+  isDefault?: boolean
+}
+
 export interface FoodRecognitionResult {
   dishName: string
   englishName: string
@@ -31,6 +47,7 @@ export interface FoodRecognitionResult {
   similarDishes: string[]
   cookingTips: string[]
   dietaryTags: string[]
+  regionalVersions?: RegionalVersion[]
 }
 
 export const foodRecognitionApi = {

@@ -10,6 +10,22 @@ export interface CookingMethod {
   description: string;
 }
 
+export interface RegionalVersion {
+  region: string;
+  regionIcon: string;
+  cuisine: string;
+  mainIngredients: Ingredient[];
+  cookingMethods: CookingMethod[];
+  flavor: string;
+  description: string;
+  difficulty: string;
+  cookingTime: string;
+  calories: string;
+  nutritionalInfo: string;
+  cookingTips: string[];
+  isDefault?: boolean;
+}
+
 export interface FoodRecognitionResult {
   dishName: string;
   englishName: string;
@@ -26,6 +42,7 @@ export interface FoodRecognitionResult {
   similarDishes: string[];
   cookingTips: string[];
   dietaryTags: string[];
+  regionalVersions?: RegionalVersion[];
 }
 
 @Injectable()
@@ -60,7 +77,94 @@ export class FoodRecognitionService {
         '火候要大，动作要快',
         '调味汁比例：醋2:糖1:生抽1:老抽少许'
       ],
-      dietaryTags: ['高蛋白', '微辣', '下饭菜']
+      dietaryTags: ['高蛋白', '微辣', '下饭菜'],
+      regionalVersions: [
+        {
+          region: '四川原版',
+          regionIcon: '🌶️',
+          cuisine: '川菜',
+          mainIngredients: [
+            { name: '鸡腿肉', probability: 0.95 },
+            { name: '花生米', probability: 0.95 },
+            { name: '干辣椒', probability: 0.9 },
+            { name: '汉源花椒', probability: 0.9 },
+            { name: '葱白', probability: 0.8 },
+            { name: '泡椒', probability: 0.75 }
+          ],
+          cookingMethods: [
+            { name: '爆炒', description: '川菜正宗做法，讲究小煎小炒，火候要猛，出勺要快' }
+          ],
+          flavor: '麻辣鲜香，酸甜微辣，糊辣味明显',
+          description: '正宗川菜宫保鸡丁使用鸡腿肉，讲究小煎小炒，麻辣鲜香酸甜平衡，糊辣味是其灵魂，花生酥脆是关键。',
+          difficulty: '较难',
+          cookingTime: '15分钟',
+          calories: '约380千卡/份',
+          nutritionalInfo: '高蛋白、适中脂肪、富含维生素',
+          cookingTips: [
+            '用鸡腿肉比鸡胸肉更嫩更有口感',
+            '干辣椒要炒至棕红色，发出糊辣味',
+            '一定要用汉源花椒，麻味才正',
+            '调味汁比例：醋3:糖2:生抽2:老抽少许:淀粉1'
+          ],
+          isDefault: true
+        },
+        {
+          region: '山东鲁菜版',
+          regionIcon: '🏔️',
+          cuisine: '鲁菜',
+          mainIngredients: [
+            { name: '鸡胸肉', probability: 0.95 },
+            { name: '花生米', probability: 0.9 },
+            { name: '荸荠', probability: 0.8 },
+            { name: '胡萝卜', probability: 0.75 },
+            { name: '青椒', probability: 0.7 },
+            { name: '葱姜蒜', probability: 0.8 }
+          ],
+          cookingMethods: [
+            { name: '滑炒', description: '鲁菜做法，鸡丁先滑油，配料更丰富，口味偏酱香' }
+          ],
+          flavor: '咸鲜酱香，微甜微辣',
+          description: '鲁菜版宫保鸡丁传说是丁宝桢在山东时所创，配料更丰富，使用荸荠增加爽脆口感，口味偏酱香。',
+          difficulty: '中等',
+          cookingTime: '20分钟',
+          calories: '约340千卡/份',
+          nutritionalInfo: '高蛋白、多种维生素',
+          cookingTips: [
+            '鸡丁滑油时油温不要太高，保持嫩滑',
+            '荸荠切片增加爽脆口感',
+            '鲁菜版突出酱香，可加少许甜面酱',
+            '花生可以用油炸的更酥脆'
+          ]
+        },
+        {
+          region: '贵州版',
+          regionIcon: '🍶',
+          cuisine: '贵州菜',
+          mainIngredients: [
+            { name: '鸡腿肉', probability: 0.95 },
+            { name: '花生米', probability: 0.9 },
+            { name: '糍粑辣椒', probability: 0.95 },
+            { name: '蒜瓣', probability: 0.8 },
+            { name: '姜片', probability: 0.75 },
+            { name: '青蒜', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '爆炒', description: '贵州版用糍粑辣椒代替干辣椒，辣度更高，香气更浓' }
+          ],
+          flavor: '香辣浓郁，咸鲜带酸',
+          description: '贵州版宫保鸡丁使用糍粑辣椒，辣度更高更香浓，加醋提鲜，是丁宝桢家乡贵州的传统做法。',
+          difficulty: '中等',
+          cookingTime: '18分钟',
+          calories: '约360千卡/份',
+          nutritionalInfo: '高蛋白、维生素丰富',
+          cookingTips: [
+            '糍粑辣椒要自己做才正宗，用干辣椒、姜、蒜一起捣碎',
+            '贵州版喜欢放少许醋提鲜',
+            '青蒜段最后放，增加清香',
+            '可以用本地土鸡，肉质更鲜美'
+          ]
+        }
+      ]
     },
     {
       dishName: '红烧肉',
@@ -92,7 +196,97 @@ export class FoodRecognitionService {
         '加开水没过肉块，慢炖1小时以上',
         '最后大火收汁，色泽更红亮'
       ],
-      dietaryTags: ['经典名菜', '肥而不腻', '宴席菜']
+      dietaryTags: ['经典名菜', '肥而不腻', '宴席菜'],
+      regionalVersions: [
+        {
+          region: '江浙沪版',
+          regionIcon: '🏮',
+          cuisine: '江浙菜',
+          mainIngredients: [
+            { name: '五花肉', probability: 0.98 },
+            { name: '冰糖', probability: 0.95 },
+            { name: '生抽', probability: 0.85 },
+            { name: '老抽', probability: 0.85 },
+            { name: '绍兴料酒', probability: 0.9 },
+            { name: '八角', probability: 0.75 },
+            { name: '生姜', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '红烧', description: '炒糖色后加绍兴酒慢炖，色泽红亮，甜咸并重' }
+          ],
+          flavor: '甜咸适中，入口即化，酒香浓郁',
+          description: '本帮红烧肉浓油赤酱，加入绍兴酒炖煮，肥而不腻，甜中带咸，是江浙地区最经典的做法。',
+          difficulty: '中等',
+          cookingTime: '90分钟',
+          calories: '约580千卡/份',
+          nutritionalInfo: '高脂肪、优质蛋白质、胶原蛋白丰富',
+          cookingTips: [
+            '一定要用绍兴料酒，去腥增香效果最佳',
+            '冰糖炒糖色是上色的关键',
+            '小火慢炖至少1.5小时，肉才会酥烂',
+            '收汁时要不停翻动防止粘锅'
+          ],
+          isDefault: true
+        },
+        {
+          region: '川湘版',
+          regionIcon: '🌶️',
+          cuisine: '川湘菜',
+          mainIngredients: [
+            { name: '五花肉', probability: 0.98 },
+            { name: '干辣椒', probability: 0.9 },
+            { name: '豆瓣酱', probability: 0.85 },
+            { name: '花椒', probability: 0.75 },
+            { name: '生抽', probability: 0.8 },
+            { name: '八角', probability: 0.7 },
+            { name: '大蒜', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '红烧', description: '先煸出油，加豆瓣酱干辣椒炒香，再加水炖煮' }
+          ],
+          flavor: '咸鲜微辣，酱香浓郁',
+          description: '川湘口味的红烧肉加入豆瓣酱和干辣椒，口感更丰富，辣中带香，适合重口味食客。',
+          difficulty: '中等',
+          cookingTime: '75分钟',
+          calories: '约560千卡/份',
+          nutritionalInfo: '高脂肪、优质蛋白质',
+          cookingTips: [
+            '五花肉先煸炒出多余油脂，吃起来不腻',
+            '豆瓣酱要小火炒出红油',
+            '干辣椒和花椒根据个人口味调整',
+            '最后大火收汁时注意不要糊锅'
+          ]
+        },
+        {
+          region: '东北版',
+          regionIcon: '❄️',
+          cuisine: '东北菜',
+          mainIngredients: [
+            { name: '五花肉', probability: 0.98 },
+            { name: '土豆', probability: 0.9 },
+            { name: '鹌鹑蛋', probability: 0.8 },
+            { name: '生抽', probability: 0.85 },
+            { name: '老抽', probability: 0.8 },
+            { name: '冰糖', probability: 0.7 },
+            { name: '葱姜', probability: 0.75 }
+          ],
+          cookingMethods: [
+            { name: '红烧', description: '肉块与土豆、鹌鹑蛋一起炖煮，菜肉一锅出' }
+          ],
+          flavor: '咸鲜入味，分量十足',
+          description: '东北红烧肉喜欢搭配土豆、鹌鹑蛋一起炖，菜肉混合，汤汁浓郁，是地道的东北家常硬菜。',
+          difficulty: '简单',
+          cookingTime: '60分钟',
+          calories: '约520千卡/份',
+          nutritionalInfo: '高脂肪、优质蛋白质、碳水化合物',
+          cookingTips: [
+            '土豆切大块，耐炖不易碎',
+            '鹌鹑蛋提前煮熟去壳',
+            '汤汁要宽一些，可以拌饭',
+            '东北做法不用放太多糖，以咸鲜为主'
+          ]
+        }
+      ]
     },
     {
       dishName: '麻婆豆腐',
@@ -154,7 +348,94 @@ export class FoodRecognitionService {
         '蔬菜丝要均匀',
         '大火快炒保持爽脆'
       ],
-      dietaryTags: ['经典川菜', '酸甜', '下饭菜']
+      dietaryTags: ['经典川菜', '酸甜', '下饭菜'],
+      regionalVersions: [
+        {
+          region: '四川原版',
+          regionIcon: '🌶️',
+          cuisine: '川菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.95 },
+            { name: '鱼泡椒', probability: 0.9 },
+            { name: '水发木耳', probability: 0.85 },
+            { name: '胡萝卜', probability: 0.7 },
+            { name: '四川豆瓣酱', probability: 0.88 },
+            { name: '葱姜蒜', probability: 0.8 }
+          ],
+          cookingMethods: [
+            { name: '爆炒', description: '四川传统做法，鱼泡椒和豆瓣酱是灵魂，大火快炒' }
+          ],
+          flavor: '鱼香味浓郁，咸甜酸辣兼备',
+          description: '正宗四川鱼香肉丝的灵魂是鱼泡椒，咸甜酸辣四味俱全，肉丝嫩滑，是川菜调味的巅峰之作。',
+          difficulty: '较难',
+          cookingTime: '25分钟',
+          calories: '约340千卡/份',
+          nutritionalInfo: '高蛋白、多种维生素',
+          cookingTips: [
+            '一定要用四川鱼泡椒，这是鱼香味的来源',
+            '鱼香汁比例：醋3:糖2:生抽2:淀粉1',
+            '肉丝用料酒、盐、淀粉腌制15分钟',
+            '全程大火快炒，出勺要快'
+          ],
+          isDefault: true
+        },
+        {
+          region: '北方家常版',
+          regionIcon: '🏠',
+          cuisine: '北方家常菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.92 },
+            { name: '胡萝卜', probability: 0.95 },
+            { name: '木耳', probability: 0.85 },
+            { name: '青椒', probability: 0.9 },
+            { name: '鸡蛋', probability: 0.75 },
+            { name: '番茄酱', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '爆炒', description: '北方改良版，蔬菜更多，口味偏酸甜，番茄酱提色' }
+          ],
+          flavor: '酸甜可口，微辣开胃',
+          description: '北方家常版鱼香肉丝减少了辣味，增加了蔬菜比例，用番茄酱提色，酸甜开胃，更适合北方口味。',
+          difficulty: '简单',
+          cookingTime: '15分钟',
+          calories: '约280千卡/份',
+          nutritionalInfo: '高蛋白、多种维生素、膳食纤维丰富',
+          cookingTips: [
+            '蔬菜丝可以多放一些，营养更均衡',
+            '番茄酱少许提色，不要放太多',
+            '北方人吃可以少放或不放辣椒',
+            '可以加鸡蛋增加口感层次'
+          ]
+        },
+        {
+          region: '广东改良版',
+          regionIcon: '🌴',
+          cuisine: '粤菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.9 },
+            { name: '茭白', probability: 0.85 },
+            { name: '冬笋', probability: 0.8 },
+            { name: '木耳', probability: 0.75 },
+            { name: '红椒', probability: 0.65 },
+            { name: '鲍鱼汁', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '滑炒', description: '粤菜做法，肉丝先滑油，配料更精致，口感清淡' }
+          ],
+          flavor: '清淡鲜甜，微酸微辣',
+          description: '粤式鱼香肉丝更讲究食材的鲜嫩，使用冬笋、茭白等时令蔬菜，口味清淡鲜甜，保留了鱼香的基本味道但更温和。',
+          difficulty: '中等',
+          cookingTime: '20分钟',
+          calories: '约300千卡/份',
+          nutritionalInfo: '高蛋白、低脂肪、时令蔬菜',
+          cookingTips: [
+            '肉丝先滑油至8分熟，保持嫩滑',
+            '冬笋和茭白要焯水去除涩味',
+            '调味以清淡为主，不要太咸太辣',
+            '可用鲍鱼汁或蚝油增加鲜味'
+          ]
+        }
+      ]
     },
     {
       dishName: '水煮鱼',
@@ -245,7 +526,97 @@ export class FoodRecognitionService {
         '糖醋汁比例：番茄酱3:糖2:醋1:水适量',
         '汁要快速翻炒均匀出锅'
       ],
-      dietaryTags: ['酸甜', '老少皆宜', '宴客菜']
+      dietaryTags: ['酸甜', '老少皆宜', '宴客菜'],
+      regionalVersions: [
+        {
+          region: '山东原版',
+          regionIcon: '🏔️',
+          cuisine: '鲁菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.95 },
+            { name: '白糖', probability: 0.95 },
+            { name: '米醋', probability: 0.9 },
+            { name: '番茄酱', probability: 0.7 },
+            { name: '淀粉', probability: 0.9 },
+            { name: '鸡蛋', probability: 0.75 },
+            { name: '葱姜水', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '炸+溜', description: '正宗鲁菜做法，讲究外酥里嫩，糖醋汁不用番茄酱，用糖和醋调汁' }
+          ],
+          flavor: '酸甜浓郁，外酥里嫩，色泽金黄',
+          description: '正宗鲁菜糖醋里脊不用番茄酱，只用白糖和米醋调出天然的酸甜味，讲究外酥里嫩，是鲁菜经典代表之一。',
+          difficulty: '较难',
+          cookingTime: '30分钟',
+          calories: '约500千卡/份',
+          nutritionalInfo: '高蛋白、高碳水',
+          cookingTips: [
+            '鲁菜版糖醋汁讲究糖和醋的比例，糖:醋=3:2',
+            '里脊肉要顶刀切，切断纤维',
+            '炸两遍：第一遍低温炸熟，第二遍高温复炸酥脆',
+            '不用番茄酱，保持传统味道'
+          ],
+          isDefault: true
+        },
+        {
+          region: '东北锅包肉版',
+          regionIcon: '❄️',
+          cuisine: '东北菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.95 },
+            { name: '土豆淀粉', probability: 0.95 },
+            { name: '白糖', probability: 0.9 },
+            { name: '9度米醋', probability: 0.9 },
+            { name: '胡萝卜丝', probability: 0.8 },
+            { name: '葱姜丝', probability: 0.8 },
+            { name: '香菜', probability: 0.75 }
+          ],
+          cookingMethods: [
+            { name: '炸+烹', description: '东北锅包肉是糖醋里脊的亲戚，用土豆淀粉挂糊，烹汁法制作' }
+          ],
+          flavor: '酸甜酥脆，外焦里嫩，果香浓郁',
+          description: '锅包肉是糖醋里脊的东北改良版，用土豆淀粉挂糊炸至金黄酥脆，酸甜汁烹入，搭配葱姜丝、胡萝卜丝，是东北最经典的名菜。',
+          difficulty: '较难',
+          cookingTime: '35分钟',
+          calories: '约520千卡/份',
+          nutritionalInfo: '高蛋白、高碳水',
+          cookingTips: [
+            '一定要用土豆淀粉，玉米淀粉不酥脆',
+            '挂糊要厚，像酸奶一样的稠度',
+            '肉片要大片，约0.5厘米厚',
+            '烹汁时大火，快速翻勺出锅'
+          ]
+        },
+        {
+          region: '广东菠萝咕噜肉版',
+          regionIcon: '🍍',
+          cuisine: '粤菜',
+          mainIngredients: [
+            { name: '猪里脊肉', probability: 0.9 },
+            { name: '菠萝', probability: 0.95 },
+            { name: '番茄酱', probability: 0.95 },
+            { name: '白糖', probability: 0.85 },
+            { name: '白醋', probability: 0.8 },
+            { name: '青红椒', probability: 0.8 },
+            { name: '淀粉', probability: 0.9 }
+          ],
+          cookingMethods: [
+            { name: '炸+炒', description: '粤式做法，加入菠萝、青红椒，果香浓郁，酸甜适中' }
+          ],
+          flavor: '酸甜果香，外酥里嫩，色彩丰富',
+          description: '菠萝咕噜肉是粤式改良版，加入新鲜菠萝和青红椒，果香浓郁，酸甜更柔和，色彩丰富，老少皆宜。',
+          difficulty: '中等',
+          cookingTime: '25分钟',
+          calories: '约450千卡/份',
+          nutritionalInfo: '高蛋白、高碳水、维生素丰富',
+          cookingTips: [
+            '菠萝要用盐水浸泡30分钟去涩',
+            '番茄酱要多放一些，色泽更红亮',
+            '青红椒最后放，保持脆嫩',
+            '可以加少许喼汁增加风味'
+          ]
+        }
+      ]
     },
     {
       dishName: '青椒土豆丝',
@@ -511,7 +882,94 @@ export class FoodRecognitionService {
         '调碗汁翻炒更均匀',
         '青椒最后放保持脆嫩'
       ],
-      dietaryTags: ['素菜', '东北菜', '下饭']
+      dietaryTags: ['素菜', '东北菜', '下饭'],
+      regionalVersions: [
+        {
+          region: '东北原版',
+          regionIcon: '❄️',
+          cuisine: '东北菜',
+          mainIngredients: [
+            { name: '紫皮茄子', probability: 0.99 },
+            { name: '黄心土豆', probability: 0.99 },
+            { name: '薄皮青椒', probability: 0.95 },
+            { name: '大蒜', probability: 0.85 },
+            { name: '东北大酱', probability: 0.75 },
+            { name: '生抽', probability: 0.7 }
+          ],
+          cookingMethods: [
+            { name: '炸+炒', description: '正宗东北做法，茄子土豆过油炸至金黄，再用大酱爆锅翻炒' }
+          ],
+          flavor: '咸香浓郁，酱香味足，软糯入味',
+          description: '正宗东北地三鲜讲究茄子、土豆、青椒三种时蔬，过油炸至金黄，用东北大酱爆锅，咸香浓郁，是东北最经典的素菜。',
+          difficulty: '中等',
+          cookingTime: '30分钟',
+          calories: '约380千卡/份',
+          nutritionalInfo: '多种蔬菜、碳水化合物、维生素丰富',
+          cookingTips: [
+            '一定要用东北紫皮茄子，口感最软糯',
+            '黄心土豆比白心土豆更面更好吃',
+            '茄子切滚刀块后撒盐腌10分钟去水',
+            '东北大酱是灵魂，不可缺少'
+          ],
+          isDefault: true
+        },
+        {
+          region: '南方家常版',
+          regionIcon: '🌿',
+          cuisine: '南方家常菜',
+          mainIngredients: [
+            { name: '长茄子', probability: 0.95 },
+            { name: '土豆', probability: 0.95 },
+            { name: '青椒', probability: 0.85 },
+            { name: '彩椒', probability: 0.6 },
+            { name: '蚝油', probability: 0.75 },
+            { name: '蒜末', probability: 0.8 }
+          ],
+          cookingMethods: [
+            { name: '少油煸炒', description: '南方改良版，少油煸炒更健康，加蚝油提鲜' }
+          ],
+          flavor: '清淡鲜香，清爽不油腻',
+          description: '南方地三鲜减少用油量，用煸炒代替油炸，加入蚝油提鲜，口味更清淡，适合追求健康的吃法。',
+          difficulty: '简单',
+          cookingTime: '20分钟',
+          calories: '约260千卡/份',
+          nutritionalInfo: '低油、多种蔬菜、维生素丰富',
+          cookingTips: [
+            '茄子可以用微波炉加热3分钟代替油炸',
+            '加彩椒增加色泽和营养',
+            '蚝油提鲜，不用放太多盐',
+            '南方人吃可以加少许糖提鲜'
+          ]
+        },
+        {
+          region: '川渝麻辣版',
+          regionIcon: '🌶️',
+          cuisine: '川菜',
+          mainIngredients: [
+            { name: '茄子', probability: 0.98 },
+            { name: '土豆', probability: 0.95 },
+            { name: '尖椒', probability: 0.9 },
+            { name: '干辣椒', probability: 0.85 },
+            { name: '花椒', probability: 0.8 },
+            { name: '豆瓣酱', probability: 0.8 }
+          ],
+          cookingMethods: [
+            { name: '干煸+炒', description: '川渝改良版，加入豆瓣酱、干辣椒、花椒，麻辣鲜香' }
+          ],
+          flavor: '麻辣鲜香，开胃下饭',
+          description: '川渝版地三鲜加入豆瓣酱、干辣椒、花椒，麻辣鲜香，更重口味，是下饭神器。',
+          difficulty: '中等',
+          cookingTime: '22分钟',
+          calories: '约320千卡/份',
+          nutritionalInfo: '多种蔬菜、维生素',
+          cookingTips: [
+            '豆瓣酱要小火炒出红油',
+            '干辣椒和花椒最后放增香',
+            '喜欢更辣的可以加小米椒',
+            '川渝版不需要放糖，突出麻辣'
+          ]
+        }
+      ]
     },
     {
       dishName: '白切鸡',

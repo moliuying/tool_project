@@ -207,7 +207,7 @@
       </el-col>
     </el-row>
 
-    <el-card class="result-card" v-if="recognitionResult">
+    <el-card class="result-card" v-if="recognitionResult && currentDisplayData">
       <template #header>
         <div class="card-header">
           <el-icon :size="20" color="#165DFF">
@@ -226,6 +226,26 @@
         </div>
       </template>
 
+      <div class="region-selector" v-if="hasRegionalVersions">
+        <div class="region-selector-header">
+          <el-icon :size="18" color="#e6a23c"><Location /></el-icon>
+          <span class="region-selector-title">选择地区版本</span>
+          <el-tag size="small" type="info">不同地区做法差异较大</el-tag>
+        </div>
+        <div class="region-tabs">
+          <div
+            v-for="(version, idx) in recognitionResult.regionalVersions"
+            :key="version.region"
+            :class="['region-tab', { active: activeRegionIndex === idx }]"
+            @click="activeRegionIndex = idx"
+          >
+            <span class="region-icon">{{ version.regionIcon }}</span>
+            <span class="region-name">{{ version.region }}</span>
+            <el-tag v-if="version.isDefault" size="small" type="warning" effect="dark">推荐</el-tag>
+          </div>
+        </div>
+      </div>
+
       <el-row :gutter="24">
         <el-col :span="8">
           <div class="dish-main-info">
@@ -234,7 +254,7 @@
               <p class="dish-english">{{ recognitionResult.englishName }}</p>
             </div>
             <div class="dish-tags">
-              <el-tag size="small" type="primary">{{ recognitionResult.cuisine }}</el-tag>
+              <el-tag size="small" type="primary">{{ currentDisplayData.cuisine }}</el-tag>
               <el-tag
                 size="small"
                 v-for="tag in recognitionResult.dietaryTags"
@@ -244,23 +264,23 @@
                 {{ tag }}
               </el-tag>
             </div>
-            <p class="dish-description">{{ recognitionResult.description }}</p>
+            <p class="dish-description">{{ currentDisplayData.description }}</p>
 
             <div class="dish-meta">
               <div class="meta-item">
                 <el-icon><Timer /></el-icon>
                 <span class="meta-label">烹饪时长:</span>
-                <span class="meta-value">{{ recognitionResult.cookingTime }}</span>
+                <span class="meta-value">{{ currentDisplayData.cookingTime }}</span>
               </div>
               <div class="meta-item">
                 <el-icon><Medal /></el-icon>
                 <span class="meta-label">难度:</span>
-                <span class="meta-value">{{ recognitionResult.difficulty }}</span>
+                <span class="meta-value">{{ currentDisplayData.difficulty }}</span>
               </div>
               <div class="meta-item">
                 <el-icon><Flame /></el-icon>
                 <span class="meta-label">热量:</span>
-                <span class="meta-value">{{ recognitionResult.calories }}</span>
+                <span class="meta-value">{{ currentDisplayData.calories }}</span>
               </div>
             </div>
           </div>
@@ -272,7 +292,7 @@
               <div class="ingredients-list">
                 <div
                   class="ingredient-item"
-                  v-for="ing in recognitionResult.mainIngredients"
+                  v-for="ing in currentDisplayData.mainIngredients"
                   :key="ing.name"
                 >
                   <div class="ingredient-info">
@@ -295,7 +315,7 @@
               <div class="cooking-methods">
                 <div
                   class="method-item"
-                  v-for="method in recognitionResult.cookingMethods"
+                  v-for="method in currentDisplayData.cookingMethods"
                   :key="method.name"
                 >
                   <div class="method-header">
@@ -307,7 +327,7 @@
               </div>
               <div class="flavor-info">
                 <span class="flavor-label">口味特点:</span>
-                <el-tag type="warning" size="large">{{ recognitionResult.flavor }}</el-tag>
+                <el-tag type="warning" size="large">{{ currentDisplayData.flavor }}</el-tag>
               </div>
             </el-tab-pane>
 
@@ -317,7 +337,7 @@
                   <el-icon :size="32" color="#67c23a"><Medal /></el-icon>
                   <div class="nutrition-content">
                     <div class="nutrition-label">营养特点</div>
-                    <div class="nutrition-value">{{ recognitionResult.nutritionalInfo }}</div>
+                    <div class="nutrition-value">{{ currentDisplayData.nutritionalInfo }}</div>
                   </div>
                 </div>
               </div>
@@ -327,7 +347,7 @@
               <div class="cooking-tips">
                 <div
                   class="tip-item"
-                  v-for="(tip, idx) in recognitionResult.cookingTips"
+                  v-for="(tip, idx) in currentDisplayData.cookingTips"
                   :key="idx"
                 >
                   <div class="tip-bullet">{{ idx + 1 }}</div>
@@ -422,7 +442,7 @@ import {
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { UploadFile } from 'element-plus'
-import { foodRecognitionApi, type FoodRecognitionResult } from '@/api/foodRecognition'
+import { foodRecognitionApi, type FoodRecognitionResult, type RegionalVersion } from '@/api/foodRecognition'
 
 interface HistoryItem {
   image: string
@@ -444,9 +464,35 @@ const progressPercent = ref(0)
 const progressStatus = ref('准备中...')
 const recognitionResult = ref<FoodRecognitionResult | null>(null)
 const activeTab = ref('ingredients')
+const activeRegionIndex = ref(0)
 
 const recognizeHistory = ref<HistoryItem[]>([])
 const showAllHistory = ref(false)
+
+const hasRegionalVersions = computed(() => {
+  return recognitionResult.value?.regionalVersions && recognitionResult.value.regionalVersions.length > 0
+})
+
+const currentDisplayData = computed(() => {
+  if (!recognitionResult.value) return null
+  if (hasRegionalVersions.value && recognitionResult.value.regionalVersions) {
+    const version = recognitionResult.value.regionalVersions[activeRegionIndex.value]
+    return {
+      ...recognitionResult.value,
+      cuisine: version.cuisine,
+      mainIngredients: version.mainIngredients,
+      cookingMethods: version.cookingMethods,
+      flavor: version.flavor,
+      description: version.description,
+      difficulty: version.difficulty,
+      cookingTime: version.cookingTime,
+      calories: version.calories,
+      nutritionalInfo: version.nutritionalInfo,
+      cookingTips: version.cookingTips
+    }
+  }
+  return recognitionResult.value
+})
 
 const currentStep = computed(() => {
   if (recognitionResult.value) return 2
@@ -596,6 +642,13 @@ const startRecognize = async () => {
     const { data } = await foodRecognitionApi.recognizeFood(sourceImage.value)
     recognitionResult.value = data
 
+    if (data.regionalVersions && data.regionalVersions.length > 0) {
+      const defaultIndex = data.regionalVersions.findIndex(v => v.isDefault)
+      activeRegionIndex.value = defaultIndex >= 0 ? defaultIndex : 0
+    } else {
+      activeRegionIndex.value = 0
+    }
+
     clearInterval(progressTimer)
     progressPercent.value = 100
     progressStatus.value = '识别完成！'
@@ -606,8 +659,11 @@ const startRecognize = async () => {
       time: new Date().toISOString()
     })
 
+    const versionInfo = data.regionalVersions && data.regionalVersions.length > 0
+      ? `，共 ${data.regionalVersions.length} 个地区版本`
+      : ''
     ElMessage.success({
-      message: `🎉 识别成功！这是「${data.dishName}」`,
+      message: `🎉 识别成功！这是「${data.dishName}」${versionInfo}`,
       type: 'success',
       duration: 3000,
       showClose: true
@@ -630,6 +686,7 @@ const resetAll = () => {
   progressPercent.value = 0
   progressStatus.value = ''
   activeTab.value = 'ingredients'
+  activeRegionIndex.value = 0
 }
 
 const loadHistory = () => {
@@ -668,6 +725,14 @@ const clearHistory = () => {
 const loadFromHistory = (item: HistoryItem) => {
   sourceImage.value = item.image
   recognitionResult.value = item.result
+
+  if (item.result.regionalVersions && item.result.regionalVersions.length > 0) {
+    const defaultIndex = item.result.regionalVersions.findIndex(v => v.isDefault)
+    activeRegionIndex.value = defaultIndex >= 0 ? defaultIndex : 0
+  } else {
+    activeRegionIndex.value = 0
+  }
+
   const img = new Image()
   img.onload = () => {
     imageWidth.value = img.width
@@ -999,6 +1064,73 @@ onMounted(() => {
 
 .result-card {
   margin-bottom: 24px;
+}
+
+.region-selector {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fdf6ec 0%, #faecd8 100%);
+  border-radius: 12px;
+  border: 1px solid #f5dab1;
+}
+
+.region-selector-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #b88230;
+}
+
+.region-selector-header .el-tag {
+  margin-left: auto;
+  font-weight: normal;
+}
+
+.region-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.region-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fff;
+  border: 2px solid #e4e7ed;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.region-tab:hover {
+  border-color: #e6a23c;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.15);
+}
+
+.region-tab.active {
+  background: linear-gradient(135deg, #ff9c6e 0%, #e6a23c 100%);
+  border-color: #e6a23c;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(230, 162, 60, 0.3);
+}
+
+.region-tab.active .el-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #fff !important;
+}
+
+.region-icon {
+  font-size: 20px;
 }
 
 .dish-main-info {
@@ -1355,6 +1487,23 @@ onMounted(() => {
 
   .result-tabs {
     padding-left: 0;
+  }
+
+  .region-tabs {
+    flex-direction: column;
+  }
+
+  .region-tab {
+    justify-content: center;
+  }
+
+  .region-selector-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .region-selector-header .el-tag {
+    margin-left: 0;
   }
 }
 </style>
