@@ -6,14 +6,71 @@
           <el-icon :size="20" color="#165DFF">
             <InfoFilled />
           </el-icon>
-          <span>功能说明</span>
+          <span>功能说明 · 科学依据 · 适用人群</span>
         </div>
       </template>
+
+      <el-alert type="info" :closable="false" show-icon class="intro-alert">
+        <template #title>
+          <strong>热情耐心的健身指导者，提供专业计划与营养建议</strong>
+        </template>
+        基于 ACSM（美国运动医学会）运动指南与《中国居民膳食指南》，为您量身定制科学、安全、高效的健身方案。
+      </el-alert>
+
+      <el-collapse v-model="activeCollapse" class="intro-collapse">
+        <el-collapse-item title="📚 计划制定依据" name="basis">
+          <ul class="basis-list">
+            <li v-for="(item, i) in staticPlanBasis" :key="i">
+              <el-tag size="small" type="primary" effect="plain">{{ i + 1 }}</el-tag>
+              <span>{{ item }}</span>
+            </li>
+          </ul>
+        </el-collapse-item>
+
+        <el-collapse-item title="✅ 适用人群与边界" name="scope">
+          <div class="scope-section">
+            <h4 class="scope-title">
+              <el-icon color="#67c23a"><CircleCheckFilled /></el-icon>
+              适用人群
+            </h4>
+            <div class="scope-tags">
+              <el-tag v-for="p in staticApplicablePeople" :key="p" type="success" effect="plain">{{ p }}</el-tag>
+            </div>
+          </div>
+          <div class="scope-section">
+            <h4 class="scope-title not-applicable">
+              <el-icon color="#f56c6c"><CircleCloseFilled /></el-icon>
+              不适用人群 / 需医生指导
+            </h4>
+            <div class="scope-tags">
+              <el-tag v-for="p in staticNotApplicablePeople" :key="p" type="danger" effect="plain">{{ p }}</el-tag>
+            </div>
+          </div>
+          <div class="scope-section">
+            <h4 class="scope-title">
+              <el-icon color="#e6a23c"><WarningFilled /></el-icon>
+              使用边界说明
+            </h4>
+            <ul class="boundary-list">
+              <li v-for="(b, i) in staticBoundaries" :key="i">{{ b }}</li>
+            </ul>
+          </div>
+        </el-collapse-item>
+
+        <el-collapse-item title="⚠️ 免责声明" name="disclaimer">
+          <el-alert type="warning" :closable="false" show-icon>
+            <template #title>
+              {{ staticDisclaimer }}
+            </template>
+          </el-alert>
+        </el-collapse-item>
+      </el-collapse>
+
       <el-steps :active="currentStep" finish-status="success" simple class="intro-steps">
-        <el-step title="填写个人信息" description="年龄、性别、身高、体重" />
-        <el-step title="选择健身目标" description="增肌、减脂、塑形或提升体能" />
-        <el-step title="设置训练条件" description="每周可训练天数、每次时长、训练场景" />
-        <el-step title="获取专属计划" description="AI 为你生成科学的训练方案" />
+        <el-step title="填写个人信息" description="含特殊健康状况" />
+        <el-step title="选择健身目标" description="增肌、减脂、塑形等" />
+        <el-step title="设置训练条件" description="天数、时长、场景" />
+        <el-step title="获取专属计划" description="含安全警示与调整" />
       </el-steps>
     </el-card>
 
@@ -32,7 +89,7 @@
         ref="formRef"
         :model="formData"
         :rules="formRules"
-        label-width="120px"
+        label-width="140px"
         :disabled="isGenerating"
       >
         <el-row :gutter="24">
@@ -155,6 +212,38 @@
           </el-radio-group>
         </el-form-item>
 
+        <el-form-item label="特殊健康状况" prop="healthConditions">
+          <el-checkbox-group v-model="formData.healthConditions">
+            <el-checkbox
+              v-for="opt in healthConditionOptions"
+              :key="opt.value"
+              :value="opt.value"
+              :border="true"
+              :size="'default'"
+            >
+              {{ opt.label }}
+              <el-tag
+                v-if="opt.risk === 'high'"
+                size="small"
+                type="danger"
+                effect="dark"
+                style="margin-left: 4px"
+              >高风险</el-tag>
+              <el-tag
+                v-else
+                size="small"
+                type="warning"
+                effect="plain"
+                style="margin-left: 4px"
+              >需注意</el-tag>
+            </el-checkbox>
+          </el-checkbox-group>
+          <div class="form-hint">
+            <el-icon :size="14" color="#e6a23c"><WarningFilled /></el-icon>
+            如有特殊健康状况，系统会自动调整训练强度和动作，并生成专项警示建议。高风险状况（高血压、心脏病、孕期、糖尿病）建议先咨询医生。
+          </div>
+        </el-form-item>
+
         <div class="form-actions">
           <el-button
             type="success"
@@ -182,11 +271,66 @@
           <span class="dot"></span>
         </div>
         <span class="generating-text">💪 正在为你定制专属健身方案</span>
-        <span class="generating-hint">AI 正在分析你的身体数据和训练目标…</span>
+        <span class="generating-hint">AI 正在分析你的身体数据、训练目标及健康状况…</span>
       </div>
     </div>
 
     <div v-if="fitnessPlan && !isGenerating" class="result-area" :class="{ 'result-appear': resultAppearTrigger }">
+      <el-alert
+        v-if="fitnessPlan.disclaimer"
+        :type="hasHighRiskWarning ? 'error' : 'warning'"
+        :closable="false"
+        show-icon
+        class="disclaimer-alert"
+      >
+        <template #title>
+          <strong>{{ hasHighRiskWarning ? '⚠️ 重要安全提醒' : '📌 免责声明' }}</strong>
+        </template>
+        {{ fitnessPlan.disclaimer }}
+      </el-alert>
+
+      <el-card v-if="fitnessPlan.healthWarnings && fitnessPlan.healthWarnings.length > 0" class="health-warnings-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon :size="20" color="#f56c6c">
+              <WarningFilled />
+            </el-icon>
+            <span>特殊健康状况专项警示</span>
+            <el-tag size="small" type="danger">请仔细阅读</el-tag>
+          </div>
+        </template>
+
+        <div class="health-warnings">
+          <div
+            v-for="(warn, index) in fitnessPlan.healthWarnings"
+            :key="index"
+            class="health-warning-item"
+            :class="warn.severity"
+          >
+            <div class="warning-header">
+              <el-icon :size="18" :color="warn.severity === 'high' ? '#f56c6c' : '#e6a23c'">
+                <CircleCheckFilled v-if="warn.severity !== 'high'" />
+                <WarningFilled v-else />
+              </el-icon>
+              <span class="warning-condition">{{ warn.condition }}</span>
+              <el-tag :type="warn.severity === 'high' ? 'danger' : 'warning'" effect="dark" size="small">
+                {{ warn.severity === 'high' ? '高风险' : '中风险' }}
+              </el-tag>
+            </div>
+            <div class="warning-text">
+              <el-icon :size="14" :color="warn.severity === 'high' ? '#f56c6c' : '#e6a23c'"><Warning /></el-icon>
+              {{ warn.warning }}
+            </div>
+            <ul class="warning-suggestions">
+              <li v-for="(s, i) in warn.suggestions" :key="i">
+                <el-icon :size="12" color="#67c23a"><Select /></el-icon>
+                {{ s }}
+              </li>
+            </ul>
+          </div>
+        </div>
+      </el-card>
+
       <el-card class="profile-card">
         <template #header>
           <div class="card-header">
@@ -235,6 +379,13 @@
             </div>
           </el-col>
         </el-row>
+        <div v-if="fitnessPlan.userProfile.healthConditions && fitnessPlan.userProfile.healthConditions.length > 0" class="user-conditions">
+          <el-icon color="#e6a23c" :size="14"><WarningFilled /></el-icon>
+          <span class="conditions-label">已标记健康状况：</span>
+          <el-tag v-for="c in fitnessPlan.userProfile.healthConditions" :key="c" size="small" type="warning" effect="plain">
+            {{ c }}
+          </el-tag>
+        </div>
       </el-card>
 
       <el-card class="overview-card">
@@ -414,7 +565,10 @@
             </template>
             <ul class="advice-list">
               <li v-for="(tip, index) in fitnessPlan.nutritionAdvice" :key="index">
-                <el-icon color="#e6a23c" :size="14"><Star /></el-icon>
+                <el-icon :color="tip.startsWith('⚠️') ? '#f56c6c' : '#e6a23c'" :size="14">
+                  <WarningFilled v-if="tip.startsWith('⚠️')" />
+                  <Star v-else />
+                </el-icon>
                 <span>{{ tip }}</span>
               </li>
             </ul>
@@ -439,6 +593,23 @@
           </el-card>
         </el-col>
       </el-row>
+
+      <el-card v-if="fitnessPlan.planBasis && fitnessPlan.planBasis.length > 0" class="basis-card">
+        <template #header>
+          <div class="card-header">
+            <el-icon :size="20" color="#165DFF">
+              <Reading />
+            </el-icon>
+            <span>本计划制定依据</span>
+          </div>
+        </template>
+        <ul class="basis-list compact">
+          <li v-for="(item, i) in fitnessPlan.planBasis" :key="i">
+            <el-tag size="small" type="primary" effect="plain">{{ i + 1 }}</el-tag>
+            <span>{{ item }}</span>
+          </li>
+        </ul>
+      </el-card>
 
       <el-card class="beginner-card">
         <template #header>
@@ -494,7 +665,10 @@ import {
   Star,
   Warning,
   WarningFilled,
-  Reading
+  Reading,
+  CircleCheckFilled,
+  CircleCloseFilled,
+  Select
 } from '@element-plus/icons-vue'
 import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
 import {
@@ -502,6 +676,8 @@ import {
   FitnessGoal,
   Gender,
   TrainingScene,
+  HealthCondition,
+  healthConditionOptions,
   type FitnessPlan as FitnessPlanType,
   type CreateFitnessPlanDto
 } from '@/api/fitness'
@@ -510,6 +686,7 @@ const formRef = ref<FormInstance>()
 const isGenerating = ref(false)
 const fitnessPlan = ref<FitnessPlanType | null>(null)
 const resultAppearTrigger = ref(false)
+const activeCollapse = ref<string[]>([])
 
 const formData = reactive<CreateFitnessPlanDto>({
   age: 25,
@@ -519,8 +696,52 @@ const formData = reactive<CreateFitnessPlanDto>({
   goal: FitnessGoal.FITNESS_IMPROVEMENT,
   availableDaysPerWeek: 3,
   availableMinutesPerSession: 60,
-  trainingScene: TrainingScene.BOTH
+  trainingScene: TrainingScene.BOTH,
+  healthConditions: []
 })
+
+const staticPlanBasis = [
+  'ACSM（美国运动医学会）运动测试与处方指南',
+  '《中国居民膳食指南（2022）》营养建议标准',
+  'BMI（身体质量指数）与 BMR（基础代谢率）科学计算',
+  '渐进超负荷原则与周期化训练理论',
+  '针对不同目标（增肌/减脂/塑形/体能）的训练分化方法',
+  '家庭与健身房双场景的动作适配与替代方案',
+  '特殊健康状况的运动禁忌与安全调整指南'
+]
+
+const staticApplicablePeople = [
+  '健身新手（无训练经验）',
+  '想要减脂塑形的人群',
+  '希望增肌增重的人群',
+  '忙碌的职场人士',
+  '产后恢复人群（6个月后，无特殊并发症）',
+  '中老年健身爱好者',
+  '轻度肥胖人群（BMI 28-32）',
+  '希望提升体能和运动表现的爱好者'
+]
+
+const staticNotApplicablePeople = [
+  '严重心脏病患者（未经医生许可）',
+  '孕期女性（尤其是孕早期与孕晚期，需产科医生许可）',
+  '未控制的重度高血压患者（血压>160/100）',
+  '严重骨质疏松且有骨折史者',
+  '急性损伤期或术后恢复期患者',
+  '严重糖尿病并发症患者',
+  '严重关节疾病急性期患者',
+  '哮喘急性发作期',
+  '医生明确建议禁止运动者'
+]
+
+const staticBoundaries = [
+  '本计划基于通用健身科学原理，不替代专业医疗诊断与建议',
+  '特殊健康状况会自动降低强度并过滤禁忌动作，但仍建议在医生/康复师指导下进行',
+  '训练中如出现剧烈疼痛、头晕、胸闷、气短等症状，请立即停止并就医',
+  '本工具适合 BMI 16-35 范围人群，超出范围建议咨询专业人士',
+  '健身效果因个体基因、作息、饮食执行度等因素存在差异，需长期坚持'
+]
+
+const staticDisclaimer = '本工具生成的健身计划基于通用运动科学原理，仅供参考，不构成医疗建议或诊断。如有慢性疾病、运动损伤史或特殊身体状况，请务必咨询医生或专业康复师后再开始训练。训练过程中请以身体感受为准，量力而行，如出现不适请立即停止并寻求专业帮助。'
 
 const formRules: FormRules = {
   age: [{ required: true, message: '请输入年龄', trigger: 'blur' }],
@@ -553,6 +774,11 @@ const currentStep = computed(() => {
   return step
 })
 
+const hasHighRiskWarning = computed(() => {
+  if (!fitnessPlan.value?.healthWarnings) return false
+  return fitnessPlan.value.healthWarnings.some(w => w.severity === 'high')
+})
+
 const getBmiClass = (bmi: number): string => {
   if (bmi < 18.5) return 'warning'
   if (bmi < 24) return 'success'
@@ -577,6 +803,7 @@ const resetForm = () => {
   formData.availableDaysPerWeek = 3
   formData.availableMinutesPerSession = 60
   formData.trainingScene = TrainingScene.BOTH
+  formData.healthConditions = []
   fitnessPlan.value = null
   resultAppearTrigger.value = false
   ElMessage.success('表单已重置')
@@ -596,15 +823,19 @@ const generatePlan = async () => {
   resultAppearTrigger.value = false
 
   try {
-    const { data } = await fitnessApi.generatePlan({ ...formData })
+    const payload = { ...formData }
+    if (!payload.healthConditions || payload.healthConditions.length === 0) {
+      delete payload.healthConditions
+    }
+    const { data } = await fitnessApi.generatePlan(payload)
     fitnessPlan.value = data
     nextTick(() => {
       resultAppearTrigger.value = true
     })
     ElMessage.success({
-      message: '💪 专属健身计划已生成！',
-      type: 'success',
-      duration: 2500,
+      message: hasHighRiskMessage(data),
+      type: hasHighRiskWarningData(data) ? 'warning' : 'success',
+      duration: 3000,
       showClose: true
     })
   } catch (error: any) {
@@ -612,6 +843,17 @@ const generatePlan = async () => {
   } finally {
     isGenerating.value = false
   }
+}
+
+const hasHighRiskWarningData = (data: FitnessPlanType) => {
+  return data.healthWarnings?.some(w => w.severity === 'high')
+}
+
+const hasHighRiskMessage = (data: FitnessPlanType) => {
+  if (hasHighRiskWarningData(data)) {
+    return '⚠️ 已根据你的健康状况调整计划，请务必阅读安全警示并咨询医生'
+  }
+  return '💪 专属健身计划已生成！请仔细阅读安全提示'
 }
 </script>
 
@@ -626,8 +868,74 @@ const generatePlan = async () => {
   margin-bottom: 24px;
 }
 
+.intro-alert {
+  margin-bottom: 20px;
+}
+
+.intro-collapse {
+  margin-bottom: 20px;
+}
+
+.intro-collapse :deep(.el-collapse-item__header) {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.basis-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.basis-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.basis-list.compact li {
+  padding: 5px 0;
+  font-size: 13px;
+}
+
+.scope-section {
+  margin-bottom: 20px;
+}
+
+.scope-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+
+.scope-title.not-applicable {
+  color: #f56c6c;
+}
+
+.scope-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.boundary-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.8;
+}
+
 .intro-steps {
-  padding: 10px 0;
+  padding: 10px 0 0 0;
+  border-top: 1px solid #ebeef5;
 }
 
 .card-header {
@@ -647,6 +955,16 @@ const generatePlan = async () => {
   margin-left: 8px;
   color: #909399;
   font-size: 14px;
+}
+
+.form-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #909399;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  line-height: 1.6;
 }
 
 .form-actions {
@@ -741,12 +1059,103 @@ const generatePlan = async () => {
   }
 }
 
+.disclaimer-alert {
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.health-warnings-card {
+  margin-bottom: 24px;
+  border: 1px solid #fde2e2;
+  background: linear-gradient(135deg, #fef0f0 0%, #fff 100%);
+}
+
+.health-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.health-warning-item {
+  padding: 16px 20px;
+  border-radius: 10px;
+  border-left: 4px solid;
+  background: #fff;
+}
+
+.health-warning-item.high {
+  border-left-color: #f56c6c;
+  background: linear-gradient(135deg, #fef0f0 0%, #fff 100%);
+}
+
+.health-warning-item.medium {
+  border-left-color: #e6a23c;
+  background: linear-gradient(135deg, #fdf6ec 0%, #fff 100%);
+}
+
+.warning-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.warning-condition {
+  font-size: 16px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.warning-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
+.warning-suggestions {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.warning-suggestions li {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  color: #606266;
+  padding: 4px 0;
+  line-height: 1.6;
+}
+
 .profile-card,
 .overview-card,
 .weekly-plan-card,
 .cycle-plan-card,
-.beginner-card {
+.beginner-card,
+.basis-card {
   margin-bottom: 24px;
+}
+
+.user-conditions {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed #ebeef5;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.conditions-label {
+  color: #606266;
+  font-weight: 500;
 }
 
 .nutrition-card,

@@ -4,6 +4,7 @@ import {
   FitnessGoal,
   Gender,
   TrainingScene,
+  HealthCondition,
 } from './dto/create-fitness-plan.dto';
 
 export interface Exercise {
@@ -38,7 +39,21 @@ export interface CyclePhase {
   tips: string[];
 }
 
+export interface HealthWarning {
+  condition: string;
+  severity: 'high' | 'medium' | 'low';
+  warning: string;
+  suggestions: string[];
+}
+
 export interface FitnessPlan {
+  planBasis: string[];
+  applicableScope: {
+    suitableFor: string[];
+    notSuitableFor: string[];
+    boundaries: string[];
+  };
+  disclaimer: string;
   userProfile: {
     age: number;
     gender: Gender;
@@ -49,6 +64,7 @@ export interface FitnessPlan {
     bmr: number;
     goal: FitnessGoal;
     goalLabel: string;
+    healthConditions: string[];
   };
   trainingOverview: {
     frequency: string;
@@ -66,26 +82,37 @@ export interface FitnessPlan {
   };
   nutritionAdvice: string[];
   safetyTips: string[];
+  healthWarnings: HealthWarning[];
   beginnerTips: string[];
 }
 
 @Injectable()
 export class FitnessService {
   generatePlan(dto: CreateFitnessPlanDto): FitnessPlan {
+    const healthConditions = dto.healthConditions || [];
+    const hasHighRiskCondition = this.hasHighRiskCondition(healthConditions);
+
     const bmi = this.calculateBMI(dto.weight, dto.height);
     const bmiCategory = this.getBMICategory(bmi);
     const bmr = this.calculateBMR(dto.weight, dto.height, dto.age, dto.gender);
     const goalLabel = this.getGoalLabel(dto.goal);
     const sceneLabel = this.getSceneLabel(dto.trainingScene || TrainingScene.BOTH);
-    const intensityLevel = this.determineIntensity(dto.age, bmi, dto.goal);
+    const intensityLevel = this.determineIntensity(dto.age, bmi, dto.goal, healthConditions);
 
-    const weeklyPlan = this.generateWeeklyPlan(dto);
-    const cyclePlan = this.generateCyclePlan(dto.goal, dto.age);
-    const nutritionAdvice = this.generateNutritionAdvice(dto.goal, bmr, bmi);
-    const safetyTips = this.generateSafetyTips(dto.age, bmi, dto.goal);
+    const weeklyPlan = this.generateWeeklyPlan(dto, healthConditions);
+    const cyclePlan = this.generateCyclePlan(dto.goal, dto.age, healthConditions);
+    const nutritionAdvice = this.generateNutritionAdvice(dto.goal, bmr, bmi, healthConditions);
+    const safetyTips = this.generateSafetyTips(dto.age, bmi, dto.goal, healthConditions);
+    const healthWarnings = this.generateHealthWarnings(healthConditions);
     const beginnerTips = this.generateBeginnerTips();
+    const planBasis = this.getPlanBasis();
+    const applicableScope = this.getApplicableScope();
+    const disclaimer = this.getDisclaimer(hasHighRiskCondition);
 
     return {
+      planBasis,
+      applicableScope,
+      disclaimer,
       userProfile: {
         age: dto.age,
         gender: dto.gender,
@@ -96,6 +123,7 @@ export class FitnessService {
         bmr,
         goal: dto.goal,
         goalLabel,
+        healthConditions: healthConditions.map(c => this.getHealthConditionLabel(c)),
       },
       trainingOverview: {
         frequency: this.getFrequencyLabel(dto.availableDaysPerWeek),
@@ -110,8 +138,89 @@ export class FitnessService {
       cyclePlan,
       nutritionAdvice,
       safetyTips,
+      healthWarnings,
       beginnerTips,
     };
+  }
+
+  private getPlanBasis(): string[] {
+    return [
+      '基于国际运动医学学会 (ACSM) 运动测试与处方指南制定',
+      '参考中国居民膳食指南（2022）营养建议',
+      '结合 BMI 身体质量指数和 BMR 基础代谢率科学计算',
+      '根据每周训练天数自动选择最佳训练分化模式（全身/上下肢/推拉腿）',
+      '训练动作按目标肌群、器械可获得性（家庭/健身房）分类匹配',
+      '强度安排遵循循序渐进原则，避免过度训练和运动损伤',
+      '周期规划采用「适应-进阶-巩固」三阶段模型，符合人体运动适应规律',
+    ];
+  }
+
+  private getApplicableScope(): { suitableFor: string[]; notSuitableFor: string[]; boundaries: string[] } {
+    return {
+      suitableFor: [
+        '18-60 岁健康成年人，无严重慢性疾病或运动禁忌症',
+        '健身新手，希望获得科学入门指导',
+        '减脂人群（BMI 18.5-35），希望通过运动配合饮食控制体重',
+        '增肌爱好者（BMI 17-28），希望系统提升肌肉量和力量',
+        '塑形人群，希望改善体态、均衡发展各肌群',
+        '忙碌职场人士，时间有限但希望保持规律运动',
+        '家庭健身爱好者，使用徒手或简易器械训练',
+        '健身房训练者，希望获得分化训练计划',
+      ],
+      notSuitableFor: [
+        '孕妇（孕期运动需在产科医生和专业产前教练指导下进行）',
+        '产后 6 周以内人群（需经医生评估后逐步恢复）',
+        '严重心血管疾病患者（心梗、心衰、严重心律失常等）',
+        '未控制的严重高血压患者（静息血压 > 180/110 mmHg）',
+        '急性损伤期或术后恢复期患者',
+        '严重骨关节疾病（如严重关节炎、股骨头坏死等）',
+        '糖尿病视网膜病变、糖尿病足等严重并发症患者',
+        '严重肥胖（BMI > 40）需医生评估后制定方案',
+        '存在其他医生认为不适合运动的疾病状况者',
+      ],
+      boundaries: [
+        '本计划为通用参考模板，不能替代医生或专业康复师的个性化指导',
+        '如存在特殊健康状况，请在开始训练前咨询医生或专业人士',
+        '如训练中出现胸痛、严重呼吸困难、头晕等症状，应立即停止并就医',
+        '计划效果因人而异，受基因、饮食、睡眠、执行程度等多种因素影响',
+        '建议每 4-8 周评估身体变化，调整训练方案以避免平台期',
+      ],
+    };
+  }
+
+  private getDisclaimer(hasHighRisk: boolean): string {
+    if (hasHighRisk) {
+      return '⚠️ 重要提示：您勾选了特殊健康状况，本计划已根据常规情况进行了适度调整，但仍强烈建议您在开始任何运动计划前，先咨询主治医生或专业康复医师的意见。如训练过程中出现不适，请立即停止并就医。';
+    }
+    return '免责声明：本健身计划由 AI 基于通用运动科学原理生成，仅供参考学习使用，不构成医疗建议或诊断。运动前请确保自身健康状况良好，如有任何疑问请咨询专业医生或持证健身教练。';
+  }
+
+  private getHealthConditionLabel(condition: HealthCondition): string {
+    const labels: Record<HealthCondition, string> = {
+      [HealthCondition.KNEE_INJURY]: '膝盖损伤',
+      [HealthCondition.WAIST_INJURY]: '腰部损伤',
+      [HealthCondition.SHOULDER_INJURY]: '肩部损伤',
+      [HealthCondition.HYPERTENSION]: '高血压',
+      [HealthCondition.HEART_DISEASE]: '心脏疾病',
+      [HealthCondition.DIABETES]: '糖尿病',
+      [HealthCondition.PREGNANCY]: '孕期',
+      [HealthCondition.POSTPARTUM]: '产后恢复',
+      [HealthCondition.OBESITY]: '重度肥胖',
+      [HealthCondition.ARTHRITIS]: '关节炎',
+      [HealthCondition.OSTEOPOROSIS]: '骨质疏松',
+      [HealthCondition.ASTHMA]: '哮喘',
+      [HealthCondition.NONE]: '无特殊状况',
+    };
+    return labels[condition];
+  }
+
+  private hasHighRiskCondition(conditions: HealthCondition[]): boolean {
+    const highRisk = [
+      HealthCondition.HEART_DISEASE,
+      HealthCondition.PREGNANCY,
+      HealthCondition.HYPERTENSION,
+    ];
+    return conditions.some(c => highRisk.includes(c));
   }
 
   private calculateBMI(weight: number, height: number): number {
@@ -158,22 +267,237 @@ export class FitnessService {
     return '高频次（每周 5-7 次）';
   }
 
-  private determineIntensity(age: number, bmi: number, goal: FitnessGoal): string {
-    if (age > 50 || bmi >= 30) return '低强度起步，循序渐进';
-    if (age > 40 || bmi >= 28) return '中低强度，注意保护关节';
+  private determineIntensity(age: number, bmi: number, goal: FitnessGoal, healthConditions: HealthCondition[]): string {
+    if (healthConditions.includes(HealthCondition.HEART_DISEASE) ||
+        healthConditions.includes(HealthCondition.PREGNANCY)) {
+      return '极低强度，务必先咨询医生';
+    }
+    if (healthConditions.includes(HealthCondition.HYPERTENSION) ||
+        healthConditions.includes(HealthCondition.DIABETES)) {
+      return '低强度起步，严格监测身体指标';
+    }
+    if (age > 50 || bmi >= 30 || healthConditions.includes(HealthCondition.OBESITY)) {
+      return '低强度起步，循序渐进';
+    }
+    if (age > 40 || bmi >= 28 || healthConditions.includes(HealthCondition.KNEE_INJURY) ||
+        healthConditions.includes(HealthCondition.WAIST_INJURY) ||
+        healthConditions.includes(HealthCondition.ARTHRITIS)) {
+      return '中低强度，注意保护关节';
+    }
     if (goal === FitnessGoal.FAT_LOSS) return '中高强度，注重心率控制';
     if (goal === FitnessGoal.MUSCLE_GAIN) return '中高强度，注重渐进超负荷';
     return '中等强度，持续提升';
   }
 
-  private generateWeeklyPlan(dto: CreateFitnessPlanDto): WeeklyPlan {
+  private generateHealthWarnings(conditions: HealthCondition[]): HealthWarning[] {
+    const warnings: HealthWarning[] = [];
+
+    if (conditions.includes(HealthCondition.KNEE_INJURY)) {
+      warnings.push({
+        condition: '膝盖损伤',
+        severity: 'medium',
+        warning: '膝关节为负重关节，损伤后需特别注意运动方式的选择',
+        suggestions: [
+          '避免深蹲、弓步蹲、跳跃类、登山机、楼梯机等对膝盖压力大的动作',
+          '用坐姿腿屈伸、坐姿腿弯举替代站立训练',
+          '优先选择游泳、椭圆机、骑自行车（调高坐垫）等低冲击有氧运动',
+          '运动时佩戴护膝，加强股四头肌和腘绳肌的力量训练以稳定膝关节',
+          '如出现膝盖疼痛、肿胀、弹响等症状，立即停止训练并就医',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.WAIST_INJURY)) {
+      warnings.push({
+        condition: '腰部损伤',
+        severity: 'medium',
+        warning: '腰部是连接上下肢的枢纽，损伤后需严格避免加重腰椎负担的动作',
+        suggestions: [
+          '禁止硬拉、负重体前屈、仰卧起坐（卷腹）、悬垂举腿等对腰部压力大的动作',
+          '核心训练以平板支撑、死虫式、鸟狗式等静态或低负荷动作为主',
+          '深蹲时注意背部挺直，不要弯腰负重',
+          '训练前充分热身腰部，训练后及时拉伸放松',
+          '日常注意坐姿，避免久坐，每隔 45-60 分钟起身活动',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.HYPERTENSION)) {
+      warnings.push({
+        condition: '高血压',
+        severity: 'high',
+        warning: '剧烈运动可能导致血压骤升，存在心脑血管风险',
+        suggestions: [
+          '‼️ 训练前请确保静息血压低于 160/100 mmHg，如高于此值请勿训练',
+          '避免憋气发力（如大重量深蹲、硬拉），这会显著升高血压',
+          '避免需要头部低于心脏的体位（如下斜卧推、倒立）',
+          '避免竞技性、爆发性运动，选择持续温和的有氧运动（快走、慢跑、游泳、骑车）',
+          '运动强度控制在最大心率的 50-65%（最大心率 ≈ 220 - 年龄）',
+          '训练前后监测血压，运动中如感到头痛、头晕、心慌立即停止',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.HEART_DISEASE)) {
+      warnings.push({
+        condition: '心脏疾病',
+        severity: 'high',
+        warning: '不恰当的运动可能诱发心肌缺血、心律失常等严重后果',
+        suggestions: [
+          '‼️ 极高风险：在开始任何运动前，必须经主治医生（心内科）评估并获得运动许可',
+          '建议在医院心脏康复中心进行 3-6 个月的规范康复训练后再居家训练',
+          '仅允许低强度活动（慢走、极慢骑车），严禁力量训练和 HIIT',
+          '运动时必须有人陪伴，随身携带急救药物（如硝酸甘油）',
+          '严格控制运动心率不超过医生指定靶心率',
+          '如出现胸痛、胸闷、气短、冷汗、恶心等症状，立即停止并拨打急救电话',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.DIABETES)) {
+      warnings.push({
+        condition: '糖尿病',
+        severity: 'high',
+        warning: '运动会影响血糖水平，不当运动可能导致低血糖或酮症酸中毒',
+        suggestions: [
+          '训练前确保血糖在 5.6-16.7 mmol/L 之间，低于 5.6 需先补充碳水，高于 16.7 不宜训练',
+          '避免空腹运动，最好在餐后 1-2 小时训练',
+          '随身携带糖果、果汁等易吸收碳水，以备低血糖时急救',
+          '注射胰岛素的患者，运动前应适当减少胰岛素剂量（需咨询医生）',
+          '避免剧烈运动和长时间运动，每次以 20-45 分钟中等强度为宜',
+          '运动前后监测血糖，记录血糖变化以调整用药和饮食',
+          '注意足部保护，避免赤脚运动，穿合脚的运动鞋袜',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.PREGNANCY)) {
+      warnings.push({
+        condition: '孕期',
+        severity: 'high',
+        warning: '孕期运动涉及胎儿安全，必须谨慎对待，个体差异极大',
+        suggestions: [
+          '‼️ 本计划不适用于孕期，孕期运动请务必在产科医生和专业产前教练指导下进行',
+          '禁止仰卧位运动（孕中晚期）、跳跃、冲击性、平衡风险高的运动',
+          '孕早期（前 3 个月）以休息和轻度活动为主，避免剧烈运动',
+          '推荐运动：孕妇瑜伽、散步、游泳（孕中期）、固定自行车',
+          '运动时避免憋气、避免腹部受压、避免过热环境',
+          '如出现阴道出血、腹痛、头晕、气短异常等情况立即停止并就医',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.POSTPARTUM)) {
+      warnings.push({
+        condition: '产后恢复',
+        severity: 'medium',
+        warning: '产后身体各系统需要时间恢复，过早高强度运动可能导致子宫脱垂、腹直肌分离加重',
+        suggestions: [
+          '顺产 42 天内、剖宫产 3 个月内以休息和盆底肌激活（凯格尔运动）为主',
+          '开始训练前需经 42 天产后检查确认身体恢复良好',
+          '禁止卷腹、仰卧起坐、跳跃、大重量负重等动作',
+          '从盆底肌修复、腹式呼吸、核心激活等基础训练开始',
+          '如存在腹直肌分离 > 2 指，需先进行专业康复，禁止传统腹部训练',
+          '注意哺乳时间安排，避免运动后立即哺乳',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.OBESITY)) {
+      warnings.push({
+        condition: '重度肥胖',
+        severity: 'medium',
+        warning: '过重体重会给关节和心肺带来额外负担，需选择低冲击运动并循序渐进',
+        suggestions: [
+          '避免跑步、跳绳、开合跳、深蹲跳等对关节冲击大的运动',
+          '优先选择游泳、水中有氧、椭圆机、卧式自行车、快走等低冲击运动',
+          '初期以消耗热量的有氧运动为主，力量训练从徒手或极轻重量开始',
+          '每次运动时间从 15-20 分钟开始，逐步增加到 40-60 分钟',
+          '穿有良好支撑的运动鞋，必要时佩戴护膝',
+          '减重速度以每周 0.5-1 公斤为宜，不要追求快速减重',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.ARTHRITIS)) {
+      warnings.push({
+        condition: '关节炎',
+        severity: 'medium',
+        warning: '关节软骨已受损，不当运动可能加速关节磨损和炎症',
+        suggestions: [
+          '避免剧烈屈伸关节、长时间负重、爬山爬楼梯的动作',
+          '选择游泳、水中运动、太极、散步等对关节友好的运动',
+          '力量训练以等长收缩（静态发力）为主，减少关节摩擦',
+          '运动前充分热身，运动时避免疼痛，如疼痛持续需停止',
+          '注意关节保暖，避免在潮湿寒冷环境中训练',
+          '急性期关节红肿热痛时应休息，不要训练',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.OSTEOPOROSIS)) {
+      warnings.push({
+        condition: '骨质疏松',
+        severity: 'high',
+        warning: '骨密度降低，骨折风险显著增加，需特别注意防跌倒和动作选择',
+        suggestions: [
+          '‼️ 避免向前弯腰、仰卧起坐、扭转脊柱、高处跳下等动作',
+          '避免需要平衡和协调的高风险运动（滑雪、滑冰、网球等）',
+          '推荐快走、低冲击舞蹈、阶梯器、轻重量抗阻训练',
+          '力量训练注重脊柱深层稳定肌和下肢肌肉，增加骨密度刺激',
+          '训练时确保地面平整无障碍物，避免滑倒',
+          '同时注意补充钙和维生素 D，遵医嘱进行药物治疗',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.ASTHMA)) {
+      warnings.push({
+        condition: '哮喘',
+        severity: 'medium',
+        warning: '运动可能诱发支气管痉挛（运动性哮喘），需提前预防并做好急救准备',
+        suggestions: [
+          '运动前 15-30 分钟预防性吸入短效支气管扩张剂（如沙丁胺醇），随身携带急救药物',
+          '避免在寒冷、干燥、空气污染严重的环境中运动，优先选择温暖潮湿环境',
+          '充分热身 10-15 分钟，循序渐进增加强度，避免突然的剧烈运动',
+          '优先选择游泳（湿润空气）、散步、间歇式强度较低的运动',
+          '避免长时间持续高强度的耐力运动',
+          '如出现胸闷、喘息、咳嗽等哮喘发作征兆，立即停止并使用急救药物，必要时就医',
+        ],
+      });
+    }
+
+    if (conditions.includes(HealthCondition.SHOULDER_INJURY)) {
+      warnings.push({
+        condition: '肩部损伤',
+        severity: 'medium',
+        warning: '肩关节是人体活动度最大但最不稳定的关节，损伤后极易复发',
+        suggestions: [
+          '避免卧推、过头推举、侧平举、引体向上等肩部高负荷动作',
+          '先以 YTWL 字母操、弹力带外旋等肩袖肌群激活训练为主',
+          '动作幅度不要超过肩关节无痛活动范围',
+          '注重胸背肌肉平衡，避免含胸圆肩加重肩部负担',
+          '肩部训练前务必用弹力带做 5-10 分钟的激活热身',
+        ],
+      });
+    }
+
+    return warnings;
+  }
+
+  private generateWeeklyPlan(dto: CreateFitnessPlanDto, healthConditions: HealthCondition[]): WeeklyPlan {
     const scene = dto.trainingScene || TrainingScene.BOTH;
     const allDays = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
     const trainingDays: string[] = [];
     const restDays: string[] = [];
 
+    let effectiveDays = dto.availableDaysPerWeek;
+    if (this.hasHighRiskCondition(healthConditions) || healthConditions.includes(HealthCondition.POSTPARTUM)) {
+      effectiveDays = Math.min(effectiveDays, 3);
+    }
+
     for (let i = 0; i < 7; i++) {
-      if (i < dto.availableDaysPerWeek) {
+      if (i < effectiveDays) {
         trainingDays.push(allDays[i]);
       } else {
         restDays.push(allDays[i]);
@@ -181,7 +505,7 @@ export class FitnessService {
     }
 
     const dayPlans: DayPlan[] = trainingDays.map((day, index) =>
-      this.generateDayPlan(day, index, dto)
+      this.generateDayPlan(day, index, dto, healthConditions)
     );
 
     return {
@@ -190,21 +514,28 @@ export class FitnessService {
     };
   }
 
-  private generateDayPlan(day: string, index: number, dto: CreateFitnessPlanDto): DayPlan {
+  private generateDayPlan(day: string, index: number, dto: CreateFitnessPlanDto, healthConditions: HealthCondition[]): DayPlan {
     const scene = dto.trainingScene || TrainingScene.BOTH;
     const perSession = dto.availableMinutesPerSession;
-    const splitType = this.getSplitType(dto.availableDaysPerWeek, dto.goal);
-    const focus = this.getDayFocus(index, dto.availableDaysPerWeek, dto.goal);
+    const focus = this.getDayFocus(index, dto.availableDaysPerWeek, dto.goal, healthConditions);
 
-    const exercises = this.selectExercises(focus, dto.goal, scene, perSession);
+    const exercises = this.selectExercises(focus, dto.goal, scene, perSession, healthConditions);
 
     let warmUp = '5-10 分钟动态热身：开合跳、高抬腿、关节环绕、动态拉伸';
     let coolDown = '5-10 分钟放松：静态拉伸、泡沫轴放松、深呼吸';
 
+    if (healthConditions.includes(HealthCondition.KNEE_INJURY)) {
+      warmUp = '5-10 分钟热身：原地踏步、膝关节环绕（小幅度）、股四头肌拉伸、腘绳肌拉伸';
+    }
+    if (healthConditions.includes(HealthCondition.HYPERTENSION) || healthConditions.includes(HealthCondition.HEART_DISEASE)) {
+      warmUp = '10-15 分钟缓慢热身：慢走 + 关节活动，让心率平稳上升';
+      coolDown = '10-15 分钟逐渐放松：慢走 + 深呼吸，让心率平稳下降，不要突然停止';
+    }
+
     if (perSession < 30) {
       warmUp = '3-5 分钟简单热身：关节环绕、原地踏步';
       coolDown = '3-5 分钟简单拉伸';
-    } else if (perSession > 90) {
+    } else if (perSession > 90 && !this.hasHighRiskCondition(healthConditions)) {
       warmUp = '10-15 分钟充分热身：慢跑/跳绳 + 动态拉伸 + 激活训练';
       coolDown = '10-15 分钟系统放松：静态拉伸 + 泡沫轴 + 冥想';
     }
@@ -244,7 +575,17 @@ export class FitnessService {
     return '肌群细分训练';
   }
 
-  private getDayFocus(index: number, totalDays: number, goal: FitnessGoal): string {
+  private getDayFocus(index: number, totalDays: number, goal: FitnessGoal, healthConditions: HealthCondition[]): string {
+    if (healthConditions.includes(HealthCondition.HEART_DISEASE) ||
+        healthConditions.includes(HealthCondition.PREGNANCY)) {
+      return '轻度活动 · 以散步和呼吸为主';
+    }
+    if (healthConditions.includes(HealthCondition.HYPERTENSION) ||
+        healthConditions.includes(HealthCondition.DIABETES) ||
+        healthConditions.includes(HealthCondition.OBESITY)) {
+      const focuses = ['低冲击有氧 + 核心激活', '轻量力量训练（上半身）', '低冲击有氧 + 拉伸放松'];
+      return focuses[index % 3];
+    }
     if (totalDays <= 2) {
       return index === 0 ? '全身力量 + 有氧' : '全身循环 + 核心';
     }
@@ -266,34 +607,77 @@ export class FitnessService {
     return focuses[index % 7];
   }
 
-  private selectExercises(focus: string, goal: FitnessGoal, scene: TrainingScene, duration: number): Exercise[] {
+  private selectExercises(
+    focus: string,
+    goal: FitnessGoal,
+    scene: TrainingScene,
+    duration: number,
+    healthConditions: HealthCondition[]
+  ): Exercise[] {
     const isHome = scene === TrainingScene.HOME;
     const isShort = duration < 45;
 
     let exercises: Exercise[] = [];
 
-    if (focus.includes('全身')) {
-      exercises = this.getFullBodyExercises(isHome, goal, isShort);
-    } else if (focus.includes('上肢') || focus.includes('推力') || focus.includes('胸部')) {
-      exercises = this.getPushExercises(isHome, goal, isShort);
-    } else if (focus.includes('拉力') || focus.includes('背部')) {
-      exercises = this.getPullExercises(isHome, goal, isShort);
-    } else if (focus.includes('下肢') || focus.includes('腿部')) {
-      exercises = this.getLegExercises(isHome, goal, isShort);
-    } else if (focus.includes('肩部')) {
-      exercises = this.getShoulderExercises(isHome, goal, isShort);
-    } else if (focus.includes('有氧') || focus.includes('HIIT')) {
-      exercises = this.getCardioExercises(isHome, goal, duration);
-    } else if (focus.includes('核心') || focus.includes('手臂')) {
-      exercises = this.getCoreArmExercises(isHome, goal, isShort);
-    } else {
-      exercises = this.getFullBodyExercises(isHome, goal, isShort);
+    if (healthConditions.includes(HealthCondition.HEART_DISEASE) ||
+        healthConditions.includes(HealthCondition.PREGNANCY)) {
+      exercises = [
+        { name: '慢走', duration: '20 分钟', description: '以能正常说话的速度匀速慢走，如感到不适立即停止', targetMuscle: '全身、心肺' },
+        { name: '腹式呼吸', duration: '5 分钟', description: '仰卧或端坐，深呼吸，吸气鼓腹，呼气收腹', targetMuscle: '核心、呼吸肌' },
+      ];
+      return exercises;
     }
 
-    return this.adjustExerciseIntensity(exercises, goal, duration);
+    if (focus.includes('轻度活动') || focus.includes('低冲击')) {
+      exercises = [
+        { name: '原地踏步', duration: '10 分钟', description: '抬起膝盖，手臂自然摆动，保持呼吸平稳', targetMuscle: '全身、心肺' },
+        { name: '坐姿举臂', sets: 3, reps: '15 次', description: '端坐椅子上，双手缓慢向上举过头顶再放下', targetMuscle: '肩部、核心' },
+        { name: '坐姿伸腿', sets: 3, reps: '每侧 12 次', description: '端坐椅子上，双腿交替伸直抬起与地面平行', targetMuscle: '股四头肌' },
+        { name: '墙推', sets: 3, reps: '15 次', description: '面对墙站立，双手推墙，类似俯卧撑但强度低', targetMuscle: '胸部、三头' },
+        { name: '骨盆倾斜', sets: 3, reps: '15 次', description: '仰卧，腰部贴地再放松，锻炼核心稳定', targetMuscle: '核心、下背' },
+        { name: '静态拉伸', duration: '10 分钟', description: '各主要肌群轻柔拉伸，每个动作保持 15-30 秒', targetMuscle: '全身' },
+      ];
+      return exercises;
+    }
+
+    if (focus.includes('全身')) {
+      exercises = this.getFullBodyExercises(isHome, goal, isShort, healthConditions);
+    } else if (focus.includes('上肢') || focus.includes('推力') || focus.includes('胸部')) {
+      exercises = this.getPushExercises(isHome, goal, isShort, healthConditions);
+    } else if (focus.includes('拉力') || focus.includes('背部')) {
+      exercises = this.getPullExercises(isHome, goal, isShort, healthConditions);
+    } else if (focus.includes('下肢') || focus.includes('腿部')) {
+      exercises = this.getLegExercises(isHome, goal, isShort, healthConditions);
+    } else if (focus.includes('肩部')) {
+      exercises = this.getShoulderExercises(isHome, goal, isShort, healthConditions);
+    } else if (focus.includes('有氧') || focus.includes('HIIT')) {
+      exercises = this.getCardioExercises(isHome, goal, duration, healthConditions);
+    } else if (focus.includes('核心') || focus.includes('手臂')) {
+      exercises = this.getCoreArmExercises(isHome, goal, isShort, healthConditions);
+    } else {
+      exercises = this.getFullBodyExercises(isHome, goal, isShort, healthConditions);
+    }
+
+    return this.adjustExerciseIntensity(exercises, goal, duration, healthConditions);
   }
 
-  private adjustExerciseIntensity(exercises: Exercise[], goal: FitnessGoal, duration: number): Exercise[] {
+  private adjustExerciseIntensity(
+    exercises: Exercise[],
+    goal: FitnessGoal,
+    duration: number,
+    healthConditions: HealthCondition[]
+  ): Exercise[] {
+    if (healthConditions.includes(HealthCondition.HYPERTENSION) ||
+        healthConditions.includes(HealthCondition.DIABETES) ||
+        healthConditions.includes(HealthCondition.POSTPARTUM) ||
+        healthConditions.includes(HealthCondition.ARTHRITIS)) {
+      exercises = exercises.map(ex => {
+        if (ex.sets) {
+          return { ...ex, sets: Math.max(2, Math.round(ex.sets * 0.7)) };
+        }
+        return ex;
+      });
+    }
     let setsMultiplier = 1;
     let repsAdjustment = '';
 
@@ -314,7 +698,11 @@ export class FitnessService {
     return exercises;
   }
 
-  private getFullBodyExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getFullBodyExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasKnee = healthConditions.includes(HealthCondition.KNEE_INJURY);
+    const hasWaist = healthConditions.includes(HealthCondition.WAIST_INJURY);
+    const hasShoulder = healthConditions.includes(HealthCondition.SHOULDER_INJURY);
+    const hasObesity = healthConditions.includes(HealthCondition.OBESITY) || healthConditions.includes(HealthCondition.ARTHRITIS);
     const gymExercises: Exercise[] = [
       { name: '深蹲', sets: 4, reps: '10-12 次', description: '杠铃/哑铃深蹲，注意膝盖方向与脚尖一致', targetMuscle: '腿部、臀部' },
       { name: '卧推', sets: 4, reps: '10-12 次', description: '平板卧推，控制下放速度', targetMuscle: '胸部、三头' },
@@ -333,10 +721,24 @@ export class FitnessService {
       { name: '开合跳', duration: '3 组 × 60 秒', description: '全身有氧运动', targetMuscle: '全身、心肺' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasKnee) {
+      result = result.filter(e => !['深蹲', '箭步蹲', '弓步蹲', '开合跳', '跳绳'].includes(e.name));
+    }
+    if (hasWaist) {
+      result = result.filter(e => !['硬拉', '仰卧起坐', '卷腹'].includes(e.name));
+    }
+    if (hasShoulder) {
+      result = result.filter(e => !['站姿推举', '推肩'].includes(e.name));
+    }
+    if (hasObesity) {
+      result = result.filter(e => !['开合跳', '跳绳', '深蹲跳'].includes(e.name));
+    }
+    return result;
   }
 
-  private getPushExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getPushExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasShoulder = healthConditions.includes(HealthCondition.SHOULDER_INJURY);
     const gymExercises: Exercise[] = [
       { name: '平板卧推', sets: 4, reps: '10-12 次', description: '控制节奏，离心 2-3 秒', targetMuscle: '胸大肌' },
       { name: '上斜哑铃卧推', sets: 3, reps: '10-12 次', description: '锻炼上胸部', targetMuscle: '上胸' },
@@ -355,10 +757,16 @@ export class FitnessService {
       { name: '墙壁俯卧撑', sets: 3, reps: '20 次', description: '热身或力竭后的补充', targetMuscle: '肩部前束' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasShoulder) {
+      result = result.filter(e => !['站姿推举', '哑铃侧平举', '水瓶侧平举', '坐姿推举'].includes(e.name));
+      result.push({ name: '墙壁俯卧撑', sets: 3, reps: '15 次', description: '低强度推胸动作，肩部友好', targetMuscle: '胸部' });
+    }
+    return result;
   }
 
-  private getPullExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getPullExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasWaist = healthConditions.includes(HealthCondition.WAIST_INJURY);
     const gymExercises: Exercise[] = [
       { name: '引体向上', sets: 4, reps: '力竭', description: '做不动可用弹力带辅助', targetMuscle: '背阔肌、二头' },
       { name: '高位下拉', sets: 4, reps: '10-12 次', description: '宽握距，感受背部发力', targetMuscle: '背阔肌' },
@@ -377,10 +785,17 @@ export class FitnessService {
       { name: '反手俯卧撑', sets: 3, reps: '12 次', description: '双手靠近，手指朝向脚部', targetMuscle: '二头、胸部' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasWaist) {
+      result = result.filter(e => !['杠铃划船', '硬拉'].includes(e.name));
+    }
+    return result;
   }
 
-  private getLegExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getLegExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasKnee = healthConditions.includes(HealthCondition.KNEE_INJURY);
+    const hasWaist = healthConditions.includes(HealthCondition.WAIST_INJURY);
+    const hasObesity = healthConditions.includes(HealthCondition.OBESITY) || healthConditions.includes(HealthCondition.ARTHRITIS);
     const gymExercises: Exercise[] = [
       { name: '杠铃深蹲', sets: 5, reps: '8-10 次', description: '深蹲之王，全幅度下蹲', targetMuscle: '股四头、臀大肌' },
       { name: '罗马尼亚硬拉', sets: 4, reps: '10-12 次', description: '感受腘绳肌拉伸', targetMuscle: '腘绳肌、臀大肌' },
@@ -399,10 +814,23 @@ export class FitnessService {
       { name: '台阶跳', sets: 3, reps: '15 次', description: '利用台阶或稳固椅子', targetMuscle: '小腿、爆发力' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasKnee) {
+      result = result.filter(e => !['杠铃深蹲', '箭步蹲', '弓步蹲', '深蹲跳', '台阶跳', '提踵跳'].includes(e.name));
+      result.push({ name: '坐姿腿屈伸', sets: 3, reps: '15 次', description: '椅子上交替伸直腿，膝盖友好', targetMuscle: '股四头肌' });
+      result.push({ name: '臀桥', sets: 3, reps: '15 次', description: '仰卧屈膝抬臀，无膝关节压力', targetMuscle: '臀大肌、腘绳肌' });
+    }
+    if (hasWaist) {
+      result = result.filter(e => !['罗马尼亚硬拉', '硬拉'].includes(e.name));
+    }
+    if (hasObesity) {
+      result = result.filter(e => !['深蹲跳', '台阶跳', '开合跳'].includes(e.name));
+    }
+    return result;
   }
 
-  private getShoulderExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getShoulderExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasShoulder = healthConditions.includes(HealthCondition.SHOULDER_INJURY);
     const gymExercises: Exercise[] = [
       { name: '站姿杠铃推举', sets: 4, reps: '10-12 次', description: '核心收紧，不借力', targetMuscle: '三角肌整体' },
       { name: '哑铃侧平举', sets: 5, reps: '15 次', description: '轻重量，感受中束收缩', targetMuscle: '三角肌中束' },
@@ -421,10 +849,20 @@ export class FitnessService {
       { name: ' pike 俯卧撑', sets: 3, reps: '12 次', description: '臀部高抬，侧重肩部', targetMuscle: '三角肌前束' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasShoulder) {
+      result = result.filter(e => !['站姿杠铃推举', '哑铃侧平举', '哑铃前平举', '倒立撑', '水瓶侧平举'].includes(e.name));
+      result.push({ name: '耸肩', sets: 3, reps: '20 次', description: '轻重量，仅斜方肌上提，肩关节活动小', targetMuscle: '斜方肌' });
+      result.push({ name: '靠墙天使', sets: 3, reps: '15 次', description: '背贴墙，手臂滑动上下，恢复肩关节活动度', targetMuscle: '肩部稳定肌' });
+    }
+    return result;
   }
 
-  private getCardioExercises(isHome: boolean, goal: FitnessGoal, duration: number): Exercise[] {
+  private getCardioExercises(isHome: boolean, goal: FitnessGoal, duration: number, healthConditions: HealthCondition[]): Exercise[] {
+    const hasKnee = healthConditions.includes(HealthCondition.KNEE_INJURY);
+    const hasObesity = healthConditions.includes(HealthCondition.OBESITY) || healthConditions.includes(HealthCondition.ARTHRITIS);
+    const hasAsthma = healthConditions.includes(HealthCondition.ASTHMA);
+    const hasHeart = healthConditions.includes(HealthCondition.HEART_DISEASE) || healthConditions.includes(HealthCondition.HYPERTENSION);
     const cardioTime = Math.max(15, Math.floor(duration * 0.6));
     const hiitTime = Math.max(10, Math.floor(duration * 0.4));
 
@@ -445,10 +883,21 @@ export class FitnessService {
       { name: '跳绳（模拟）', duration: `${cardioTime - 15} 分钟`, description: '没有绳子可以模拟跳绳动作', targetMuscle: '小腿、心肺' },
     ];
 
-    return isHome ? homeCardio : gymCardio;
+    let result = isHome ? homeCardio : gymCardio;
+    if (hasKnee || hasObesity) {
+      result = result.filter(e => !['高抬腿', '开合跳', '跳绳', '跳绳（模拟）', '波比跳', '台阶跳'].includes(e.name));
+      result.push({ name: '原地踏步', duration: `${cardioTime} 分钟`, description: '低冲击有氧，膝盖友好', targetMuscle: '全身、心肺' });
+    }
+    if (hasAsthma || hasHeart) {
+      result = result.filter(e => e.name.includes('HIIT') || e.name.includes('波比') || e.name.includes('冲刺'));
+      result = [{ name: '快走/慢走', duration: `${cardioTime} 分钟`, description: '匀速进行，保持可正常说话的强度，如感不适立即停止', targetMuscle: '全身、心肺' }];
+    }
+    return result;
   }
 
-  private getCoreArmExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean): Exercise[] {
+  private getCoreArmExercises(isHome: boolean, goal: FitnessGoal, isShort: boolean, healthConditions: HealthCondition[]): Exercise[] {
+    const hasWaist = healthConditions.includes(HealthCondition.WAIST_INJURY);
+    const hasShoulder = healthConditions.includes(HealthCondition.SHOULDER_INJURY);
     const gymExercises: Exercise[] = [
       { name: '悬垂举腿', sets: 4, reps: '15 次', description: '核心发力，不借力摆动', targetMuscle: '下腹' },
       { name: '绳索卷腹', sets: 4, reps: '15 次', description: '感受腹部收缩', targetMuscle: '腹肌整体' },
@@ -467,10 +916,20 @@ export class FitnessService {
       { name: '椅子臂屈伸', sets: 4, reps: '15 次', description: '双手撑椅子，身体下沉', targetMuscle: '肱三头肌' },
     ];
 
-    return isHome ? homeExercises : gymExercises;
+    let result = isHome ? homeExercises : gymExercises;
+    if (hasWaist) {
+      result = result.filter(e => !['俄罗斯转体', '仰卧卷腹', '绳索卷腹'].includes(e.name));
+      result.push({ name: '死虫式', sets: 3, reps: '每侧 12 次', description: '仰卧，对侧手脚同时伸展，腰部始终贴地', targetMuscle: '核心稳定' });
+      result.push({ name: '鸟狗式', sets: 3, reps: '每侧 12 次', description: '四点跪姿，对侧手脚同时伸展，保持躯干稳定', targetMuscle: '核心、下背' });
+    }
+    if (hasShoulder) {
+      result = result.filter(e => !['椅子臂屈伸', '绳索下压'].includes(e.name));
+    }
+    return result;
   }
 
-  private generateCyclePlan(goal: FitnessGoal, age: number): { phases: CyclePhase[]; totalDuration: string } {
+  private generateCyclePlan(goal: FitnessGoal, age: number, healthConditions: HealthCondition[]): { phases: CyclePhase[]; totalDuration: string } {
+    const hasCondition = healthConditions.length > 0;
     const phases: CyclePhase[] = [];
 
     if (age > 50) {
@@ -505,6 +964,17 @@ export class FitnessService {
 
     let progressiveDuration = '8 周';
     let progressiveIntensity = '中-高强度，渐进超负荷';
+    if (hasCondition) {
+      phases[0] = {
+        ...phases[0],
+        name: '基础适应期（延长）',
+        duration: '6-8 周',
+        description: '因存在特殊健康状况，需要更长时间让身体逐步适应，请在专业人士指导下进行',
+        intensity: '低强度，以不产生不适为原则',
+      };
+      progressiveDuration = '保守进阶，不急于增加强度';
+      progressiveIntensity = '低-中强度，以安全为第一原则';
+    }
     if (goal === FitnessGoal.FAT_LOSS) {
       progressiveDuration = '6 周';
       progressiveIntensity = '中高强度，关注心率区间';
@@ -587,7 +1057,25 @@ export class FitnessService {
     return tipsMap[goal];
   }
 
-  private generateNutritionAdvice(goal: FitnessGoal, bmr: number, bmi: number): string[] {
+  private generateNutritionAdvice(goal: FitnessGoal, bmr: number, bmi: number, healthConditions: HealthCondition[]): string[] {
+    const advice: string[] = [];
+    if (healthConditions.includes(HealthCondition.DIABETES)) {
+      advice.push('⚠️ 糖尿病饮食请严格遵照医生或营养师的指导，本建议仅作参考');
+      advice.push('定时定量进餐，避免血糖大幅波动，选择低 GI（升糖指数）食物');
+    }
+    if (healthConditions.includes(HealthCondition.HYPERTENSION)) {
+      advice.push('⚠️ 高血压饮食请严格限盐（每日 < 5g），避免腌制食品和加工肉类');
+      advice.push('增加钾摄入（香蕉、土豆、菠菜等），限制饮酒和咖啡因');
+    }
+    if (healthConditions.includes(HealthCondition.PREGNANCY)) {
+      advice.push('⚠️ 孕期营养请严格遵照产科医生和营养师指导，保证叶酸、铁、钙等关键营养素摄入');
+    }
+    if (healthConditions.includes(HealthCondition.OSTEOPOROSIS)) {
+      advice.push('⚠️ 骨质疏松注意补充钙（每日 1000-1200mg）和维生素 D，多吃奶制品、豆制品、深绿色蔬菜');
+    }
+    if (advice.length > 0) {
+      advice.push('--- 以下为通用营养建议 ---');
+    }
     let caloricIntake: string;
     let proteinRatio: string;
     let specificTips: string[];
@@ -649,10 +1137,10 @@ export class FitnessService {
       generalTips.push('⚠️ 您的 BMI 偏低，减脂目标可能不适合，建议改为塑形或体能提升');
     }
 
-    return generalTips;
+    return [...advice, ...generalTips];
   }
 
-  private generateSafetyTips(age: number, bmi: number, goal: FitnessGoal): string[] {
+  private generateSafetyTips(age: number, bmi: number, goal: FitnessGoal, healthConditions: HealthCondition[]): string[] {
     const tips: string[] = [
       '训练前必须充分热身，训练后必须拉伸放松',
       '动作质量优先于重量和次数，不标准的动作容易受伤',

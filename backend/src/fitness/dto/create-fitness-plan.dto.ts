@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max, IsEnum, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsNumber, Min, Max, IsEnum, IsOptional, IsArray } from 'class-validator';
 
 export enum FitnessGoal {
   MUSCLE_GAIN = 'muscle_gain',
@@ -16,6 +16,22 @@ export enum TrainingScene {
   HOME = 'home',
   GYM = 'gym',
   BOTH = 'both'
+}
+
+export enum HealthCondition {
+  KNEE_INJURY = 'knee_injury',
+  WAIST_INJURY = 'waist_injury',
+  SHOULDER_INJURY = 'shoulder_injury',
+  HYPERTENSION = 'hypertension',
+  HEART_DISEASE = 'heart_disease',
+  DIABETES = 'diabetes',
+  PREGNANCY = 'pregnancy',
+  POSTPARTUM = 'postpartum',
+  OBESITY = 'obesity',
+  ARTHRITIS = 'arthritis',
+  OSTEOPOROSIS = 'osteoporosis',
+  ASTHMA = 'asthma',
+  NONE = 'none'
 }
 
 export class CreateFitnessPlanDto {
@@ -60,4 +76,9 @@ export class CreateFitnessPlanDto {
   @IsEnum(TrainingScene)
   @IsOptional()
   trainingScene?: TrainingScene;
+
+  @IsArray()
+  @IsEnum(HealthCondition, { each: true })
+  @IsOptional()
+  healthConditions?: HealthCondition[];
 }
