@@ -231,6 +231,60 @@
           <div class="preview-info" v-if="sourceImage">
             <el-tag size="small">尺寸: {{ imageWidth }} x {{ imageHeight }}</el-tag>
             <el-tag size="small" type="info">文件大小: {{ formatFileSize(fileSize) }}</el-tag>
+            <el-tag
+              v-if="imageQuality"
+              size="small"
+              :type="imageQuality.overallScore >= 80 ? 'success' : imageQuality.overallScore >= 60 ? 'warning' : 'danger'"
+              effect="dark"
+            >
+              图片质量: {{ imageQuality.overallScore }}分
+            </el-tag>
+          </div>
+
+          <div class="quality-assessment" v-if="imageQuality && !imageQuality.isRecommended">
+            <el-alert
+              :type="imageQuality.issues.some(i => i.severity === 'error') ? 'error' : 'warning'"
+              :closable="false"
+              show-icon
+            >
+              <template #title>
+                <div class="quality-alert-title">
+                  <el-icon :size="18"><Warning /></el-icon>
+                  <span>检测到 {{ imageQuality.issues.length }} 个可能影响识别准确率的问题</span>
+                </div>
+              </template>
+              <div class="quality-issues">
+                <div class="quality-issue" v-for="issue in imageQuality.issues" :key="issue.type">
+                  <div class="issue-header">
+                    <el-tag size="small" :type="issue.severity === 'error' ? 'danger' : 'warning'" effect="dark">
+                      {{ issue.severity === 'error' ? '严重' : '注意' }}
+                    </el-tag>
+                    <span class="issue-title">{{ issue.title }}</span>
+                  </div>
+                  <p class="issue-desc">{{ issue.description }}</p>
+                  <div class="issue-suggestion">
+                    <el-icon :size="14" color="#67c23a"><CircleCheck /></el-icon>
+                    <span>建议：{{ issue.suggestion }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="quality-footer">
+                <el-icon :size="14" color="#e6a23c"><Light /></el-icon>
+                <span>按照以上建议重新拍摄，可以显著提升识别准确率！</span>
+              </div>
+            </el-alert>
+          </div>
+
+          <div class="quality-good" v-if="imageQuality && imageQuality.isRecommended && imageQuality.issues.length === 0">
+            <el-alert type="success" :closable="false" show-icon>
+              <template #title>
+                <div class="quality-good-title">
+                  <el-icon :size="18"><CircleCheck /></el-icon>
+                  <span>图片质量很好，识别准确率高！</span>
+                </div>
+              </template>
+              光线、清晰度、对比度都不错，可以放心开始识别。
+            </el-alert>
           </div>
 
           <div class="paste-hint" v-if="!sourceImage">
@@ -362,7 +416,12 @@
             <Document />
           </el-icon>
           <span>识别结果</span>
-          <el-tag size="small" type="success" class="header-tag">
+          <el-tag
+            size="small"
+            :type="recognitionResult.confidence >= 0.85 ? 'success' : recognitionResult.confidence >= 0.7 ? 'warning' : 'danger'"
+            class="header-tag"
+            effect="dark"
+          >
             置信度: {{ (recognitionResult.confidence * 100).toFixed(0) }}%
           </el-tag>
           <div class="header-actions">
@@ -373,6 +432,55 @@
           </div>
         </div>
       </template>
+
+      <div class="low-confidence-warning" v-if="isLowConfidence">
+        <el-alert type="warning" :closable="false" show-icon>
+          <template #title>
+            <div class="lcw-title">
+              <el-icon :size="18" color="#e6a23c"><QuestionFilled /></el-icon>
+              <span>本次识别置信度较低（{{ (recognitionResult.confidence * 100).toFixed(0) }}%），结果仅供参考</span>
+            </div>
+          </template>
+          <div class="lcw-content">
+            <div class="lcw-section">
+              <div class="lcw-section-title">
+                <el-icon :size="16" color="#f56c6c"><Warning /></el-icon>
+                <span>可能的原因</span>
+              </div>
+              <ul class="lcw-list">
+                <li v-if="imageQuality && imageQuality.issues.length > 0">
+                  <strong>拍摄质量问题：</strong>
+                  <span v-for="(issue, i) in imageQuality.issues" :key="issue.type">
+                    {{ issue.title }}{{ i < imageQuality.issues.length - 1 ? '、' : '' }}
+                  </span>
+                </li>
+                <li v-if="!imageQuality || imageQuality.issues.length === 0">
+                  图片中植物的关键识别特征（花、果、叶）不完整或不清晰
+                </li>
+                <li>该植物与数据库中的多个物种特征相似</li>
+                <li>可能是数据库中未收录的稀有品种或园艺栽培变种</li>
+              </ul>
+            </div>
+            <div class="lcw-section">
+              <div class="lcw-section-title">
+                <el-icon :size="16" color="#67c23a"><CircleCheck /></el-icon>
+                <span>提升识别准确率的建议</span>
+              </div>
+              <ul class="lcw-list">
+                <li v-if="imageQuality && imageQuality.issues.some(i => i.type === 'darkness')">
+                  将植物移到<strong>光线充足</strong>的地方重新拍摄
+                </li>
+                <li v-if="imageQuality && imageQuality.issues.some(i => i.type === 'blur')">
+                  用微距模式靠近拍摄，<strong>对焦清晰</strong>后再按快门
+                </li>
+                <li>同时拍摄<strong>花朵、叶片和整株</strong>的清晰照片，多角度验证</li>
+                <li>拍摄叶片<strong>正反面</strong>和枝条上的<strong>叶序排列</strong></li>
+                <li>如有花朵，拍一张<strong>正面特写</strong>展示花瓣和花蕊结构</li>
+              </ul>
+            </div>
+          </div>
+        </el-alert>
+      </div>
 
       <el-row :gutter="24">
         <el-col :span="8">
@@ -596,6 +704,23 @@ interface HistoryItem {
   time: string
 }
 
+interface ImageQualityIssue {
+  type: 'brightness' | 'darkness' | 'blur' | 'contrast' | 'resolution'
+  severity: 'warning' | 'error'
+  title: string
+  description: string
+  suggestion: string
+}
+
+interface ImageQuality {
+  overallScore: number
+  brightness: number
+  contrast: number
+  sharpness: number
+  issues: ImageQualityIssue[]
+  isRecommended: boolean
+}
+
 const STORAGE_KEY = 'plant_recognition_history'
 
 const uploadRef = ref()
@@ -604,6 +729,7 @@ const sourceImage = ref<string>('')
 const imageWidth = ref(0)
 const imageHeight = ref(0)
 const fileSize = ref(0)
+const imageQuality = ref<ImageQuality | null>(null)
 
 const recognizing = ref(false)
 const progressPercent = ref(0)
@@ -632,6 +758,141 @@ const displayHistory = computed(() => {
   if (showAllHistory.value) return reversed
   return reversed.slice(0, 6)
 })
+
+const isLowConfidence = computed(() => {
+  if (!recognitionResult.value) return false
+  return recognitionResult.value.confidence < 0.7
+})
+
+const analyzeImageQuality = (img: HTMLImageElement): Promise<ImageQuality> => {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      resolve({
+        overallScore: 100,
+        brightness: 128,
+        contrast: 50,
+        sharpness: 50,
+        issues: [],
+        isRecommended: true
+      })
+      return
+    }
+
+    const maxSize = 300
+    let w = img.width
+    let h = img.height
+    const scale = Math.min(1, maxSize / Math.max(w, h))
+    w = Math.floor(w * scale)
+    h = Math.floor(h * scale)
+    canvas.width = w
+    canvas.height = h
+    ctx.drawImage(img, 0, 0, w, h)
+
+    const imageData = ctx.getImageData(0, 0, w, h)
+    const data = imageData.data
+    const pixelCount = w * h
+
+    let totalLuminance = 0
+    let minLuminance = 255
+    let maxLuminance = 0
+    const luminanceValues: number[] = []
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+      totalLuminance += luminance
+      luminanceValues.push(luminance)
+      if (luminance < minLuminance) minLuminance = luminance
+      if (luminance > maxLuminance) maxLuminance = luminance
+    }
+
+    const avgBrightness = totalLuminance / pixelCount
+    const contrast = maxLuminance - minLuminance
+
+    let sharpness = 0
+    const grayData = luminanceValues
+    for (let y = 1; y < h - 1; y++) {
+      for (let x = 1; x < w - 1; x++) {
+        const idx = y * w + x
+        const gx = Math.abs(grayData[idx - 1] - grayData[idx + 1])
+        const gy = Math.abs(grayData[idx - w] - grayData[idx + w])
+        sharpness += gx + gy
+      }
+    }
+    sharpness = sharpness / ((w - 2) * (h - 2))
+
+    const issues: ImageQualityIssue[] = []
+
+    if (avgBrightness < 60) {
+      issues.push({
+        type: 'darkness',
+        severity: avgBrightness < 40 ? 'error' : 'warning',
+        title: '光线不足',
+        description: `图片整体偏暗（亮度${avgBrightness.toFixed(0)}/255），叶片纹理、颜色等识别关键特征可能被阴影掩盖。`,
+        suggestion: '将植物移到光线更充足的窗边或室外，或使用台灯从侧面补光后重新拍摄。避免使用闪光灯直接照射。'
+      })
+    }
+
+    if (avgBrightness > 220) {
+      issues.push({
+        type: 'brightness',
+        severity: avgBrightness > 240 ? 'error' : 'warning',
+        title: '曝光过度',
+        description: `图片整体过亮（亮度${avgBrightness.toFixed(0)}/255），高光区域细节丢失，颜色信息失真。`,
+        suggestion: '避开正午阳光直射，移到树荫下或阴天拍摄，或调整手机曝光补偿降低亮度。'
+      })
+    }
+
+    if (contrast < 40) {
+      issues.push({
+        type: 'contrast',
+        severity: contrast < 25 ? 'error' : 'warning',
+        title: '对比度不足',
+        description: `画面灰蒙蒙的缺乏层次（对比度${contrast.toFixed(0)}），叶片边缘和纹路等细节难以区分。`,
+        suggestion: '换个角度避免逆光拍摄，或调整主体与背景的色差，使植物更加突出。'
+      })
+    }
+
+    if (sharpness < 20) {
+      issues.push({
+        type: 'blur',
+        severity: sharpness < 12 ? 'error' : 'warning',
+        title: '图像模糊',
+        description: `清晰度不足（锐度${sharpness.toFixed(1)}），可能是手抖、对焦不准或拍摄距离过远造成的。`,
+        suggestion: '靠近植物使用微距模式拍摄，持稳手机或找个支撑物，轻点屏幕确保对焦在叶片/花朵上。'
+      })
+    }
+
+    if (img.width < 600 || img.height < 600) {
+      issues.push({
+        type: 'resolution',
+        severity: 'warning',
+        title: '分辨率偏低',
+        description: `图片尺寸较小（${img.width}×${img.height}），可能缺少足够的细节信息。`,
+        suggestion: '尽量使用原图上传，避免发送经过压缩的图片。靠近植物拍摄以获取更多细节。'
+      })
+    }
+
+    let score = 100
+    issues.forEach(issue => {
+      score -= issue.severity === 'error' ? 25 : 12
+    })
+    score = Math.max(0, score)
+
+    resolve({
+      overallScore: score,
+      brightness: avgBrightness,
+      contrast,
+      sharpness,
+      issues,
+      isRecommended: score >= 60
+    })
+  })
+}
 
 const scenarios = [
   { title: '公园散步识花', icon: 'Location', color: '#165DFF', desc: '在公园遇到美丽的花花草草' },
@@ -776,16 +1037,19 @@ const loadImageFromFile = (file: File) => {
 
   try {
     const reader = new FileReader()
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       sourceImage.value = e.target?.result as string
       fileSize.value = file.size
+      recognitionResult.value = null
+      imageQuality.value = null
       const img = new Image()
-      img.onload = () => {
+      img.onload = async () => {
         imageWidth.value = img.width
         imageHeight.value = img.height
+        const quality = await analyzeImageQuality(img)
+        imageQuality.value = quality
       }
       img.src = sourceImage.value
-      recognitionResult.value = null
     }
     reader.readAsDataURL(file)
   } catch (e) {
@@ -856,12 +1120,21 @@ const startRecognize = async () => {
       time: new Date().toISOString()
     })
 
-    ElMessage.success({
-      message: `🎉 识别成功！这是「${data.chineseName}」`,
-      type: 'success',
-      duration: 3000,
-      showClose: true
-    })
+    if (data.confidence >= 0.7) {
+      ElMessage.success({
+        message: `🎉 识别成功！这是「${data.chineseName}」`,
+        type: 'success',
+        duration: 3000,
+        showClose: true
+      })
+    } else {
+      ElMessage.warning({
+        message: `识别完成，但置信度较低（${(data.confidence * 100).toFixed(0)}%），建议重新拍摄以获得更准确结果`,
+        type: 'warning',
+        duration: 4000,
+        showClose: true
+      })
+    }
   } catch (e) {
     console.error('Recognition Error:', e)
     ElMessage.error('识别失败，请重试或更换图片')
@@ -880,6 +1153,7 @@ const resetAll = () => {
   progressPercent.value = 0
   progressStatus.value = ''
   activeTab.value = 'characteristics'
+  imageQuality.value = null
 }
 
 const loadHistory = () => {
@@ -1907,5 +2181,141 @@ onMounted(() => {
   .result-tabs {
     padding-left: 0;
   }
+}
+
+.quality-assessment {
+  margin-top: 16px;
+}
+
+.quality-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.quality-good {
+  margin-top: 16px;
+}
+
+.quality-good-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.quality-issues {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.quality-issue {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 12px;
+  border-left: 3px solid #e6a23c;
+}
+
+.issue-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.issue-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+}
+
+.issue-desc {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.issue-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #f0f9eb;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #529b2e;
+  line-height: 1.5;
+}
+
+.issue-suggestion > span {
+  flex: 1;
+}
+
+.quality-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #dcdfe6;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.low-confidence-warning {
+  margin-bottom: 20px;
+}
+
+.lcw-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.lcw-content {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lcw-section {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.lcw-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.lcw-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lcw-list li {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.lcw-list li strong {
+  color: #303133;
 }
 </style>
