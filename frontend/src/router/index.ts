@@ -305,6 +305,11 @@ const routes: RouteRecordRaw[] = [
         path: '/fitness-plan',
         name: 'FitnessPlanGenerator',
         component: () => import('@/views/FitnessPlanGenerator.vue')
+      },
+      {
+        path: '/social-scenario',
+        name: 'SocialScenarioSimulator',
+        component: () => import('@/views/SocialScenarioSimulator.vue')
       }
     ]
   }
