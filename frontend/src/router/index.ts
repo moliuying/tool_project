@@ -300,6 +300,11 @@ const routes: RouteRecordRaw[] = [
         path: '/daily-psychology',
         name: 'DailyPsychology',
         component: () => import('@/views/DailyPsychology.vue')
+      },
+      {
+        path: '/fitness-plan',
+        name: 'FitnessPlanGenerator',
+        component: () => import('@/views/FitnessPlanGenerator.vue')
       }
     ]
   }
