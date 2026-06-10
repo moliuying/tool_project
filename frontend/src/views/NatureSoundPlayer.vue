@@ -353,6 +353,10 @@ let timerInterval: number | null = null
 const audioContext = ref<AudioContext | null>(null)
 const audioNodes = reactive<Record<string, AudioNodeGroup>>({})
 const masterGainNode = ref<GainNode | null>(null)
+let keepAliveOscillator: OscillatorNode | null = null
+let keepAliveGain: GainNode | null = null
+let audioContextCheckTimer: number | null = null
+let wakeLockSentinal: any = null
 
 const isAnyPlaying = computed(() => sounds.some(s => s.active))
 const playingCount = computed(() => sounds.filter(s => s.active).length)
@@ -362,15 +366,89 @@ const currentSceneIcon = computed(() => {
   return scene?.icon || 'MagicStick'
 })
 
+const startKeepAlive = (ctx: AudioContext) => {
+  if (keepAliveOscillator && keepAliveGain) return
+  keepAliveOscillator = ctx.createOscillator()
+  keepAliveGain = ctx.createGain()
+  keepAliveGain.gain.value = 0.0001
+  keepAliveOscillator.type = 'sine'
+  keepAliveOscillator.frequency.value = 22050
+  keepAliveOscillator.connect(keepAliveGain)
+  keepAliveGain.connect(ctx.destination)
+  try {
+    keepAliveOscillator.start()
+  } catch (e) {}
+}
+
+const stopKeepAlive = () => {
+  try {
+    if (keepAliveOscillator) {
+      keepAliveOscillator.stop()
+      keepAliveOscillator.disconnect()
+    }
+    if (keepAliveGain) {
+      keepAliveGain.disconnect()
+    }
+  } catch (e) {}
+  keepAliveOscillator = null
+  keepAliveGain = null
+}
+
+const resumeAudioContext = () => {
+  if (!audioContext.value) return
+  if (audioContext.value.state === 'suspended') {
+    audioContext.value.resume().catch(() => {})
+  }
+}
+
+const startAudioContextCheck = () => {
+  stopAudioContextCheck()
+  const tick = () => {
+    if (isAnyPlaying.value) {
+      resumeAudioContext()
+    }
+    audioContextCheckTimer = window.setTimeout(tick, 1000)
+  }
+  tick()
+}
+
+const stopAudioContextCheck = () => {
+  if (audioContextCheckTimer) {
+    clearTimeout(audioContextCheckTimer)
+    audioContextCheckTimer = null
+  }
+}
+
+const requestWakeLock = async () => {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLockSentinal = await (navigator as any).wakeLock.request('screen')
+      wakeLockSentinal.addEventListener('release', () => {})
+    }
+  } catch (e) {}
+}
+
+const releaseWakeLock = async () => {
+  try {
+    if (wakeLockSentinal) {
+      await wakeLockSentinal.release()
+      wakeLockSentinal = null
+    }
+  } catch (e) {}
+}
+
 const initAudioContext = () => {
   if (!audioContext.value) {
     audioContext.value = new (window.AudioContext || (window as any).webkitAudioContext)()
     masterGainNode.value = audioContext.value.createGain()
     masterGainNode.value.gain.value = masterVolume.value / 100
     masterGainNode.value.connect(audioContext.value.destination)
+    startKeepAlive(audioContext.value)
+    startAudioContextCheck()
+    requestWakeLock()
   }
   if (audioContext.value.state === 'suspended') {
-    audioContext.value.resume()
+    audioContext.value.resume().catch(() => {})
   }
   return audioContext.value
 }
@@ -747,6 +825,15 @@ const stopAllSounds = () => {
     sound.active = false
     stopSound(sound.id)
   })
+  releaseWakeLock()
+  stopKeepAlive()
+  stopAudioContextCheck()
+  if (audioContext.value) {
+    audioContext.value.close().then(() => {
+      audioContext.value = null
+      masterGainNode.value = null
+    }).catch(() => {})
+  }
 }
 
 const toggleAll = () => {
@@ -818,34 +905,63 @@ const getBarHeight = (index: number) => {
 let visualizerInterval: number | null = null
 let wasPlayingBeforeHidden = false
 
-const handleVisibilityChange = () => {
+const handleVisibilityChange = async () => {
   if (document.visibilityState === 'visible') {
-    if (audioContext.value && audioContext.value.state === 'suspended') {
-      audioContext.value.resume().then(() => {
-        if (wasPlayingBeforeHidden && isAnyPlaying.value) {
-          ElMessage.success('已恢复播放')
+    if (isAnyPlaying.value) {
+      if (audioContext.value) {
+        if (audioContext.value.state === 'suspended') {
+          try {
+            await audioContext.value.resume()
+          } catch (e) {}
         }
-      })
+        if (!keepAliveOscillator && audioContext.value) {
+          startKeepAlive(audioContext.value)
+        }
+        startAudioContextCheck()
+        requestWakeLock()
+      }
     }
   } else {
     wasPlayingBeforeHidden = isAnyPlaying.value
+    if (isAnyPlaying.value && audioContext.value) {
+      if (audioContext.value.state === 'suspended') {
+        audioContext.value.resume().catch(() => {})
+      }
+    }
+  }
+}
+
+const handlePageShow = (e: PageTransitionEvent) => {
+  if (e.persisted || (window.performance && window.performance.navigation.type === 2)) {
+    setTimeout(() => {
+      if (isAnyPlaying.value && audioContext.value) {
+        if (audioContext.value.state === 'suspended') {
+          audioContext.value.resume().catch(() => {})
+        }
+      }
+    }, 100)
   }
 }
 
 onMounted(() => {
   visualizerInterval = window.setInterval(() => {}, 100)
   document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('pageshow', handlePageShow)
 })
 
 onUnmounted(() => {
   stopAllSounds()
   stopTimer()
   document.removeEventListener('visibilitychange', handleVisibilityChange)
+  window.removeEventListener('pageshow', handlePageShow)
+  stopKeepAlive()
+  stopAudioContextCheck()
+  releaseWakeLock()
   if (visualizerInterval) {
     clearInterval(visualizerInterval)
   }
   if (audioContext.value) {
-    audioContext.value.close()
+    audioContext.value.close().catch(() => {})
   }
 })
 </script>
