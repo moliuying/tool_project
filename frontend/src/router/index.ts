@@ -350,6 +350,11 @@ const routes: RouteRecordRaw[] = [
         path: '/nature-sound',
         name: 'NatureSoundPlayer',
         component: () => import('@/views/NatureSoundPlayer.vue')
+      },
+      {
+        path: '/virtual-drum',
+        name: 'VirtualDrum',
+        component: () => import('@/views/VirtualDrum.vue')
       }
     ]
   }
