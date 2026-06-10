@@ -63,8 +63,9 @@ async function bootstrap() {
       { name: '汽车知识咨询', path: '/car-knowledge', icon: 'Van', parentId: null, sort: 46, component: 'views/CarKnowledgeAdvisor.vue' },
       { name: '摄影作品点评', path: '/photo-critique', icon: 'Camera', parentId: null, sort: 47, component: 'views/PhotoCritique.vue' },
       { name: '编程问题解答', path: '/programming-qna', icon: 'ChatDotRound', parentId: null, sort: 48, component: 'views/ProgrammingQna.vue' },
+      { name: '品牌LOGO生成', path: '/brand-logo', icon: 'Brush', parentId: null, sort: 49, component: 'views/BrandLogoGenerator.vue' },
       { name: '系统管理', path: '/system', icon: 'Setting', parentId: null, sort: 100, component: null },
-      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 48, sort: 1, component: 'views/Menu.vue' },
+      { name: '菜单管理', path: '/system/menu', icon: 'Menu', parentId: 50, sort: 1, component: 'views/Menu.vue' },
     ];
 
     for (const menu of menus) {

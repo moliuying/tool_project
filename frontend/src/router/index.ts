@@ -340,6 +340,11 @@ const routes: RouteRecordRaw[] = [
         path: '/programming-qna',
         name: 'ProgrammingQna',
         component: () => import('@/views/ProgrammingQna.vue')
+      },
+      {
+        path: '/brand-logo',
+        name: 'BrandLogoGenerator',
+        component: () => import('@/views/BrandLogoGenerator.vue')
       }
     ]
   }
