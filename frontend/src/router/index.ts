@@ -345,6 +345,11 @@ const routes: RouteRecordRaw[] = [
         path: '/brand-logo',
         name: 'BrandLogoGenerator',
         component: () => import('@/views/BrandLogoGenerator.vue')
+      },
+      {
+        path: '/nature-sound',
+        name: 'NatureSoundPlayer',
+        component: () => import('@/views/NatureSoundPlayer.vue')
       }
     ]
   }
