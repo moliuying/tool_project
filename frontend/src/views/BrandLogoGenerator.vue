@@ -899,51 +899,78 @@ const minimalIcons = ['◻️', '▭', '○', '△', '□', '◇', '▽', '◎']
 const techIcons = ['⚡', '◆', '⬡', '◈', '✦', '⟡', '◇', '▣']
 const retroIcons = ['✦', '❋', '✺', '❂', '☀', '❁', '✾', '❃']
 const cuteIcons = ['♥', '★', '✿', '❀', '☀', '☁', '♪', '✧']
-const luxuryIcons = ['♛', '♕', '✦', '◆', '❖', '◈', '⟡', '✧']
+const luxuryIcons = [
+  '♛', '♕', '✦', '◆', '❖', '◈', '⟡', '✧',
+  '❋', '✺', '❂', '❁',
+  '◊', '◇', '⬡', '⬢',
+  '◯', '◐', '◑', '◒', '◓',
+  '△', '▽', '◁', '▷',
+  '♔', '♚', '♖', '♜',
+  '❦', '❧', '❥',
+  '§', '¶', '※', '❀',
+  '◉', '◎', '◍', '◌',
+  '✢', '✣', '✤', '✥',
+  '♡', '♤', '♧', '♢',
+  '⟐', '⟗', '⧫', '◙', '❖'
+]
 const naturalIcons = ['🌿', '🍃', '🌱', '🌾', '🌸', '🌻', '🌺', '🦋']
 
 const archetypeColorPreferences: Record<string, string[]> = {
   innocent: ['#FF7D00', '#F7BA1E', '#EC4899', '#0FC88D'],
-  sage: ['#165DFF', '#1D2129', '#0FC6C2', '#52C41A'],
-  explorer: ['#FF7D00', '#0FC88D', '#F53F3F', '#0E42D2'],
-  outlaw: ['#F53F3F', '#722ED1', '#1D2129', '#FF7D00'],
-  magician: ['#722ED1', '#9254DE', '#165DFF', '#F5319D'],
-  hero: ['#165DFF', '#F53F3F', '#1D2129', '#FF7D00'],
-  lover: ['#F5319D', '#EC4899', '#F53F3F', '#722ED1'],
+  sage: ['#165DFF', '#1D2129', '#0FC6C2', '#52C41A', '#2C3E50', '#4A4A4A', '#8B8589'],
+  explorer: ['#FF7D00', '#0FC88D', '#F53F3F', '#0E42D2', '#1D2D44', '#3E2723'],
+  outlaw: ['#F53F3F', '#722ED1', '#1D2129', '#FF7D00', '#1A1A1A', '#2B1B1B'],
+  magician: ['#722ED1', '#9254DE', '#165DFF', '#F5319D', '#1A1A2E', '#B76E79'],
+  hero: ['#165DFF', '#F53F3F', '#1D2129', '#FF7D00', '#2C3E50', '#1B262C'],
+  lover: ['#F5319D', '#EC4899', '#F53F3F', '#722ED1', '#B76E79', '#3E2723'],
   jester: ['#F7BA1E', '#FF7D00', '#F5319D', '#0FC88D'],
-  everyman: ['#52C41A', '#0FC6C2', '#86909C', '#FF7D00'],
-  caregiver: ['#0FC88D', '#F5319D', '#FF7D00', '#52C41A'],
-  ruler: ['#1D2129', '#F7BA1E', '#722ED1', '#165DFF'],
-  creator: ['#F5319D', '#722ED1', '#F7BA1E', '#165DFF']
+  everyman: ['#52C41A', '#0FC6C2', '#86909C', '#FF7D00', '#4A4A4A', '#BCAAA4'],
+  caregiver: ['#0FC88D', '#F5319D', '#FF7D00', '#52C41A', '#8D6E63', '#D4B896'],
+  ruler: ['#1D2129', '#F7BA1E', '#722ED1', '#165DFF', '#1A1A1A', '#2C2C2C', '#D4AF37', '#0F1C2E', '#8B7355', '#A67C52'],
+  creator: ['#F5319D', '#722ED1', '#F7BA1E', '#165DFF', '#6F5B3E', '#8B6914']
 }
 
 const audienceColorPreferences: Record<string, string[]> = {
   genz: ['#722ED1', '#F5319D', '#F7BA1E', '#0FC88D'],
-  millennial: ['#165DFF', '#0FC6C2', '#722ED1', '#F53F3F'],
-  business: ['#165DFF', '#1D2129', '#0FC6C2', '#722ED1'],
-  family: ['#52C41A', '#FF7D00', '#0FC88D', '#F7BA1E'],
+  millennial: ['#165DFF', '#0FC6C2', '#722ED1', '#F53F3F', '#4A4A4A'],
+  business: ['#165DFF', '#1D2129', '#0FC6C2', '#722ED1', '#2C3E50', '#8B8589', '#1D2D44'],
+  family: ['#52C41A', '#FF7D00', '#0FC88D', '#F7BA1E', '#8D6E63'],
   student: ['#FF7D00', '#F7BA1E', '#722ED1', '#0FC88D'],
-  mom: ['#F5319D', '#0FC88D', '#F7BA1E', '#EC4899'],
-  senior: ['#165DFF', '#52C41A', '#86909C', '#0FC6C2'],
-  premium: ['#1D2129', '#F7BA1E', '#722ED1', '#86909C']
+  mom: ['#F5319D', '#0FC88D', '#F7BA1E', '#EC4899', '#B76E79'],
+  senior: ['#165DFF', '#52C41A', '#86909C', '#0FC6C2', '#3E2723', '#BCAAA4'],
+  premium: ['#1D2129', '#F7BA1E', '#722ED1', '#86909C', '#1A1A1A', '#D4AF37', '#0F1C2E', '#8B7355', '#1B262C', '#B8860B', '#B76E79', '#1D2D44']
 }
 
 const genderColorPreferences: Record<string, string[]> = {
-  neutral: ['#165DFF', '#722ED1', '#0FC6C2', '#1D2129'],
-  female: ['#F5319D', '#EC4899', '#722ED1', '#F7BA1E'],
-  male: ['#165DFF', '#1D2129', '#0FC6C2', '#F53F3F']
+  neutral: ['#165DFF', '#722ED1', '#0FC6C2', '#1D2129', '#1A1A1A', '#4A4A4A', '#2C3E50', '#8B8589'],
+  female: ['#F5319D', '#EC4899', '#722ED1', '#F7BA1E', '#B76E79', '#D4B896', '#C9B896'],
+  male: ['#165DFF', '#1D2129', '#0FC6C2', '#F53F3F', '#1A1A1A', '#0F1C2E', '#2C3E50', '#8B7355']
 }
 
 const ageColorPreferences = (ageMin: number, ageMax: number): string[] => {
   const avgAge = (ageMin + ageMax) / 2
   if (avgAge < 18) return ['#F7BA1E', '#F5319D', '#FF7D00', '#0FC88D']
   if (avgAge < 30) return ['#722ED1', '#165DFF', '#F5319D', '#0FC6C2']
-  if (avgAge < 45) return ['#165DFF', '#0FC6C2', '#722ED1', '#F7BA1E']
-  if (avgAge < 60) return ['#1D2129', '#165DFF', '#52C41A', '#86909C']
-  return ['#165DFF', '#52C41A', '#86909C', '#0FC6C2']
+  if (avgAge < 45) return ['#165DFF', '#0FC6C2', '#722ED1', '#F7BA1E', '#4A4A4A', '#2C3E50', '#B76E79']
+  if (avgAge < 60) return ['#1D2129', '#165DFF', '#52C41A', '#86909C', '#1A1A1A', '#D4AF37', '#8B7355', '#1D2D44']
+  return ['#165DFF', '#52C41A', '#86909C', '#0FC6C2', '#3E2723', '#2C2C2C', '#BCAAA4']
 }
 
 const colorPalettes: Record<string, { primary: string; secondary: string; light: string; bg: string }[]> = {
+  luxury: [
+    { primary: '#1A1A1A', secondary: '#8B7355', light: '#C9B896', bg: '#F8F6F2' },
+    { primary: '#2C2C2C', secondary: '#D4AF37', light: '#F5E6A8', bg: '#FAFAF7' },
+    { primary: '#0F1C2E', secondary: '#8B7355', light: '#B8A88A', bg: '#F5F3EF' },
+    { primary: '#1D2D44', secondary: '#A67C52', light: '#D4B896', bg: '#F7F5F2' },
+    { primary: '#2B1B1B', secondary: '#8B6914', light: '#D4AF37', bg: '#FDFBF7' },
+    { primary: '#1A1A2E', secondary: '#6F5B3E', light: '#C9A96E', bg: '#F9F7F4' },
+    { primary: '#3A2E2A', secondary: '#8B8589', light: '#C9CDD4', bg: '#FAF9F7' },
+    { primary: '#2C3E50', secondary: '#7F8C8D', light: '#BDC3C7', bg: '#F8F9FA' },
+    { primary: '#4A4A4A', secondary: '#B8860B', light: '#E8D5A3', bg: '#FAF8F4' },
+    { primary: '#1B262C', secondary: '#A58B69', light: '#D4C4A8', bg: '#F7F5F2' },
+    { primary: '#3E2723', secondary: '#8D6E63', light: '#BCAAA4', bg: '#FAF8F6' },
+    { primary: '#212121', secondary: '#B76E79', light: '#F5E6E8', bg: '#FDFAFB' }
+  ],
   blue: [
     { primary: '#165DFF', secondary: '#4080FF', light: '#6BA3FF', bg: '#F0F7FF' },
     { primary: '#0E42D2', secondary: '#1D5BF0', light: '#5E8BFF', bg: '#E8F0FF' },
@@ -990,6 +1017,31 @@ const colorPalettes: Record<string, { primary: string; secondary: string; light:
 }
 
 const colorPsychology: Record<string, { name: string; meaning: string; tags: string[]; isLight: boolean }> = {
+  '#1A1A1A': { name: '极致黑', meaning: '绝对的奢华与克制，是高端品牌的灵魂之色，传递永恒经典与至高品质，适合顶级奢侈品牌', tags: ['奢华', '经典', '克制', '高端'], isLight: false },
+  '#8B7355': { name: '复古金棕', meaning: '温暖而内敛的金属质感，如同古董金器的沉淀，传递时光淬炼的品质感与历史底蕴', tags: ['品质', '复古', '底蕴', '高端'], isLight: false },
+  '#C9B896': { name: '香槟米金', meaning: '柔和的浅金色调，不张扬却自带贵气，传递优雅、克制与精致的生活态度', tags: ['优雅', '精致', '克制', '高端'], isLight: true },
+  '#D4AF37': { name: '香槟金', meaning: '经典的奢华金属色，温暖而不刺眼，传递贵族气质与精致生活品味，是奢侈品的标志性色调', tags: ['奢华', '贵族', '精致', '经典'], isLight: false },
+  '#0F1C2E': { name: '午夜藏蓝', meaning: '深邃如夜空的蓝黑色，传递神秘、尊贵与沉稳，适合高端男士品牌和珠宝腕表', tags: ['尊贵', '神秘', '沉稳', '高端'], isLight: false },
+  '#1D2D44': { name: '深海藏青', meaning: '沉稳而有深度的藏青色，如同深海般包容而有力量，传递经典商务与高端品质感', tags: ['经典', '商务', '品质', '高端'], isLight: false },
+  '#A67C52': { name: '古铜棕', meaning: '温润的古铜色调，带有手工打磨的质感，传递匠心、传承与手作精神', tags: ['匠心', '传承', '手工', '高端'], isLight: false },
+  '#D4B896': { name: '燕麦米金', meaning: '温暖柔和的大地色系，传递自然、纯粹与高品质生活方式，适合高奢生活方式品牌', tags: ['自然', '纯粹', '品质', '高端'], isLight: true },
+  '#2B1B1B': { name: '勃艮第黑', meaning: '深褐近黑的酒红色调，如同陈年葡萄酒的色泽，传递醇厚、经典与极致品味', tags: ['醇厚', '经典', '品味', '高端'], isLight: false },
+  '#8B6914': { name: '暗金橄榄', meaning: '沉稳的暗金色，带有橄榄绿的微妙基调，传递军规级品质与复古奢华感', tags: ['品质', '复古', '奢华', '克制'], isLight: false },
+  '#1A1A2E': { name: '皇室靛蓝', meaning: '深邃至极的蓝紫色调，如同皇室帷幕的颜色，传递至高无上的尊贵与神秘', tags: ['尊贵', '皇室', '神秘', '高端'], isLight: false },
+  '#6F5B3E': { name: '摩卡棕', meaning: '浓郁的深棕色，如同顶级摩卡咖啡的色泽，传递醇厚、温暖与高品质生活', tags: ['醇厚', '温暖', '品质', '高端'], isLight: false },
+  '#C9A96E': { name: '淡雅沙金', meaning: '低调的浅沙金色，不张扬却难掩贵气，传递新贵阶层的品味与克制', tags: ['新贵', '克制', '品味', '高端'], isLight: true },
+  '#3A2E2A': { name: '炭烧咖啡', meaning: '深沉的炭褐色调，如同深度烘焙的咖啡豆，传递匠心工艺与极致品味', tags: ['匠心', '品味', '极致', '高端'], isLight: false },
+  '#8B8589': { name: '玫瑰钛灰', meaning: '带微妙玫瑰调的高级灰色，传递现代都市精英的低调奢华与品味', tags: ['低调', '精英', '现代', '高端'], isLight: false },
+  '#2C3E50': { name: '石墨蓝灰', meaning: '石墨般的蓝灰色调，冷静而有力量，传递现代商务精英的沉稳与品味', tags: ['商务', '精英', '沉稳', '高端'], isLight: false },
+  '#B8860B': { name: '暗金色', meaning: '深沉不张扬的金色，如同古法黄金的色泽，传递传承、厚重与高贵', tags: ['传承', '高贵', '厚重', '高端'], isLight: false },
+  '#1B262C': { name: '深海墨黑', meaning: '近乎墨色的深蓝黑色，传递神秘、深邃与至高品质，适合顶级腕表与珠宝品牌', tags: ['神秘', '深邃', '品质', '高端'], isLight: false },
+  '#A58B69': { name: '可可棕金', meaning: '可可与金的融合色调，传递温暖、醇厚与精致的生活美学', tags: ['温暖', '精致', '醇厚', '高端'], isLight: false },
+  '#D4C4A8': { name: '奶咖米白', meaning: '高级米白调，温暖而不刺眼，大量留白时的最佳选择，传递纯粹与极致', tags: ['纯粹', '极致', '留白', '高端'], isLight: true },
+  '#3E2723': { name: '乌木棕', meaning: '深色名贵木材的色泽，传递自然、珍贵与东方禅意的奢华美学', tags: ['珍贵', '禅意', '自然', '高端'], isLight: false },
+  '#8D6E63': { name: '烟棕灰', meaning: '烟熏质感的棕色系，传递复古、成熟与低调奢华的品味', tags: ['复古', '成熟', '低调', '高端'], isLight: false },
+  '#BCAAA4': { name: '暖调米灰', meaning: '温暖的浅灰米色，作为辅助色传递高级感与精致度', tags: ['精致', '高级', '辅助', '高端'], isLight: true },
+  '#B76E79': { name: '干枯玫瑰金', meaning: '灰调玫瑰粉金色，不甜腻却自带高级感，传递女性化奢华与精致品味', tags: ['女性化', '精致', '奢华', '克制'], isLight: false },
+  '#F5E6E8': { name: '粉雾米白', meaning: '极浅的粉色调米白，柔和而优雅，适合高奢女性品牌的留白底色', tags: ['优雅', '女性化', '留白', '高端'], isLight: true },
   '#165DFF': { name: '科技蓝', meaning: '传达专业、信任与科技感，激发用户对可靠性的认知，适合科技、金融品牌', tags: ['专业', '信任', '科技'], isLight: false },
   '#722ED1': { name: '创意紫', meaning: '象征创造力、奢华与神秘感，吸引追求独特的受众，适合文创、美妆品牌', tags: ['创意', '奢华', '独特'], isLight: false },
   '#00B42A': { name: '生命绿', meaning: '代表健康、自然与成长，传达环保和有机理念，适合健康、农业品牌', tags: ['健康', '自然', '环保'], isLight: false },
@@ -1079,16 +1131,30 @@ const fontsByStyle: Record<string, { nameStyle: Record<string, string>; englishS
     {
       fontStyle: '高端衬线',
       traits: ['高端', '品质', '优雅'],
-      nameStyle: { fontFamily: '"Songti SC", Georgia, "Times New Roman", serif', fontWeight: '500', letterSpacing: '6px' },
-      englishStyle: { fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: '400', letterSpacing: '4px', fontSize: '11px' },
-      sloganStyle: { fontFamily: 'Georgia, serif', fontWeight: '300', letterSpacing: '3px', fontSize: '10px' }
+      nameStyle: { fontFamily: '"Songti SC", Georgia, "Times New Roman", serif', fontWeight: '400', letterSpacing: '8px' },
+      englishStyle: { fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: '300', letterSpacing: '6px', fontSize: '10px' },
+      sloganStyle: { fontFamily: 'Georgia, serif', fontWeight: '200', letterSpacing: '4px', fontSize: '9px' }
     },
     {
-      fontStyle: '经典罗马体',
-      traits: ['高端', '经典', '权威'],
-      nameStyle: { fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: '600', letterSpacing: '5px' },
-      englishStyle: { fontFamily: '"Times New Roman", serif', fontWeight: '500', letterSpacing: '3px', fontSize: '12px' },
-      sloganStyle: { fontFamily: '"Times New Roman", serif', fontWeight: '400', fontSize: '10px' }
+      fontStyle: '经典细衬线',
+      traits: ['高端', '克制', '精致'],
+      nameStyle: { fontFamily: '"Songti SC", "STSong", Georgia, serif', fontWeight: '300', letterSpacing: '10px' },
+      englishStyle: { fontFamily: 'Georgia, "Didot", serif', fontWeight: '200', letterSpacing: '7px', fontSize: '10px' },
+      sloganStyle: { fontFamily: 'Georgia, serif', fontWeight: '200', letterSpacing: '5px', fontSize: '9px' }
+    },
+    {
+      fontStyle: 'Didot高端衬线',
+      traits: ['奢华', '优雅', '时尚'],
+      nameStyle: { fontFamily: 'Georgia, "Times New Roman", serif', fontWeight: '500', letterSpacing: '7px' },
+      englishStyle: { fontFamily: '"Didot", Georgia, serif', fontWeight: '400', letterSpacing: '5px', fontSize: '11px' },
+      sloganStyle: { fontFamily: '"Times New Roman", serif', fontWeight: '300', letterSpacing: '4px', fontSize: '10px' }
+    },
+    {
+      fontStyle: 'Hairline极细体',
+      traits: ['克制', '极简', '现代高端'],
+      nameStyle: { fontFamily: '"Helvetica Neue", "PingFang SC", sans-serif', fontWeight: '200', letterSpacing: '9px' },
+      englishStyle: { fontFamily: '"Helvetica Neue", Arial, sans-serif', fontWeight: '100', letterSpacing: '6px', fontSize: '10px' },
+      sloganStyle: { fontFamily: 'sans-serif', fontWeight: '200', letterSpacing: '4px', fontSize: '9px' }
     }
   ],
   natural: [
@@ -1505,7 +1571,65 @@ const onIndustryChange = () => {
 
 const getRandomItem = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
+const isLuxuryBrand = (): boolean => {
+  return brandForm.value.positioning === 'luxury'
+    || brandForm.value.priceLevel >= 4
+    || brandForm.value.style === 'luxury'
+    || brandForm.value.audiences.includes('premium')
+    || brandForm.value.valueKeywords.includes('高端')
+    || brandForm.value.valueKeywords.includes('奢华')
+}
+
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null
+}
+
+const getColorSaturation = (hex: string): number => {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  const r = rgb.r / 255, g = rgb.g / 255, b = rgb.b / 255
+  const max = Math.max(r, g, b), min = Math.min(r, g, b)
+  const l = (max + min) / 2
+  if (max === min) return 0
+  const d = max - min
+  return l > 0.5 ? d / (2 - max - min) : d / (max + min)
+}
+
+const getColorBrightness = (hex: string): number => {
+  const rgb = hexToRgb(hex)
+  if (!rgb) return 0
+  return (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000
+}
+
+const isHighSaturationColor = (hex: string): boolean => {
+  const sat = getColorSaturation(hex)
+  const bright = getColorBrightness(hex)
+  return sat > 0.7 && bright > 60 && bright < 200
+}
+
+const isLuxuryPalette = (palette: { primary: string }): boolean => {
+  const lowSatPrimary = getColorSaturation(palette.primary) < 0.55
+  const luxuryColors = ['#1A1A1A', '#2C2C2C', '#0F1C2E', '#1D2D44', '#2B1B1B', '#1A1A2E',
+    '#3A2E2A', '#2C3E50', '#4A4A4A', '#1B262C', '#3E2723', '#212121',
+    '#1D2129', '#4E5969', '#86909C', '#8B7355', '#D4AF37', '#A67C52',
+    '#8B6914', '#6F5B3E', '#8B8589', '#B8860B', '#A58B69', '#8D6E63',
+    '#B76E79', '#722ED1', '#9254DE']
+  return lowSatPrimary || luxuryColors.includes(palette.primary.toUpperCase())
+}
+
 const getIconsForStyle = (style: string, industry: string): string[] => {
+  if (isLuxuryBrand()) {
+    const baseLuxury = [...luxuryIcons]
+    if (style === 'minimal') {
+      return [...baseLuxury, ...minimalIcons]
+    }
+    return baseLuxury
+  }
   if (style === 'minimal') return minimalIcons
   if (style === 'tech') return techIcons
   if (style === 'retro') return retroIcons
@@ -1516,6 +1640,19 @@ const getIconsForStyle = (style: string, industry: string): string[] => {
 }
 
 const getWeightedPalette = () => {
+  const isLuxury = isLuxuryBrand()
+
+  if (isLuxury) {
+    if (brandForm.value.colorScheme === 'auto') {
+      const luxuryPalettes = colorPalettes.luxury || []
+      const monoPalettes = colorPalettes.mono || []
+      const combined = [...luxuryPalettes, ...monoPalettes]
+      if (combined.length > 0) {
+        return getRandomItem(combined)
+      }
+    }
+  }
+
   if (brandForm.value.colorScheme !== 'auto' && colorPalettes[brandForm.value.colorScheme]) {
     return getRandomItem(colorPalettes[brandForm.value.colorScheme])
   }
@@ -1525,39 +1662,84 @@ const getWeightedPalette = () => {
 
   for (const palette of allPalettes) {
     let score = 0
+
+    if (isLuxury) {
+      if (isLuxuryPalette(palette)) {
+        score += 80
+      }
+      const sat = getColorSaturation(palette.primary)
+      if (sat > 0.7) {
+        score -= 120
+      } else if (sat > 0.5) {
+        score -= 60
+      } else if (sat < 0.3) {
+        score += 40
+      }
+      if (isHighSaturationColor(palette.primary)) {
+        score -= 200
+      }
+    }
+
     for (const arc of brandForm.value.archetypes) {
       if ((archetypeColorPreferences[arc] || []).includes(palette.primary)) {
-        score += 25
+        score += isLuxury ? 15 : 25
       }
     }
     for (const aud of brandForm.value.audiences) {
       if ((audienceColorPreferences[aud] || []).includes(palette.primary)) {
-        score += 20
+        score += isLuxury ? 10 : 20
       }
     }
     if (ageColorPreferences(brandForm.value.ageRange[0], brandForm.value.ageRange[1]).includes(palette.primary)) {
-      score += 15
+      score += isLuxury ? 8 : 15
     }
     if ((genderColorPreferences[brandForm.value.genderBias] || []).includes(palette.primary)) {
-      score += 10
+      score += isLuxury ? 5 : 10
     }
     if (score === 0) score = 1
     colorScores.set(palette, score)
   }
 
   const sorted = Array.from(colorScores.entries()).sort((a, b) => b[1] - a[1])
-  const topCount = Math.max(3, Math.floor(sorted.length / 3))
+  const topCount = isLuxury
+    ? Math.max(2, Math.floor(sorted.length / 5))
+    : Math.max(3, Math.floor(sorted.length / 3))
   return getRandomItem(sorted.slice(0, topCount).map(s => s[0]))
 }
 
 const getWeightedFontConfig = () => {
-  const fonts = fontsByStyle[brandForm.value.style] || fontsByStyle.minimal
+  const isLuxury = isLuxuryBrand()
+  let fonts = fontsByStyle[brandForm.value.style] || fontsByStyle.minimal
+
+  if (isLuxury && fonts !== fontsByStyle.luxury) {
+    fonts = [...fontsByStyle.luxury, ...fonts]
+  }
+
   const fontScores: Map<typeof fonts[0], number> = new Map()
 
   for (const font of fonts) {
     let score = 50
+
+    if (isLuxury) {
+      if (font.traits.includes('高端') || font.traits.includes('奢华') || font.traits.includes('克制')) {
+        score += 60
+      }
+      if (font.traits.includes('精致') || font.traits.includes('优雅') || font.traits.includes('经典')) {
+        score += 30
+      }
+      const fontWeight = parseInt(font.nameStyle.fontWeight || '500')
+      if (fontWeight <= 300) score += 25
+      else if (fontWeight <= 400) score += 15
+      else if (fontWeight >= 700) score -= 40
+      const letterSpacing = font.nameStyle.letterSpacing || '0px'
+      const spacingNum = parseInt(letterSpacing) || 0
+      if (spacingNum >= 7) score += 20
+      else if (spacingNum >= 5) score += 10
+      else if (spacingNum <= 2) score -= 30
+    }
+
     for (const keyword of brandForm.value.valueKeywords) {
-      if (font.traits.includes(keyword)) score += 20
+      if (font.traits.includes(keyword)) score += isLuxury ? 30 : 20
     }
     for (const arc of brandForm.value.archetypes) {
       const arcTraitMap: Record<string, string[]> = {
@@ -1576,7 +1758,7 @@ const getWeightedFontConfig = () => {
       }
       const traits = arcTraitMap[arc] || []
       for (const t of traits) {
-        if (font.traits.includes(t)) score += 15
+        if (font.traits.includes(t)) score += isLuxury ? 20 : 15
       }
     }
     fontScores.set(font, score)
@@ -1587,26 +1769,35 @@ const getWeightedFontConfig = () => {
 }
 
 const calculateFitnessScore = (palette: { primary: string }, font: { traits: string[] }, icon: string) => {
+  const isLuxury = isLuxuryBrand()
   let score = 50
 
+  if (isLuxury) {
+    if (isLuxuryPalette(palette)) score += 20
+    if (isHighSaturationColor(palette.primary)) score -= 25
+    if (getColorSaturation(palette.primary) < 0.4) score += 10
+    if (font.traits.includes('高端') || font.traits.includes('奢华') || font.traits.includes('克制')) score += 15
+    if (font.traits.includes('精致') || font.traits.includes('优雅')) score += 10
+  }
+
   for (const arc of brandForm.value.archetypes) {
-    if ((archetypeColorPreferences[arc] || []).includes(palette.primary)) score += 10
+    if ((archetypeColorPreferences[arc] || []).includes(palette.primary)) score += isLuxury ? 8 : 10
   }
   for (const aud of brandForm.value.audiences) {
-    if ((audienceColorPreferences[aud] || []).includes(palette.primary)) score += 8
+    if ((audienceColorPreferences[aud] || []).includes(palette.primary)) score += isLuxury ? 6 : 8
   }
   for (const keyword of brandForm.value.valueKeywords) {
-    if (font.traits.includes(keyword)) score += 8
+    if (font.traits.includes(keyword)) score += isLuxury ? 10 : 8
   }
   if (ageColorPreferences(brandForm.value.ageRange[0], brandForm.value.ageRange[1]).includes(palette.primary)) {
-    score += 6
+    score += isLuxury ? 4 : 6
   }
   if ((genderColorPreferences[brandForm.value.genderBias] || []).includes(palette.primary)) {
-    score += 5
+    score += isLuxury ? 3 : 5
   }
 
   const icons = getIconsForStyle(brandForm.value.style, brandForm.value.industry)
-  if (icons.includes(icon)) score += 10
+  if (icons.includes(icon)) score += isLuxury ? 8 : 10
 
   return Math.min(98, Math.max(55, score))
 }
@@ -1617,6 +1808,7 @@ const generateDesignPrinciples = (
   layout: { name: string; value: string },
   icon: string
 ): DesignPrinciple[] => {
+  const isLuxury = isLuxuryBrand()
   const principles: DesignPrinciple[] = []
   const colorInfo = colorPsychology[palette.primary]
 
@@ -1624,19 +1816,30 @@ const generateDesignPrinciples = (
     principles.push({
       icon: '🎨',
       label: '配色策略',
-      text: `采用${colorInfo.name}（${palette.primary}）作为主色调，${colorInfo.meaning}`
+      text: `采用${colorInfo.name}（${palette.primary}）作为主色调，${colorInfo.meaning}${isLuxury ? '。低饱和度色彩传递高端品牌的克制与精致感' : ''}`
     })
   }
 
+  const fontDesc = isLuxury
+    ? '超大字间距营造呼吸感，细字重传递精致与克制，是高端奢侈品品牌的标准字体策略'
+    : brandForm.value.style === 'luxury'
+      ? '大字间距增强高端感'
+      : brandForm.value.style === 'tech'
+        ? '现代感字体传递科技属性'
+        : '符合品牌整体调性'
   principles.push({
     icon: '🔤',
     label: '字体策略',
-    text: `选用${font.fontStyle}，其特质为「${font.traits.join('·')}」，${brandForm.value.style === 'luxury' ? '大字间距增强高端感' : brandForm.value.style === 'tech' ? '现代感字体传递科技属性' : '符合品牌整体调性'}`
+    text: `选用${font.fontStyle}，其特质为「${font.traits.join('·')}」，${fontDesc}`
   })
 
   const layoutDesc: Record<string, string> = {
-    top: '图标在上文字在下的垂直布局，符合阅读习惯，适合图标表现力强的符号',
-    left: '图标在左文字在右的横向布局，信息密度高，适合中英文组合展示',
+    top: isLuxury
+      ? '图标在上文字在下的垂直布局，大量留白彰显尊贵，极简排列传递高端品牌的克制美学'
+      : '图标在上文字在下的垂直布局，符合阅读习惯，适合图标表现力强的符号',
+    left: isLuxury
+      ? '图标在左文字在右的横向布局，元素间距宽松，如同高级时装的剪裁，体现品牌品味'
+      : '图标在左文字在右的横向布局，信息密度高，适合中英文组合展示',
     circle: '圆形图标包裹设计，具有强辨识度和记忆点，适合APP头像和社交场景'
   }
   principles.push({
@@ -1645,7 +1848,11 @@ const generateDesignPrinciples = (
     text: `采用${layout.name}（${layout.value}），${layoutDesc[layout.value]}`
   })
 
-  const iconMeaning = icon.length <= 2 ? `符号「${icon}」具有直观的视觉辨识度` : `图标元素「${icon}」与行业属性高度契合`
+  const iconMeaning = isLuxury
+    ? `极简几何符号「${icon}」低调而有记忆点，留白处彰显品牌品味，符合奢侈品的视觉语言`
+    : icon.length <= 2
+      ? `符号「${icon}」具有直观的视觉辨识度`
+      : `图标元素「${icon}」与行业属性高度契合`
   principles.push({
     icon: '✨',
     label: '图标策略',
@@ -1657,7 +1864,9 @@ const generateDesignPrinciples = (
     principles.push({
       icon: '🧠',
       label: '心理学依据',
-      text: `整体设计呼应「${arcLabels}」品牌人格原型，从视觉层面触达目标受众的深层心理需求`
+      text: isLuxury
+        ? `整体设计呼应「${arcLabels}」品牌人格原型，通过克制的视觉语言触达高净值人群对品质、传承与独特性的深层心理需求`
+        : `整体设计呼应「${arcLabels}」品牌人格原型，从视觉层面触达目标受众的深层心理需求`
     })
   }
 
@@ -1665,13 +1874,28 @@ const generateDesignPrinciples = (
 }
 
 const generateOneLogo = (): LogoDesign => {
+  const isLuxury = isLuxuryBrand()
   const icons = getIconsForStyle(brandForm.value.style, brandForm.value.industry)
-  const layout = layoutOptions[Math.floor(Math.random() * layoutOptions.length)]
+
+  let layout
+  if (isLuxury) {
+    const luxuryLayouts = [
+      { name: '图标在上', value: 'top' as const },
+      { name: '图标在左', value: 'left' as const }
+    ]
+    layout = luxuryLayouts[Math.floor(Math.random() * luxuryLayouts.length)]
+  } else {
+    layout = layoutOptions[Math.floor(Math.random() * layoutOptions.length)]
+  }
+
   const palette = getWeightedPalette()
   const fontConfig = getWeightedFontConfig()
   const icon = getRandomItem(icons)
-  const nameSize = layout.value === 'circle' ? 20 : (layout.value === 'top' ? 24 : 22)
-  const iconSize = layout.value === 'circle' ? 36 : (layout.value === 'top' ? 48 : 40)
+
+  const baseNameSize = layout.value === 'circle' ? 20 : (layout.value === 'top' ? 24 : 22)
+  const baseIconSize = layout.value === 'circle' ? 36 : (layout.value === 'top' ? 48 : 40)
+  const nameSize = isLuxury ? Math.max(14, baseNameSize - 2) : baseNameSize
+  const iconSize = isLuxury ? Math.max(24, baseIconSize - 6) : baseIconSize
 
   const matchedPersonalities = brandForm.value.archetypes.length > 0
     ? brandForm.value.archetypes
@@ -1681,7 +1905,7 @@ const generateOneLogo = (): LogoDesign => {
   const designPrinciples = generateDesignPrinciples(palette, fontConfig, layout, icon)
 
   return {
-    styleName: styles.find(s => s.value === brandForm.value.style)?.label || '极简风',
+    styleName: styles.find(s => s.value === brandForm.value.style)?.label || (isLuxury ? '高端奢华风' : '极简风'),
     layoutName: layout.name,
     iconPosition: layout.value,
     icon,
@@ -1705,7 +1929,8 @@ const generateOneLogo = (): LogoDesign => {
       color: palette.light
     },
     canvasStyle: {
-      fontFamily: fontConfig.nameStyle.fontFamily
+      fontFamily: fontConfig.nameStyle.fontFamily,
+      padding: isLuxury ? '40px' : '20px'
     },
     fontStyle: fontConfig.fontStyle,
     fitnessScore,
