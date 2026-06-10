@@ -135,11 +135,24 @@
             v-model="masterVolume"
             :min="0"
             :max="100"
-            style="width: 160px"
+            style="width: 140px"
             :show-tooltip="false"
             @input="updateMasterVolume"
           />
           <span class="volume-label">{{ masterVolume }}%</span>
+        </div>
+
+        <div class="volume-group">
+          <span class="reverb-label">混响</span>
+          <el-slider
+            v-model="reverbMix"
+            :min="0"
+            :max="50"
+            style="width: 100px"
+            :show-tooltip="false"
+            @input="updateReverb"
+          />
+          <span class="volume-label">{{ reverbMix }}%</span>
         </div>
 
         <div class="action-group">
@@ -181,16 +194,16 @@
         <div class="card-header">
           <el-icon :size="18" color="#e74c3c"><Microphone /></el-icon>
           <span>关于音色 · 音质说明</span>
-          <el-tag size="small" type="warning" class="sound-tag">Web Audio 实时合成</el-tag>
+          <el-tag size="small" type="warning" class="sound-tag">高精度 Web Audio 合成</el-tag>
         </div>
       </template>
 
       <el-alert type="info" :closable="false" show-icon class="sound-alert">
         <template #title>
-          <strong>当前音色类型：Web Audio API 实时合成音效（非真实鼓组采样）</strong>
+          <strong>当前音色类型：高精度 Web Audio 合成音效（非真实鼓组采样录制）</strong>
         </template>
         <div class="sound-alert-content">
-          <p>本虚拟架子鼓通过浏览器内置的 <strong>Web Audio API</strong> 使用振荡器（Oscillator）和白噪声（White Noise）模块，结合滤波器、包络曲线等信号处理技术，<strong>实时计算生成</strong>各种鼓声。无需下载任何音频文件，打开即用，零延迟响应。</p>
+          <p>本虚拟架子鼓通过浏览器内置的 <strong>Web Audio API</strong>，采用多层振荡器叠加、粉红/白噪声混合塑形、动态包络曲线、软饱和模拟、带通共振滤波等专业信号处理技术，<strong>实时计算生成</strong>接近真实鼓组音色的声音。同时内置了动态压缩器和房间混响效果，让整体听感更加饱满自然。</p>
         </div>
       </el-alert>
 
@@ -202,12 +215,12 @@
               <span>合成音效特点</span>
             </div>
             <ul class="compare-list">
-              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>零加载时间，随时可用</span></li>
-              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>响应极快，无播放延迟</span></li>
-              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>体积极小，不占存储空间</span></li>
-              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>可无限次叠加演奏</span></li>
-              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>真实感不如专业采样音色</span></li>
-              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>动态层次相对有限</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>零加载时间，打开即用</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>多层叠加合成，音色层次丰富</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>内置动态压缩 + 房间混响</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>可无限次叠加演奏不爆音</span></li>
+              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>底鼓低频下潜深度不及真实采样</span></li>
+              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>军鼓响线质感略有电子感</span></li>
             </ul>
           </div>
         </el-col>
@@ -222,7 +235,7 @@
               <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 鼓点编排与创意灵感记录</span></li>
               <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 初学者熟悉鼓组布局</span></li>
               <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 日常娱乐放松演奏</span></li>
-              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 配合节拍器做速度训练</span></li>
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 简易 Demo/草稿节奏录制</span></li>
               <li><el-icon color="#909399"><InfoFilled /></el-icon><span>ℹ️ 如需录音棚级音色请使用专业 DAW 软件</span></li>
             </ul>
           </div>
@@ -367,18 +380,19 @@ const qualityTips = [
   {
     icon: 'Warning',
     title: '适中音量播放',
-    desc: '过高音量会出现削波失真，建议保持 60-80% 主音量',
+    desc: '过高音量会出现削波失真，建议保持 60-80% 主音量，已内置压缩器保护',
     color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
   },
   {
     icon: 'MagicStick',
-    title: '合理编排力度',
-    desc: '通过击键速度的心理暗示，想象轻重变化让演奏更有音乐性',
+    title: '调节混响量',
+    desc: '调低混响可获更干练音色，调高混响可获更空间感，适合不同曲风',
     color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
   }
 ]
 
 const masterVolume = ref(80)
+const reverbMix = ref(15)
 const activePads = reactive(new Set<string>())
 const drumKitRef = ref<HTMLElement | null>(null)
 
@@ -398,13 +412,40 @@ let beatCount = 0
 
 let audioContext: AudioContext | null = null
 let masterGainNode: GainNode | null = null
+let compressorNode: DynamicsCompressorNode | null = null
+let reverbNode: ConvolverNode | null = null
+let reverbGainNode: GainNode | null = null
+let dryGainNode: GainNode | null = null
 
 const initAudioContext = () => {
   if (!audioContext) {
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+
+    compressorNode = audioContext.createDynamicsCompressor()
+    compressorNode.threshold.value = -12
+    compressorNode.knee.value = 10
+    compressorNode.ratio.value = 4
+    compressorNode.attack.value = 0.003
+    compressorNode.release.value = 0.15
+
     masterGainNode = audioContext.createGain()
     masterGainNode.gain.value = masterVolume.value / 100
-    masterGainNode.connect(audioContext.destination)
+
+    dryGainNode = audioContext.createGain()
+    dryGainNode.gain.value = 0.85
+
+    reverbGainNode = audioContext.createGain()
+    reverbGainNode.gain.value = 0.15
+
+    reverbNode = audioContext.createConvolver()
+    reverbNode.buffer = createReverbIR(audioContext, 1.2, 2.0)
+
+    masterGainNode.connect(compressorNode)
+    compressorNode.connect(dryGainNode)
+    compressorNode.connect(reverbNode)
+    dryGainNode.connect(audioContext.destination)
+    reverbNode.connect(reverbGainNode)
+    reverbGainNode.connect(audioContext.destination)
   }
   if (audioContext.state === 'suspended') {
     audioContext.resume()
@@ -412,9 +453,29 @@ const initAudioContext = () => {
   return audioContext
 }
 
+const createReverbIR = (ctx: AudioContext, duration: number, decay: number): AudioBuffer => {
+  const length = ctx.sampleRate * duration
+  const buffer = ctx.createBuffer(2, length, ctx.sampleRate)
+  for (let ch = 0; ch < 2; ch++) {
+    const data = buffer.getChannelData(ch)
+    for (let i = 0; i < length; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay)
+    }
+  }
+  return buffer
+}
+
 const updateMasterVolume = () => {
   if (masterGainNode) {
     masterGainNode.gain.value = masterVolume.value / 100
+  }
+}
+
+const updateReverb = () => {
+  if (dryGainNode && reverbGainNode) {
+    const wet = reverbMix.value / 100
+    dryGainNode.gain.value = 1 - wet * 0.5
+    reverbGainNode.gain.value = wet
   }
 }
 
@@ -428,109 +489,364 @@ const createNoiseBuffer = (ctx: AudioContext, duration: number): AudioBuffer => 
   return buffer
 }
 
+const createPinkNoiseBuffer = (ctx: AudioContext, duration: number): AudioBuffer => {
+  const bufferSize = ctx.sampleRate * duration
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+  const data = buffer.getChannelData(0)
+  let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0
+  for (let i = 0; i < bufferSize; i++) {
+    const white = Math.random() * 2 - 1
+    b0 = 0.99886 * b0 + white * 0.0555179
+    b1 = 0.99332 * b1 + white * 0.0750759
+    b2 = 0.96900 * b2 + white * 0.1538520
+    b3 = 0.86650 * b3 + white * 0.3104856
+    b4 = 0.55000 * b4 + white * 0.5329522
+    b5 = -0.7616 * b5 - white * 0.0168980
+    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11
+    b6 = white * 0.115926
+  }
+  return buffer
+}
+
+const makeSoftSaturateCurve = (samples: number = 8192): Float32Array => {
+  const curve = new Float32Array(samples)
+  for (let i = 0; i < samples; i++) {
+    const x = (i * 2) / samples - 1
+    curve[i] = (Math.PI + 2.5) * x / (Math.PI + 2.5 * Math.abs(x))
+  }
+  return curve
+}
+
 const playKick = (ctx: AudioContext) => {
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.connect(gain)
-  gain.connect(masterGainNode!)
+  const now = ctx.currentTime
 
-  osc.frequency.setValueAtTime(150, ctx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+  const clickOsc = ctx.createOscillator()
+  const clickGain = ctx.createGain()
+  clickOsc.type = 'sine'
+  clickOsc.frequency.setValueAtTime(4000, now)
+  clickOsc.frequency.exponentialRampToValueAtTime(800, now + 0.005)
+  clickGain.gain.setValueAtTime(0.35, now)
+  clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.015)
+  clickOsc.connect(clickGain)
+  clickGain.connect(masterGainNode!)
+  clickOsc.start(now)
+  clickOsc.stop(now + 0.02)
 
-  gain.gain.setValueAtTime(1, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5)
+  const subOsc = ctx.createOscillator()
+  const subGain = ctx.createGain()
+  subOsc.type = 'sine'
+  subOsc.frequency.setValueAtTime(55, now)
+  subOsc.frequency.setValueAtTime(55, now + 0.01)
+  subOsc.frequency.exponentialRampToValueAtTime(38, now + 0.4)
+  subGain.gain.setValueAtTime(0.001, now)
+  subGain.gain.linearRampToValueAtTime(0.9, now + 0.008)
+  subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55)
+  subOsc.connect(subGain)
+  subGain.connect(masterGainNode!)
+  subOsc.start(now)
+  subOsc.stop(now + 0.6)
 
-  osc.start(ctx.currentTime)
-  osc.stop(ctx.currentTime + 0.5)
+  const bodyOsc = ctx.createOscillator()
+  const bodyGain = ctx.createGain()
+  bodyOsc.type = 'triangle'
+  bodyOsc.frequency.setValueAtTime(160, now)
+  bodyOsc.frequency.exponentialRampToValueAtTime(50, now + 0.08)
+  bodyOsc.frequency.exponentialRampToValueAtTime(40, now + 0.4)
+  bodyGain.gain.setValueAtTime(0.001, now)
+  bodyGain.gain.linearRampToValueAtTime(0.7, now + 0.005)
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35)
+  bodyOsc.connect(bodyGain)
+  bodyGain.connect(masterGainNode!)
+  bodyOsc.start(now)
+  bodyOsc.stop(now + 0.4)
+
+  const noiseBuffer = createNoiseBuffer(ctx, 0.06)
+  const noiseSrc = ctx.createBufferSource()
+  noiseSrc.buffer = noiseBuffer
+  const noiseFilter = ctx.createBiquadFilter()
+  noiseFilter.type = 'lowpass'
+  noiseFilter.frequency.value = 500
+  const noiseGain = ctx.createGain()
+  noiseGain.gain.setValueAtTime(0.25, now)
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04)
+  noiseSrc.connect(noiseFilter)
+  noiseFilter.connect(noiseGain)
+  noiseGain.connect(masterGainNode!)
+  noiseSrc.start(now)
+  noiseSrc.stop(now + 0.06)
 }
 
 const playSnare = (ctx: AudioContext) => {
-  const noiseBuffer = createNoiseBuffer(ctx, 0.2)
-  const noise = ctx.createBufferSource()
-  noise.buffer = noiseBuffer
-  const noiseFilter = ctx.createBiquadFilter()
-  noiseFilter.type = 'highpass'
-  noiseFilter.frequency.value = 1000
-  const noiseGain = ctx.createGain()
-  noiseGain.gain.setValueAtTime(1, ctx.currentTime)
-  noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2)
-  noise.connect(noiseFilter)
-  noiseFilter.connect(noiseGain)
-  noiseGain.connect(masterGainNode!)
-  noise.start(ctx.currentTime)
+  const now = ctx.currentTime
 
-  const osc = ctx.createOscillator()
-  const oscGain = ctx.createGain()
-  osc.type = 'triangle'
-  osc.frequency.setValueAtTime(250, ctx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
-  oscGain.gain.setValueAtTime(0.5, ctx.currentTime)
-  oscGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1)
-  osc.connect(oscGain)
-  oscGain.connect(masterGainNode!)
-  osc.start(ctx.currentTime)
-  osc.stop(ctx.currentTime + 0.2)
+  const bodyOsc = ctx.createOscillator()
+  const bodyGain = ctx.createGain()
+  bodyOsc.type = 'triangle'
+  bodyOsc.frequency.setValueAtTime(220, now)
+  bodyOsc.frequency.exponentialRampToValueAtTime(120, now + 0.05)
+  bodyOsc.frequency.exponentialRampToValueAtTime(80, now + 0.15)
+  bodyGain.gain.setValueAtTime(0.55, now)
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12)
+  bodyOsc.connect(bodyGain)
+  bodyGain.connect(masterGainNode!)
+  bodyOsc.start(now)
+  bodyOsc.stop(now + 0.15)
+
+  const noiseBuffer = createNoiseBuffer(ctx, 0.25)
+  const noiseSrc = ctx.createBufferSource()
+  noiseSrc.buffer = noiseBuffer
+
+  const hpFilter = ctx.createBiquadFilter()
+  hpFilter.type = 'highpass'
+  hpFilter.frequency.value = 2000
+
+  const peakFilter = ctx.createBiquadFilter()
+  peakFilter.type = 'peaking'
+  peakFilter.frequency.value = 5000
+  peakFilter.gain.value = 6
+  peakFilter.Q.value = 1.5
+
+  const noiseGain = ctx.createGain()
+  noiseGain.gain.setValueAtTime(0.7, now)
+  noiseGain.gain.setValueAtTime(0.7, now + 0.01)
+  noiseGain.gain.exponentialRampToValueAtTime(0.15, now + 0.06)
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2)
+
+  noiseSrc.connect(hpFilter)
+  hpFilter.connect(peakFilter)
+  peakFilter.connect(noiseGain)
+  noiseGain.connect(masterGainNode!)
+  noiseSrc.start(now)
+  noiseSrc.stop(now + 0.25)
+
+  const snareNoiseBuffer = createNoiseBuffer(ctx, 0.15)
+  const snareNoise = ctx.createBufferSource()
+  snareNoise.buffer = snareNoiseBuffer
+  const snareBp = ctx.createBiquadFilter()
+  snareBp.type = 'bandpass'
+  snareBp.frequency.value = 3500
+  snareBp.Q.value = 3
+  const snareGain = ctx.createGain()
+  snareGain.gain.setValueAtTime(0.3, now)
+  snareGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1)
+  snareNoise.connect(snareBp)
+  snareBp.connect(snareGain)
+  snareGain.connect(masterGainNode!)
+  snareNoise.start(now)
+  snareNoise.stop(now + 0.15)
 }
 
-const playTom = (ctx: AudioContext, freq: number, decay: number) => {
-  const osc = ctx.createOscillator()
-  const gain = ctx.createGain()
-  osc.type = 'sine'
-  osc.connect(gain)
-  gain.connect(masterGainNode!)
+const playTom = (ctx: AudioContext, baseFreq: number, decay: number) => {
+  const now = ctx.currentTime
 
-  osc.frequency.setValueAtTime(freq, ctx.currentTime)
-  osc.frequency.exponentialRampToValueAtTime(freq * 0.5, ctx.currentTime + decay)
+  const headOsc = ctx.createOscillator()
+  const headGain = ctx.createGain()
+  headOsc.type = 'sine'
+  headOsc.frequency.setValueAtTime(baseFreq * 1.5, now)
+  headOsc.frequency.exponentialRampToValueAtTime(baseFreq, now + 0.03)
+  headOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.85, now + decay)
+  headGain.gain.setValueAtTime(0.001, now)
+  headGain.gain.linearRampToValueAtTime(0.75, now + 0.003)
+  headGain.gain.exponentialRampToValueAtTime(0.001, now + decay)
+  headOsc.connect(headGain)
+  headGain.connect(masterGainNode!)
+  headOsc.start(now)
+  headOsc.stop(now + decay + 0.05)
 
-  gain.gain.setValueAtTime(0.8, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + decay)
+  const bodyOsc = ctx.createOscillator()
+  const bodyGain = ctx.createGain()
+  bodyOsc.type = 'triangle'
+  bodyOsc.frequency.setValueAtTime(baseFreq * 2, now)
+  bodyOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.2, now + 0.05)
+  bodyOsc.frequency.exponentialRampToValueAtTime(baseFreq * 0.7, now + decay * 0.7)
+  bodyGain.gain.setValueAtTime(0.3, now)
+  bodyGain.gain.exponentialRampToValueAtTime(0.001, now + decay * 0.5)
+  bodyOsc.connect(bodyGain)
+  bodyGain.connect(masterGainNode!)
+  bodyOsc.start(now)
+  bodyOsc.stop(now + decay * 0.7 + 0.05)
 
-  osc.start(ctx.currentTime)
-  osc.stop(ctx.currentTime + decay)
+  const noiseBuffer = createNoiseBuffer(ctx, 0.05)
+  const noiseSrc = ctx.createBufferSource()
+  noiseSrc.buffer = noiseBuffer
+  const noiseFilter = ctx.createBiquadFilter()
+  noiseFilter.type = 'bandpass'
+  noiseFilter.frequency.value = baseFreq * 4
+  noiseFilter.Q.value = 1
+  const noiseGain = ctx.createGain()
+  noiseGain.gain.setValueAtTime(0.2, now)
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03)
+  noiseSrc.connect(noiseFilter)
+  noiseFilter.connect(noiseGain)
+  noiseGain.connect(masterGainNode!)
+  noiseSrc.start(now)
+  noiseSrc.stop(now + 0.05)
 }
 
 const playHihat = (ctx: AudioContext, open: boolean) => {
-  const noiseBuffer = createNoiseBuffer(ctx, open ? 0.5 : 0.08)
-  const noise = ctx.createBufferSource()
-  noise.buffer = noiseBuffer
+  const now = ctx.currentTime
+  const duration = open ? 0.6 : 0.08
 
-  const filter = ctx.createBiquadFilter()
-  filter.type = 'highpass'
-  filter.frequency.value = 7000
+  const noiseBuffer = createNoiseBuffer(ctx, duration + 0.1)
+  const noiseSrc = ctx.createBufferSource()
+  noiseSrc.buffer = noiseBuffer
 
-  const gain = ctx.createGain()
-  gain.gain.setValueAtTime(0.5, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (open ? 0.5 : 0.08))
+  const hpFilter = ctx.createBiquadFilter()
+  hpFilter.type = 'highpass'
+  hpFilter.frequency.value = 6000
 
-  noise.connect(filter)
-  filter.connect(gain)
-  gain.connect(masterGainNode!)
-  noise.start(ctx.currentTime)
+  const bp1 = ctx.createBiquadFilter()
+  bp1.type = 'bandpass'
+  bp1.frequency.value = 10000
+  bp1.Q.value = 1.5
+
+  const bp2 = ctx.createBiquadFilter()
+  bp2.type = 'bandpass'
+  bp2.frequency.value = 14000
+  bp2.Q.value = 2
+
+  const sat = ctx.createWaveShaper()
+  sat.curve = makeSoftSaturateCurve()
+  sat.oversample = '4x'
+
+  const mainGain = ctx.createGain()
+  const peakVol = 0.4
+  mainGain.gain.setValueAtTime(peakVol, now)
+  mainGain.gain.setValueAtTime(peakVol, now + 0.003)
+  mainGain.gain.exponentialRampToValueAtTime(0.001, now + duration)
+
+  noiseSrc.connect(hpFilter)
+  hpFilter.connect(bp1)
+  bp1.connect(sat)
+  sat.connect(mainGain)
+  mainGain.connect(masterGainNode!)
+
+  const metalOsc = ctx.createOscillator()
+  metalOsc.type = 'square'
+  metalOsc.frequency.value = 8500
+  const metalGain = ctx.createGain()
+  metalGain.gain.setValueAtTime(0.06, now)
+  metalGain.gain.exponentialRampToValueAtTime(0.001, now + duration * 0.6)
+  metalOsc.connect(bp2)
+  bp2.connect(metalGain)
+  metalGain.connect(masterGainNode!)
+  metalOsc.start(now)
+  metalOsc.stop(now + duration)
+
+  noiseSrc.start(now)
+  noiseSrc.stop(now + duration + 0.1)
 }
 
 const playCymbal = (ctx: AudioContext, type: 'crash' | 'ride' | 'splash' | 'china') => {
-  const noiseBuffer = createNoiseBuffer(ctx, type === 'splash' ? 0.3 : type === 'ride' ? 1.5 : 1.2)
-  const noise = ctx.createBufferSource()
-  noise.buffer = noiseBuffer
+  const now = ctx.currentTime
+  const config = {
+    crash:  { duration: 2.0,  hpFreq: 4000, bpFreqs: [6000, 8500, 12000], peak: 0.55, satAmount: 0.7 },
+    ride:   { duration: 1.8,  hpFreq: 5000, bpFreqs: [7000, 10000, 13000], peak: 0.35, satAmount: 0.5 },
+    splash: { duration: 0.5,  hpFreq: 5000, bpFreqs: [8000, 11000, 14000], peak: 0.45, satAmount: 0.6 },
+    china:  { duration: 1.5,  hpFreq: 2500, bpFreqs: [3500, 6000, 9000],  peak: 0.50, satAmount: 0.8 }
+  }[type]
 
-  const filter = ctx.createBiquadFilter()
-  filter.type = 'highpass'
-  filter.frequency.value = type === 'china' ? 3000 : 5000
+  const pinkBuffer = createPinkNoiseBuffer(ctx, config.duration + 0.2)
+  const pinkSrc = ctx.createBufferSource()
+  pinkSrc.buffer = pinkBuffer
 
-  const gain = ctx.createGain()
-  const duration = type === 'splash' ? 0.3 : type === 'ride' ? 1.5 : 1.2
-  const peak = type === 'crash' ? 0.8 : 0.5
+  const whiteBuffer = createNoiseBuffer(ctx, config.duration + 0.2)
+  const whiteSrc = ctx.createBufferSource()
+  whiteSrc.buffer = whiteBuffer
 
-  gain.gain.setValueAtTime(peak, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration)
+  const hpFilter = ctx.createBiquadFilter()
+  hpFilter.type = 'highpass'
+  hpFilter.frequency.value = config.hpFreq
 
-  noise.connect(filter)
-  filter.connect(gain)
-  gain.connect(masterGainNode!)
-  noise.start(ctx.currentTime)
+  const sat = ctx.createWaveShaper()
+  sat.curve = makeSoftSaturateCurve()
+  sat.oversample = '4x'
+
+  const mainGain = ctx.createGain()
+  mainGain.gain.setValueAtTime(0.001, now)
+  mainGain.gain.linearRampToValueAtTime(config.peak, now + 0.005)
+  mainGain.gain.setValueAtTime(config.peak, now + 0.01)
+  mainGain.gain.exponentialRampToValueAtTime(0.001, now + config.duration)
+
+  pinkSrc.connect(hpFilter)
+  hpFilter.connect(sat)
+  sat.connect(mainGain)
+  mainGain.connect(masterGainNode!)
+  pinkSrc.start(now)
+  pinkSrc.stop(now + config.duration + 0.2)
+
+  const whiteGain = ctx.createGain()
+  whiteGain.gain.setValueAtTime(0.15, now)
+  whiteGain.gain.exponentialRampToValueAtTime(0.001, now + config.duration * 0.3)
+
+  const whiteBp = ctx.createBiquadFilter()
+  whiteBp.type = 'highpass'
+  whiteBp.frequency.value = config.bpFreqs[2]
+
+  whiteSrc.connect(whiteBp)
+  whiteBp.connect(whiteGain)
+  whiteGain.connect(masterGainNode!)
+  whiteSrc.start(now)
+  whiteSrc.stop(now + config.duration * 0.3 + 0.1)
+
+  config.bpFreqs.forEach((freq, idx) => {
+    const osc = ctx.createOscillator()
+    osc.type = 'square'
+    osc.frequency.value = freq * (0.998 + Math.random() * 0.004)
+    const oscGain = ctx.createGain()
+    const vol = 0.02 / (idx + 1)
+    oscGain.gain.setValueAtTime(vol, now)
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + config.duration * (0.4 + idx * 0.15))
+    const bp = ctx.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.value = freq
+    bp.Q.value = 8
+    osc.connect(bp)
+    bp.connect(oscGain)
+    oscGain.connect(masterGainNode!)
+    osc.start(now)
+    osc.stop(now + config.duration + 0.1)
+  })
+
+  if (type === 'china') {
+    const chinaOsc = ctx.createOscillator()
+    chinaOsc.type = 'sawtooth'
+    chinaOsc.frequency.value = 420
+    const chinaGain = ctx.createGain()
+    chinaGain.gain.setValueAtTime(0.08, now)
+    chinaGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15)
+    const chinaBp = ctx.createBiquadFilter()
+    chinaBp.type = 'bandpass'
+    chinaBp.frequency.value = 800
+    chinaBp.Q.value = 2
+    chinaOsc.connect(chinaBp)
+    chinaBp.connect(chinaGain)
+    chinaGain.connect(masterGainNode!)
+    chinaOsc.start(now)
+    chinaOsc.stop(now + 0.2)
+  }
+
+  if (type === 'ride') {
+    const bellOsc = ctx.createOscillator()
+    bellOsc.type = 'sine'
+    bellOsc.frequency.value = 3200
+    const bellGain = ctx.createGain()
+    bellGain.gain.setValueAtTime(0.1, now)
+    bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2)
+    const bellBp = ctx.createBiquadFilter()
+    bellBp.type = 'bandpass'
+    bellBp.frequency.value = 3200
+    bellBp.Q.value = 12
+    bellOsc.connect(bellBp)
+    bellBp.connect(bellGain)
+    bellGain.connect(masterGainNode!)
+    bellOsc.start(now)
+    bellOsc.stop(now + 0.25)
+  }
 }
 
 const playMetronomeClick = (ctx: AudioContext, accent: boolean) => {
+  const now = ctx.currentTime
   const osc = ctx.createOscillator()
   const gain = ctx.createGain()
   osc.connect(gain)
@@ -539,11 +855,11 @@ const playMetronomeClick = (ctx: AudioContext, accent: boolean) => {
   osc.frequency.value = accent ? 1200 : 800
   osc.type = 'sine'
 
-  gain.gain.setValueAtTime(accent ? 0.4 : 0.25, ctx.currentTime)
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05)
+  gain.gain.setValueAtTime(accent ? 0.4 : 0.25, now)
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05)
 
-  osc.start(ctx.currentTime)
-  osc.stop(ctx.currentTime + 0.05)
+  osc.start(now)
+  osc.stop(now + 0.05)
 }
 
 const playDrumSound = (padId: string) => {
@@ -1050,6 +1366,13 @@ onUnmounted(() => {
   font-weight: 600;
   color: #606266;
   min-width: 40px;
+}
+
+.reverb-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #909399;
+  white-space: nowrap;
 }
 
 .sound-info-card,
