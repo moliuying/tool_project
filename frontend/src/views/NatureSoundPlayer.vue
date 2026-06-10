@@ -21,6 +21,25 @@
       </el-row>
     </el-card>
 
+    <el-alert
+      type="success"
+      :closable="false"
+      show-icon
+      class="background-play-alert"
+    >
+      <template #title>
+        <div class="alert-title">
+          <el-icon :size="18"><Monitor /></el-icon>
+          <span>支持后台播放</span>
+        </div>
+      </template>
+      <div class="alert-content">
+        <p>✅ <strong>桌面浏览器：</strong>切换标签页、最小化窗口或切换其他应用时，声音可持续正常播放。</p>
+        <p>📱 <strong>移动浏览器：</strong>需将本页添加到主屏幕或使用桌面版网站，锁屏和后台播放效果更佳。iOS Safari 在锁屏后可能会暂停播放，建议保持页面活跃。</p>
+        <p>💡 <strong>小贴士：</strong>如果声音意外暂停，切回本页面即可自动恢复播放。长时间使用推荐配合定时关闭功能。</p>
+      </div>
+    </el-alert>
+
     <el-card class="player-card" :class="{ playing: isAnyPlaying }">
       <template #header>
         <div class="card-header">
@@ -252,7 +271,8 @@ import {
   Moon,
   Sunny,
   DataLine,
-  Warning
+  Warning,
+  Monitor
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -294,7 +314,8 @@ const usageTips = [
   { step: '第 1 步', title: '选择场景模式', content: '点击上方场景按钮，系统会自动配置最适合该场景的声音组合和音量。' },
   { step: '第 2 步', title: '自由组合声音', content: '也可以点击下方声音卡片，自由组合多种自然声音，打造专属你的环境音。' },
   { step: '第 3 步', title: '调节音量和定时', content: '拖动滑块调节每种声音的音量，设置定时关闭功能，安心入眠不担心。' },
-  { step: '第 4 步', title: '佩戴耳机效果更佳', content: '建议使用立体声耳机聆听，沉浸式体验自然环境，效果更加明显。' }
+  { step: '第 4 步', title: '佩戴耳机效果更佳', content: '建议使用立体声耳机聆听，沉浸式体验自然环境，效果更加明显。' },
+  { step: '第 5 步', title: '支持后台播放', content: '桌面端切换标签页或应用不影响播放；移动端建议将页面添加到主屏幕，锁屏播放更稳定。声音意外暂停时切回本页即可自动恢复。' }
 ]
 
 const sceneGuides = [
@@ -795,14 +816,31 @@ const getBarHeight = (index: number) => {
 }
 
 let visualizerInterval: number | null = null
+let wasPlayingBeforeHidden = false
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    if (audioContext.value && audioContext.value.state === 'suspended') {
+      audioContext.value.resume().then(() => {
+        if (wasPlayingBeforeHidden && isAnyPlaying.value) {
+          ElMessage.success('已恢复播放')
+        }
+      })
+    }
+  } else {
+    wasPlayingBeforeHidden = isAnyPlaying.value
+  }
+}
 
 onMounted(() => {
   visualizerInterval = window.setInterval(() => {}, 100)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
 })
 
 onUnmounted(() => {
   stopAllSounds()
   stopTimer()
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
   if (visualizerInterval) {
     clearInterval(visualizerInterval)
   }
@@ -827,6 +865,34 @@ onUnmounted(() => {
 
 .value-card :deep(.el-card__body) {
   padding: 24px;
+}
+
+.background-play-alert {
+  margin-bottom: 24px;
+  border-radius: 12px;
+}
+
+.background-play-alert .alert-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.background-play-alert .alert-content {
+  margin-top: 8px;
+  line-height: 1.8;
+}
+
+.background-play-alert .alert-content p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #606266;
+}
+
+.background-play-alert :deep(.el-alert__content) {
+  width: 100%;
 }
 
 .value-header {
