@@ -176,6 +176,80 @@
       </div>
     </el-card>
 
+    <el-card class="sound-info-card">
+      <template #header>
+        <div class="card-header">
+          <el-icon :size="18" color="#e74c3c"><Microphone /></el-icon>
+          <span>关于音色 · 音质说明</span>
+          <el-tag size="small" type="warning" class="sound-tag">Web Audio 实时合成</el-tag>
+        </div>
+      </template>
+
+      <el-alert type="info" :closable="false" show-icon class="sound-alert">
+        <template #title>
+          <strong>当前音色类型：Web Audio API 实时合成音效（非真实鼓组采样）</strong>
+        </template>
+        <div class="sound-alert-content">
+          <p>本虚拟架子鼓通过浏览器内置的 <strong>Web Audio API</strong> 使用振荡器（Oscillator）和白噪声（White Noise）模块，结合滤波器、包络曲线等信号处理技术，<strong>实时计算生成</strong>各种鼓声。无需下载任何音频文件，打开即用，零延迟响应。</p>
+        </div>
+      </el-alert>
+
+      <el-row :gutter="24" class="sound-compare-row">
+        <el-col :span="12">
+          <div class="compare-card compare-synth">
+            <div class="compare-header">
+              <el-icon :size="20"><Cpu /></el-icon>
+              <span>合成音效特点</span>
+            </div>
+            <ul class="compare-list">
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>零加载时间，随时可用</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>响应极快，无播放延迟</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>体积极小，不占存储空间</span></li>
+              <li><el-icon color="#67c23a"><CircleCheck /></el-icon><span>可无限次叠加演奏</span></li>
+              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>真实感不如专业采样音色</span></li>
+              <li><el-icon color="#e6a23c"><Warning /></el-icon><span>动态层次相对有限</span></li>
+            </ul>
+          </div>
+        </el-col>
+        <el-col :span="12">
+          <div class="compare-card compare-sample">
+            <div class="compare-header">
+              <el-icon :size="20"><Headset /></el-icon>
+              <span>适用场景说明</span>
+            </div>
+            <ul class="compare-list">
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 节奏练习与节奏感培养</span></li>
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 鼓点编排与创意灵感记录</span></li>
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 初学者熟悉鼓组布局</span></li>
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 日常娱乐放松演奏</span></li>
+              <li><el-icon color="#165DFF"><CircleCheck /></el-icon><span>✅ 配合节拍器做速度训练</span></li>
+              <li><el-icon color="#909399"><InfoFilled /></el-icon><span>ℹ️ 如需录音棚级音色请使用专业 DAW 软件</span></li>
+            </ul>
+          </div>
+        </el-col>
+      </el-row>
+
+      <div class="quality-tips">
+        <div class="quality-tips-title">
+          <el-icon :size="16" color="#e6a23c"><MagicStick /></el-icon>
+          <span>提升听感体验的建议</span>
+        </div>
+        <el-row :gutter="16">
+          <el-col :span="8" v-for="tip in qualityTips" :key="tip.title">
+            <div class="quality-tip-item">
+              <div class="qt-icon" :style="{ background: tip.color }">
+                <el-icon :size="18" color="#fff"><component :is="tip.icon" /></el-icon>
+              </div>
+              <div class="qt-content">
+                <strong>{{ tip.title }}</strong>
+                <p>{{ tip.desc }}</p>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
+    </el-card>
+
     <el-card class="guide-card">
       <template #header>
         <div class="card-header">
@@ -225,7 +299,12 @@ import {
   Refresh,
   MagicStick,
   Keyboard,
-  Bulb
+  Bulb,
+  Microphone,
+  CircleCheck,
+  Warning,
+  InfoFilled,
+  Cpu
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -276,6 +355,27 @@ const tips = [
   '打开节拍器跟随练习，从慢速开始逐步提高速度',
   '录音功能可以记录你的演奏，回放检查节奏是否准确',
   '尝试点击「示范节奏」学习基础的摇滚和放克鼓点'
+]
+
+const qualityTips = [
+  {
+    icon: 'Headset',
+    title: '使用耳机/音箱',
+    desc: '底鼓低频需要良好的低音响应，普通笔记本扬声器无法完全呈现',
+    color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  },
+  {
+    icon: 'Warning',
+    title: '适中音量播放',
+    desc: '过高音量会出现削波失真，建议保持 60-80% 主音量',
+    color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+  },
+  {
+    icon: 'MagicStick',
+    title: '合理编排力度',
+    desc: '通过击键速度的心理暗示，想象轻重变化让演奏更有音乐性',
+    color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+  }
 ]
 
 const masterVolume = ref(80)
@@ -952,9 +1052,141 @@ onUnmounted(() => {
   min-width: 40px;
 }
 
+.sound-info-card,
 .guide-card,
 .tips-card {
   margin-bottom: 24px;
+}
+
+.sound-tag {
+  margin-left: 12px;
+  font-weight: normal;
+}
+
+.sound-alert {
+  margin-bottom: 20px;
+  border-radius: 10px;
+}
+
+.sound-alert-content p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #606266;
+}
+
+.sound-alert-content strong {
+  color: #165DFF;
+}
+
+.sound-compare-row {
+  margin-bottom: 24px;
+}
+
+.compare-card {
+  padding: 20px;
+  border-radius: 12px;
+  height: 100%;
+}
+
+.compare-synth {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  border: 1px solid #ffcdd2;
+}
+
+.compare-sample {
+  background: linear-gradient(135deg, #f0f7ff 0%, #e0edff 100%);
+  border: 1px solid #bbdefb;
+}
+
+.compare-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #303133;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+}
+
+.compare-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compare-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+}
+
+.compare-list li .el-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.quality-tips {
+  padding: 20px;
+  background: linear-gradient(135deg, #fff8e6 0%, #ffefcc 100%);
+  border-radius: 12px;
+  border: 1px solid #ffe58f;
+}
+
+.quality-tips-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ad6800;
+  margin-bottom: 16px;
+}
+
+.quality-tip-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  transition: transform 0.2s;
+}
+
+.quality-tip-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.qt-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.qt-content strong {
+  display: block;
+  font-size: 14px;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.qt-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #909399;
+  line-height: 1.5;
 }
 
 .keymap-grid {
@@ -1022,6 +1254,14 @@ onUnmounted(() => {
 }
 
 @media (max-width: 900px) {
+  .sound-compare-row :deep(.el-col) {
+    margin-bottom: 16px;
+  }
+
+  .quality-tips :deep(.el-col) {
+    margin-bottom: 12px;
+  }
+
   .keymap-grid {
     grid-template-columns: repeat(2, 1fr);
   }
